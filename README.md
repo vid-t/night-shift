@@ -70,6 +70,21 @@ The training sample holds every train attack example with a visible change, plus
 
 To add the neighbouring loops' measurements to an example, join the other rows with the same `window_id`. `hai.baselines.neighbour_features` does this for the boosting baseline.
 
+## Export and fine-tuning
+
+`uv run hai-export` turns `examples.parquet` into the files a model trains on, with fixed seeds:
+
+| File | Rows |
+|---|---|
+| `data/processed/opentslm/train.jsonl` | `train_use` rows |
+| `data/processed/opentslm/validation.jsonl` | every validation row |
+| `data/processed/opentslm/test.jsonl` | every loop of each scored test attack window, plus 50 normal test windows per version |
+| `data/processed/opentslm/test_full.jsonl` | every test row |
+| `data/processed/opentslm/test_shuffled.jsonl` | `test.jsonl` with the seconds permuted inside each window |
+| `data/processed/timenet/examples_table.csv.gz` | one row per example, no series values (the TimeNet connector's table) |
+
+Each JSONL line holds the example's id, version, loop, split, label, start second, flags, answer text and its series, named by role. Fine-tuning OpenTSLM on them: [training/README.md](training/README.md).
+
 ## Data
 
 Raw and processed data are never committed. The two frozen CSVs derive from HAI and are under CC BY-SA 4.0: see [DATA_LICENSE.md](DATA_LICENSE.md). Results, mismatches and open questions are in [REPORT.md](REPORT.md).
