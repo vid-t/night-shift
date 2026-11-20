@@ -17,6 +17,8 @@ Per version and overall, on the scored window of each attack (one per attack):
   right_loop_only   every attacked loop answers attack and every other loop answers normal; a
                     `reacting` loop (normal, but its series react to an attack on another loop of the
                     same process) counts neither for nor against it
+  right_loop_strict the same without that allowance: a reacting loop must answer normal too. This
+                    is the rule as it was before reacting loops were marked
   timed             the earliest start second stated by the attacked loops that answer attack is
                     within 30 s of the attack's start (the earliest true start among its attacked
                     loops). "Already under way" reads as second 0; a start before the window counts as 0.
@@ -102,7 +104,7 @@ def score(pairs: list[tuple[dict, str | None]]) -> dict:
         for r in rows:
             if r["scored"] and r["window_kind"] == "attack":
                 windows[r["example_id"].rsplit("/", 1)[0]].append(r)
-        n = found = right = timed = reacting = reacting_attack = 0
+        n = found = right = strict = timed = reacting = reacting_attack = 0
         truths = []
         vis = defaultdict(lambda: {"examples": 0, "answered_attack": 0, "timed": 0})
         for w in windows.values():
@@ -113,6 +115,7 @@ def score(pairs: list[tuple[dict, str | None]]) -> dict:
             found += any(r["said"] == "attack" for r in hit)
             others = [r for r in w if r["label"] == "normal" and not r.get("reacting", False)]
             right += all(r["said"] == "attack" for r in hit) and all(r["said"] == "normal" for r in others)
+            strict += all(r["said"] == "attack" for r in hit) and all(r["said"] == "normal" for r in w if r["label"] == "normal")
             react = [r for r in w if r["label"] == "normal" and r.get("reacting", False)]
             reacting += len(react)
             reacting_attack += sum(r["said"] == "attack" for r in react)
@@ -128,7 +131,8 @@ def score(pairs: list[tuple[dict, str | None]]) -> dict:
         normal = [r for r in rows if r["window_kind"] == "normal"]
         alarms = sum(r["said"] != "normal" for r in normal)
         versions.append({
-            "version": version, "attacks": n, "found": found, "right_loop_only": right, "timed": timed,
+            "version": version, "attacks": n, "found": found, "right_loop_only": right,
+            "right_loop_strict": strict, "timed": timed,
             "reacting": reacting, "reacting_said_attack": reacting_attack,
             "normal_examples": len(normal),
             "false_alarms_per_100": round(100 * alarms / len(normal), 1) if normal else None,
@@ -158,7 +162,7 @@ def _table(rows: list[dict], cols: list[str]) -> str:
 
 
 def report(name: str, result: dict) -> str:
-    v_cols = ["version", "attacks", "found", "right_loop_only", "timed", "reacting", "reacting_said_attack",
+    v_cols = ["version", "attacks", "found", "right_loop_only", "right_loop_strict", "timed", "reacting", "reacting_said_attack",
               "normal_examples", "false_alarms_per_100", "examples", "valid_share", "label_right_share"]
     l_cols = ["version", "kind", "examples", "answered_attack", "timed"]
     c = result["constant_guess"]

@@ -222,6 +222,15 @@ def test_losses_are_read_per_epoch():
 def test_full_run_estimate():
     k = load_kaggle_common()
     assert k.full_run_estimate({"train": 1.0, "validation": None, "answer": 1.0}) is None
-    got = k.full_run_estimate({"train": 0.36, "validation": 0.36, "answer": 3.6})
-    assert got["hours_per_epoch"] == pytest.approx((3770 + 1092) * 0.36 / 3600, abs=0.01)
+    rows = {"train": 3880, "validation": 1092, "test": 1536}
+    got = k.full_run_estimate({"train": 0.36, "validation": 0.36, "answer": 3.6}, rows)
+    assert got["hours_per_epoch"] == pytest.approx((3880 + 1092) * 0.36 / 3600, abs=0.01)
     assert got["hours_for_test_answers"] == pytest.approx(1536 * 3.6 / 3600, abs=0.01)
+    assert k.full_run_estimate({"train": 0.36, "validation": 0.36, "answer": 3.6}) == got  # the default counts
+
+
+def test_rows_are_counted_from_the_exported_files(tmp_path):
+    k = load_kaggle_common()
+    (tmp_path / "train.jsonl").write_text("{}\n{}\n\n{}\n")
+    (tmp_path / "test.jsonl").write_text("{}\n")
+    assert k.count_rows(tmp_path) == {"train": 3, "validation": k.FULL_ROWS["validation"], "test": 1}

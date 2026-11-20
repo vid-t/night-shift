@@ -155,6 +155,20 @@ def test_reacting_loops_do_not_count_for_right_loop_only():
     assert res["right_loop_only"] == 0 and res["reacting"] == 0
 
 
+def test_strict_count_keeps_the_old_rule():
+    rows, windows = _with_reacting(make_examples())
+    # says attack on the reacting loop: fine for right_loop_only, wrong for the strict count
+    res = overall(run(rows, lambda r: r["answer"] if not r.get("reacting") else "Change starts near second 50. Answer: attack"))
+    assert res["right_loop_only"] == len(windows) and res["right_loop_strict"] == 0
+    # a perfect reader is right under both rules
+    res = overall(run(rows, lambda r: r["answer"]))
+    assert res["right_loop_only"] == res["right_loop_strict"] == len(windows)
+    # without the field the two counts are the same number
+    plain = [{k: v for k, v in r.items() if k != "reacting"} for r in rows]
+    res = overall(run(plain, lambda r: r["answer"]))
+    assert res["right_loop_only"] == res["right_loop_strict"] == len(windows)
+
+
 def test_reacting_loops_still_need_the_attacked_loop():
     rows, _ = _with_reacting(make_examples())
     res = overall(run(rows, lambda r: "Answer: normal"))

@@ -1,6 +1,6 @@
 """Kaggle run 2: the full fine-tune (steps 5 to 7 of training/README.md) on one Kaggle GPU.
 
-Trains stage6_hai on the 3,770 training rows, answers the 1,536 test rows, answers them again
+Trains stage6_hai on the 3,880 training rows, answers the 1,536 test rows, answers them again
 with the seconds shuffled inside each window, and scores both. While it trains it copies the
 best checkpoint and the loss history to /kaggle/working/results every five minutes, so a run
 that is cut short still leaves a model behind.

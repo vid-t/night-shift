@@ -47,7 +47,7 @@ def main() -> None:
 
     summary = {"version": paths.version, "llm_id": k.LLM_ID, "gpu": paths.gpu, "setup_seconds": paths.setup_seconds,
                "total_seconds": round(time.time() - started), "run": result,
-               "full_run_estimate": k.full_run_estimate(result["seconds_per_row"])}
+               "full_run_estimate": k.full_run_estimate(result["seconds_per_row"], k.count_rows(paths.jsonl))}
     (k.RESULTS / "run_summary.json").write_text(json.dumps(summary, indent=2))
     k.say("\nSummary:")
     k.say(json.dumps(summary, indent=2))
