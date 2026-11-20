@@ -1,0 +1,18 @@
+# data is rebuilt from the pinned source, never committed
+data/raw/*
+!data/raw/SHA256SUMS
+data/processed/
+data/cache/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+.ruff_cache/
+
+# secrets and local config
+.env
+.env.*
+.DS_Store
