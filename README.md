@@ -14,7 +14,7 @@ uv run hai-build      # download, verify, check, build, score, write REPORT.md
 uv run pytest         # tests run on what the build produced
 ```
 
-`hai-build` downloads about 650 MB from `icsdataset/hai` at a pinned commit and checks every file against `data/raw/SHA256SUMS`. `--versions 21.03,22.04` picks versions; the default is the list `ENABLED` in `src/hai/config.py`.
+`hai-build` downloads about 650 MB from `icsdataset/hai` at a pinned commit and checks every file against `data/raw/SHA256SUMS`. `--versions 21.03,22.04` picks versions; the default is all four (`ENABLED` in `src/hai/config.py`). A fresh build takes about two and a half minutes, most of it the download.
 
 ## What the build does
 
@@ -30,7 +30,7 @@ uv run pytest         # tests run on what the build produced
 | Baselines on validation | `hai.baselines` | `data/processed/baselines.json` |
 | Report | `hai.report` | `REPORT.md` |
 
-To regenerate the attack table from the PDF: `uv run python -m hai.attacks_pdf`. To check the committed table against the PDF: `uv run python -m hai.attacks_pdf --check`. Every fix to the manual's table is in `CORRECTIONS`, `ATTACK_FIXES` and `POINT_FIXES` in `src/hai/attacks_pdf.py`, with its reason in the `note` column.
+To recount the rows and rerun the table check against the flags: `uv run python -m hai.check_table 21.03` (any versions; default all). To regenerate the attack table from the PDF: `uv run python -m hai.attacks_pdf`. To check the committed table against the PDF: `uv run python -m hai.attacks_pdf --check`. Every fix to the manual's table is in `CORRECTIONS`, `ATTACK_FIXES` and `POINT_FIXES` in `src/hai/attacks_pdf.py`, with its reason in the `note` column.
 
 ## Loops
 

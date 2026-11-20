@@ -390,6 +390,8 @@ Sample answers:
 - `22.04/train1/20210711T225902/P2-SC` (normal): The target and the measurement stay flat. The command stays flat. Answer: normal
 - `20.07/test1/20191031T174219/P2-SC` (normal): The measurement stays flat. Answer: normal
 
+Attack answers that name no clear step (`No series shows a clear step`): 153 of 1458.
+
 Attack examples whose attack started before the window: 0. Examples in windows that touch a `loop uncertain` attack: 144.
 
 ## 5. Baselines (validation split only)
@@ -424,6 +426,7 @@ Scored per attack on the window where the attack starts at second 120. `found_on
 - 23.05: P1_B3004 and P1_B3005 are matched from data (target tracking), not from the manual. P1_B4022 is not matched, so the 23.05 boiler temperature loop has no target.
 - 23.05 label-test2.csv prints its times to the minute; the loader checks that every row's minute matches the data row.
 - The water-level targets (P3_LH01, P3_LL01 and their older names) are constant in every file, also during the 20.07 attacks that name them. Setpoint attacks on that loop leave no trace in the target series.
+- Turbine speed loop: 20.07 has only P2_SIT01 (no command, and P2_SD01 is constant per file), so that loop has one series there, not the two the brief expected; 21.03 has two (P2_SIT01, P2_CO_rpm) and no target, because P2_ASD is always 0.
 - The loop label says which loop the manual says was attacked. It does not check that the attack is visible in that loop's series.
 - Attack windows can overlap a second attack on another loop. Those loops are labelled `attack` too, with their own start second.
 - Gradient boosting uses shape statistics per series plus how the measurement relates to the target and the command; no absolute levels, so it cannot tell files apart by their set points. The feature set was chosen after one comparison on validation (shape alone against shape plus relations); the relational features found more validation attacks and were kept. It has not been tuned otherwise.

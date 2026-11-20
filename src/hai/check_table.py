@@ -129,3 +129,22 @@ def rename_check(version: str, attacks: pd.DataFrame) -> pd.DataFrame:
 def normal_file_clean(version: str) -> int:
     """Attack seconds in the version's normal file (must be 0)."""
     return int(load(version, NORMAL_FILES[version])["attack"].sum())
+
+
+def main() -> None:
+    """Rerun the table check: `uv run python -m hai.check_table [versions...]`."""
+    import sys
+
+    from hai.config import ENABLED
+
+    pd.set_option("display.width", 200)
+    for v in sys.argv[1:] or ENABLED:
+        c, u = check(v)
+        print(f"{v}: {len(c)} attacks, {int((c.status == 'ok').sum())} ok, {len(u)} flag runs not in the table")
+        bad = c[c.status != "ok"]
+        if len(bad):
+            print(bad[["attack_id", "status", "detail"]].to_string(index=False))
+
+
+if __name__ == "__main__":
+    main()
