@@ -130,6 +130,43 @@ def test_missing_predictions_count_as_wrong():
     assert res["valid_share"] < 1.0
 
 
+def _with_reacting(rows):
+    """Mark one normal loop of each scored attack window as reacting."""
+    seen = set()
+    for r in rows:
+        w = r["example_id"].rsplit("/", 1)[0]
+        if r["window_kind"] == "attack" and r["label"] == "normal" and w not in seen:
+            r["reacting"] = True
+            seen.add(w)
+    return rows, seen
+
+
+def test_reacting_loops_do_not_count_for_right_loop_only():
+    rows, windows = _with_reacting(make_examples())
+    # a perfect reader that also says attack on the reacting loop
+    res = overall(run(rows, lambda r: r["answer"] if not r.get("reacting") else "Change starts near second 50. Answer: attack"))
+    assert res["right_loop_only"] == res["attacks"] == 8
+    assert res["reacting"] == len(windows) == 8 and res["reacting_said_attack"] == 8
+    assert res["false_alarms_per_100"] == 0.0
+    # without the mark the same answers break right_loop_only in every window
+    plain = [{k: v for k, v in r.items() if k != "reacting"} for r in rows]
+    res = overall(run(plain, lambda r: r["answer"] if r["example_id"] not in {x["example_id"] for x in rows if x.get("reacting")}
+                      else "Answer: attack"))
+    assert res["right_loop_only"] == 0 and res["reacting"] == 0
+
+
+def test_reacting_loops_still_need_the_attacked_loop():
+    rows, _ = _with_reacting(make_examples())
+    res = overall(run(rows, lambda r: "Answer: normal"))
+    assert res["right_loop_only"] == res["found"] == 0 and res["reacting_said_attack"] == 0
+
+
+def test_score_report_prints_the_reacting_line():
+    rows, _ = _with_reacting(make_examples())
+    text = score.report("plain", run(rows, lambda r: r["answer"]))
+    assert "Reacting loops (normal, not counted in right_loop_only): 8 in the scored windows, 0 answered attack." in text
+
+
 def test_score_cli_scores_plain_and_shuffled(tmp_path, capsys):
     rows = make_examples()
     for name in ("plain", "shuffled"):

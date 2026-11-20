@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from hai import attacks_pdf, check_table, download, report
-from hai.answers import answer
+from hai.answers import SWING_ELIGIBLE_MAX_RATE, answer, swing
 from hai.baselines import run as run_baselines
 from hai.config import DATA_FILES, ENABLED, FROZEN, NORMAL_FILES, PROCESSED
 from hai.dataset import SEED, build_examples
@@ -31,6 +31,74 @@ def norm_stats(version: str) -> tuple[dict, dict]:
     return ranges, scales
 
 
+def swings_at(r, s: int, e: int, scales: dict) -> bool:
+    """Does any series of example `r` show a swing change at second `s` (60 s before against s..e)?"""
+    for tag, x in zip(r.tags, r.values):
+        x = np.asarray(x, "float64")
+        if swing(x[max(0, s - 60):s], x[s:min(e + 1, len(x))], scales[(r.version, tag)]):
+            return True
+    return False
+
+
+def swing_eligibility(ex: pd.DataFrame, scales: dict) -> pd.DataFrame:
+    """How often each loop swings on its own: the share of quiet examples with a swing change at a placebo second.
+
+    Quiet examples: every loop example of a normal window in the train and validation splits (the test split
+    is not read). Each gets one (start, end) pair drawn with a fixed seed from the attack examples of the same
+    splits whose attack starts at second 10 or later, so the placebo second has the distribution of a real one.
+    A loop is swing-eligible when its rate, pooled over versions, is below SWING_ELIGIBLE_MAX_RATE.
+    Returns one row per (version, loop) plus one pooled row per loop (version "all").
+    """
+    seen = ex[ex.split != "test"]
+    att = seen[(seen.label == "attack") & (seen.attack_start_s >= 10)]
+    pairs = att[["attack_start_s", "attack_end_s"]].to_numpy()
+    quiet = seen[seen.window_kind == "normal"]
+    rng = np.random.default_rng([SEED, 17])
+    draw = pairs[rng.integers(len(pairs), size=len(quiet))]
+    hit = np.array([swings_at(r, int(s), int(e), scales) for r, (s, e) in zip(quiet.itertuples(), draw)], bool)
+    q = quiet[["version", "loop"]].assign(swing=hit)
+    per = q.groupby(["version", "loop"]).swing.agg(quiet_examples="size", swinging="sum").reset_index()
+    pooled = q.groupby("loop").swing.agg(quiet_examples="size", swinging="sum").reset_index().assign(version="all")
+    out = pd.concat([per, pooled], ignore_index=True)
+    out["rate"] = (out.swinging / out.quiet_examples).round(3)
+    out["eligible"] = False
+    rate = dict(zip(pooled.loop, pooled.swinging / pooled.quiet_examples))
+    out.loc[out.version == "all", "eligible"] = [rate[lp] < SWING_ELIGIBLE_MAX_RATE for lp in pooled.loop]
+    return out[["version", "loop", "quiet_examples", "swinging", "rate", "eligible"]]
+
+
+def eligible_loops(table: pd.DataFrame) -> set[str]:
+    return set(table[(table.version == "all") & table.eligible].loop)
+
+
+def process(loop: str) -> str:
+    """P1 boiler, P2 turbine, P3 water: the part of the loop name before the dash."""
+    return loop.split("-")[0]
+
+
+def reacting(ex: pd.DataFrame, scales: dict, eligible: set[str]) -> np.ndarray:
+    """Normal rows that look like they react to an attack on another loop of the same process.
+
+    True for a row labelled `normal` in an attack window, in a swing-eligible loop, when the window holds an
+    attacked loop of the same process (P1 boiler, P2 turbine, P3 water) and the row's series show a swing
+    change at that attack's start. The start is the earliest start among the same-process attacked rows of
+    the window, the end the latest end; only attacked rows whose attack starts at second 10 or later count
+    (an attack already under way leaves no before stretch to compare), so a row whose only same-process
+    attack is already under way is never reacting. Two attacks in one window: earliest start, latest end.
+    """
+    out = np.zeros(len(ex), bool)
+    att = ex[(ex.label == "attack") & (ex.attack_start_s >= 10)].assign(process=lambda d: d.loop.map(process))
+    span = att.groupby(["window_id", "process"]).agg(s=("attack_start_s", "min"), e=("attack_end_s", "max"))
+    span = span.to_dict("index")
+    for i, r in enumerate(ex.itertuples()):
+        if r.label != "normal" or r.window_kind != "attack" or r.loop not in eligible:
+            continue
+        got = span.get((r.window_id, process(r.loop)))
+        if got is not None:
+            out[i] = swings_at(r, int(got["s"]), int(got["e"]), scales)
+    return out
+
+
 TRAIN_NORMAL_PER_ATTACK = 2  # normal examples kept per attack example, from each of the two kinds of window
 
 
@@ -39,7 +107,8 @@ def training_sample(ex: pd.DataFrame) -> np.ndarray:
 
     Kept, per version: every train attack example with a visible change, twice as many normal
     examples from attack windows (loops that were not attacked) and twice as many from normal
-    windows, drawn with a fixed seed. Validation and test keep every row and are never sampled.
+    windows, drawn with a fixed seed. A `reacting` row is never kept: its label says normal while
+    its series react to the attack next door. Validation and test keep every row and are never sampled.
     """
     rng = np.random.default_rng([SEED, 7])
     use = np.zeros(len(ex), bool)
@@ -50,7 +119,7 @@ def training_sample(ex: pd.DataFrame) -> np.ndarray:
         pos = np.flatnonzero(v & attack & ~ex.no_visible_change.to_numpy())
         use[pos] = True
         for kind in ("attack", "normal"):
-            pool = np.flatnonzero(v & ~attack & (ex.window_kind == kind).to_numpy())
+            pool = np.flatnonzero(v & ~attack & ~ex.reacting.to_numpy() & (ex.window_kind == kind).to_numpy())
             n = min(TRAIN_NORMAL_PER_ATTACK * len(pos), len(pool))
             use[rng.choice(pool, size=n, replace=False)] = True
     return use
@@ -136,10 +205,15 @@ def main(argv=None) -> None:
         wins.append(w), exs.append(e)
     wins, ex = pd.concat(wins, ignore_index=True), pd.concat(exs, ignore_index=True)
 
-    print("5. answer text", flush=True)
-    texts = [answer(r, {t: scales[(r.version, t)] for t in r.tags}) for r in ex.itertuples()]
+    print("5. swing eligibility, answer text, reacting neighbours", flush=True)
+    eligibility = swing_eligibility(ex, scales)
+    eligible = eligible_loops(eligibility)
+    texts = [answer(r, {t: scales[(r.version, t)] for t in r.tags}, r.loop in eligible) for r in ex.itertuples()]
     ex["answer"] = [t for t, _ in texts]
     ex["no_visible_change"] = [hidden for _, hidden in texts]
+    level_only = np.array([r.label == "attack" and answer(r, {t: scales[(r.version, t)] for t in r.tags})[1]
+                           for r in ex.itertuples()], bool)  # the rule without the swing test, for the report
+    ex["reacting"] = reacting(ex, scales, eligible)
     ex["train_use"] = training_sample(ex)
 
     wins.to_parquet(PROCESSED / "windows.parquet", index=False)
@@ -155,7 +229,7 @@ def main(argv=None) -> None:
                  facts=pd.concat(facts, ignore_index=True), checks=checks, before=before,
                  unmatched=pd.concat(unmatched, ignore_index=True),
                  renames=pd.concat(renames, ignore_index=True), tracks=pd.concat(tracks, ignore_index=True),
-                 wins=wins, ex=ex, base=base)
+                 wins=wins, ex=ex, base=base, eligibility=eligibility, level_only=level_only)
     print("done")
 
 

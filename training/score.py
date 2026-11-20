@@ -14,7 +14,9 @@ An empty or unparseable answer is wrong: it never counts as normal nor as attack
 Per version and overall, on the scored window of each attack (one per attack):
   attacks           attacks with at least one attacked loop among the six
   found             an attacked loop answers attack
-  right_loop_only   every attacked loop answers attack and every other loop answers normal
+  right_loop_only   every attacked loop answers attack and every other loop answers normal; a
+                    `reacting` loop (normal, but its series react to an attack on another loop of the
+                    same process) counts neither for nor against it
   timed             the earliest start second stated by the attacked loops that answer attack is
                     within 30 s of the attack's start (the earliest true start among its attacked
                     loops). "Already under way" reads as second 0; a start before the window counts as 0.
@@ -25,6 +27,8 @@ On all examples:
   valid_share       share of valid answers
 Attacked loop examples in the scored windows, on separate lines for those with a visible change
 and those marked no_visible_change: how many answer attack, how many are timed.
+Reacting loop examples in the scored windows: how many there are, how many answer attack
+(`reacting`, `reacting_said_attack`). A test file without the `reacting` field has none.
 """
 import argparse
 import json
@@ -98,7 +102,7 @@ def score(pairs: list[tuple[dict, str | None]]) -> dict:
         for r in rows:
             if r["scored"] and r["window_kind"] == "attack":
                 windows[r["example_id"].rsplit("/", 1)[0]].append(r)
-        n = found = right = timed = 0
+        n = found = right = timed = reacting = reacting_attack = 0
         truths = []
         vis = defaultdict(lambda: {"examples": 0, "answered_attack": 0, "timed": 0})
         for w in windows.values():
@@ -107,7 +111,11 @@ def score(pairs: list[tuple[dict, str | None]]) -> dict:
                 continue
             n += 1
             found += any(r["said"] == "attack" for r in hit)
-            right += all(r["said"] == "attack" for r in hit) and all(r["said"] == "normal" for r in w if r["label"] == "normal")
+            others = [r for r in w if r["label"] == "normal" and not r.get("reacting", False)]
+            right += all(r["said"] == "attack" for r in hit) and all(r["said"] == "normal" for r in others)
+            react = [r for r in w if r["label"] == "normal" and r.get("reacting", False)]
+            reacting += len(react)
+            reacting_attack += sum(r["said"] == "attack" for r in react)
             truth = min(max(0, int(r["attack_start_s"])) for r in hit)
             truths.append(truth)
             said = [r["start"] for r in hit if r["said"] == "attack" and r["start"] is not None]
@@ -121,6 +129,7 @@ def score(pairs: list[tuple[dict, str | None]]) -> dict:
         alarms = sum(r["said"] != "normal" for r in normal)
         versions.append({
             "version": version, "attacks": n, "found": found, "right_loop_only": right, "timed": timed,
+            "reacting": reacting, "reacting_said_attack": reacting_attack,
             "normal_examples": len(normal),
             "false_alarms_per_100": round(100 * alarms / len(normal), 1) if normal else None,
             "examples": len(rows), "valid_share": round(sum(r["said"] is not None for r in rows) / len(rows), 3) if rows else None,
@@ -149,13 +158,16 @@ def _table(rows: list[dict], cols: list[str]) -> str:
 
 
 def report(name: str, result: dict) -> str:
-    v_cols = ["version", "attacks", "found", "right_loop_only", "timed", "normal_examples", "false_alarms_per_100",
-              "examples", "valid_share", "label_right_share"]
+    v_cols = ["version", "attacks", "found", "right_loop_only", "timed", "reacting", "reacting_said_attack",
+              "normal_examples", "false_alarms_per_100", "examples", "valid_share", "label_right_share"]
     l_cols = ["version", "kind", "examples", "answered_attack", "timed"]
     c = result["constant_guess"]
+    a = next(v for v in result["versions"] if v["version"] == "all")
     return (f"== {name} ==\nPer attack (scored windows) and false alarms (normal windows):\n"
             f"{_table(result['versions'], v_cols)}\n\nAttacked loop examples in the scored windows:\n"
             f"{_table(result['loops'], l_cols)}\n\n"
+            f"Reacting loops (normal, not counted in right_loop_only): {a['reacting']} in the scored windows, "
+            f"{a['reacting_said_attack']} answered attack.\n"
             f"Constant guess on timing: always second 120 times {c['timed_at_120']} of {c['attacks']} attacks; "
             f"the best constant (second {c['best_second']}) times {c['timed_at_best']}.\n")
 

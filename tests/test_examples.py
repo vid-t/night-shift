@@ -78,6 +78,7 @@ def test_training_sample(examples):
     used = examples[examples.train_use]
     assert (used.split == "train").all()
     assert not used.no_visible_change.any()
+    assert not used.reacting.any()
     train_attacks = examples[(examples.split == "train") & (examples.label == "attack") & ~examples.no_visible_change]
     assert set(train_attacks.example_id) <= set(used.example_id)
     share = (used.label == "attack").mean()

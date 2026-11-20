@@ -112,13 +112,17 @@ def score(ex: pd.DataFrame, flagged: np.ndarray) -> pd.DataFrame:
     visible_* and hidden_*: attacked loop examples in those windows, split by whether
     their series show a visible change, and how many of each were flagged.
     False alarms are per 100 loop examples from normal windows.
+    `reacting` rows (normal loops that react to an attack next door) count neither for nor against
+    `right_loop_only`; `reacting_loops` and `reacting_flagged` count them on their own, in the same windows.
     """
     ex = ex.assign(flag=flagged)
+    if "reacting" not in ex:
+        ex = ex.assign(reacting=False)
     rows = []
     for version, g in list(ex.groupby("version")) + [("all", ex)]:
         att = g[(g.window_kind == "attack") & g.scored]
         n = found = right = detected = 0
-        vis = vis_f = hid = hid_f = 0
+        vis = vis_f = hid = hid_f = rea = rea_f = 0
         for _, w in att.groupby("window_id"):
             hit = w[w.label == "attack"]
             if hit.empty:
@@ -126,13 +130,16 @@ def score(ex: pd.DataFrame, flagged: np.ndarray) -> pd.DataFrame:
             n += 1
             found += bool(hit.flag.any())
             detected += bool(w.flag.any())
-            right += bool(hit.flag.all() and not w[w.label == "normal"].flag.any())
+            right += bool(hit.flag.all() and not w[(w.label == "normal") & ~w.reacting].flag.any())
+            r = w[w.reacting]
+            rea, rea_f = rea + len(r), rea_f + int(r.flag.sum())
             v, h = hit[~hit.no_visible_change], hit[hit.no_visible_change]
             vis, vis_f, hid, hid_f = vis + len(v), vis_f + int(v.flag.sum()), hid + len(h), hid_f + int(h.flag.sum())
         normal = g[g.window_kind == "normal"]
         rows.append({"version": version, "attacks": n, "found_on_attacked_loop": found,
                      "detected_any_loop": detected, "right_loop_only": right,
                      "visible_loops": vis, "visible_flagged": vis_f, "hidden_loops": hid, "hidden_flagged": hid_f,
+                     "reacting_loops": rea, "reacting_flagged": rea_f,
                      "normal_examples": len(normal),
                      "false_alarms_per_100": round(100 * normal.flag.mean(), 1) if len(normal) else np.nan})
     return pd.DataFrame(rows)

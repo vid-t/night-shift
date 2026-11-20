@@ -5,17 +5,19 @@ import os
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from hai.dataset import LOOP_NAMES, SERIES_LABEL, WIN
 from hai.export import NORMAL_TEST_WINDOWS, export
 
-# SHA-256 of the decompressed hand-off table (hai_examples_table.csv.gz) the TimeNet connector was built on.
-HANDOFF_SHA256 = "4c99f4e2022a690931ad333af4a27063b936f94226723f9297f6d2754da66137"
+# SHA-256 of the decompressed TimeNet table (hai_examples_table.csv.gz). The label repair (swing test, `reacting`
+# column) changed it from 4c99f4e2...137, the table the TimeNet connector was first built on; hand the new file over.
+HANDOFF_SHA256 = "a63ff125155b0f3fbd3ad80d6adae1d2b8b04a60df53035e3daf7ff4720ec9e5"
 HANDOFF = os.environ.get("HAI_HANDOFF_TABLE")  # optional: path to the hand-off file itself
 
 KEYS = {"example_id", "version", "loop", "loop_name", "split", "label", "attack_start_s", "scored",
-        "no_visible_change", "window_kind", "answer", "series"}
+        "no_visible_change", "reacting", "window_kind", "answer", "series"}
 
 
 @pytest.fixture(scope="module")
@@ -62,7 +64,7 @@ def test_schema_matches_the_parquet(examples, exported):
             assert set(rec) == KEYS
             row = by_id.loc[rec["example_id"]]
             for k in ("version", "loop", "split", "label", "attack_start_s", "scored", "no_visible_change",
-                      "window_kind", "answer"):
+                      "reacting", "window_kind", "answer"):
                 assert rec[k] == row[k], (name, k)
             assert rec["loop_name"] == LOOP_NAMES[rec["loop"]]
             assert [s["role"] for s in rec["series"]] == list(row.roles)
@@ -101,6 +103,15 @@ def test_shuffled_permutes_seconds_inside_each_example(exported):
         assert np.array_equal(np.sort(x, axis=1), np.sort(y, axis=1))
         moved += not np.array_equal(x, y)
     assert moved > 0.9 * len(plain)
+
+
+def test_reacting_is_exported(examples, exported):
+    out, _ = exported
+    want = set(examples[examples.reacting & (examples.split == "test")].example_id)
+    got = {r["example_id"] for r in read(out / "opentslm" / "test_full.jsonl") if r["reacting"]}
+    assert want and got == want
+    table = pd.read_csv(out / "timenet" / "examples_table.csv.gz")
+    assert table.reacting.dtype == bool and int(table.reacting.sum()) == int(examples.reacting.sum())
 
 
 def test_export_is_deterministic(examples, exported, tmp_path):
