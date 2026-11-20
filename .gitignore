@@ -19,3 +19,11 @@ __pycache__/
 
 # logs
 *.log
+
+# OpenTSLM checkout, exports and training output
+external/
+*.jsonl
+*.pt
+*.safetensors
+results/
+runs/

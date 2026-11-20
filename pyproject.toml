@@ -12,9 +12,12 @@ dependencies = [
 
 [dependency-groups]
 dev = ["pytest>=8"]
+# only for tests/test_training.py::test_dataset_*; training itself runs in OpenTSLM's own environment
+training = ["torch>=2.2", "tqdm>=4.62"]
 
 [project.scripts]
 hai-build = "hai.build:main"
+hai-export = "hai.export:main"
 
 [build-system]
 requires = ["hatchling"]
