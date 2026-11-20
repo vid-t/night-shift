@@ -2,6 +2,10 @@
 
 Words only (rises, falls, stays flat, follows) and a start second. No measured
 values. Every answer ends with `Answer: attack` or `Answer: normal`.
+
+`answer` also says whether an attack example shows no visible change in its
+series. Those examples are left out of training: their text could only teach
+a model to guess.
 """
 import numpy as np
 
@@ -38,11 +42,12 @@ def _join(parts: list[str]) -> str:
     return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
 
 
-def attack_text(tags, roles, values, start: int, end: int, scales: dict) -> str:
+def attack_text(tags, roles, values, start: int, end: int, scales: dict) -> tuple[str, bool]:
+    """The text, and True when no series shows a clear step (no visible change)."""
     if start < 0:
-        return "The change is already under way when the window opens. Answer: attack"
+        return "The change is already under way when the window opens. Answer: attack", False
     if start < 10:
-        return f"Change starts near second {start}. Answer: attack"
+        return f"Change starts near second {start}. Answer: attack", False
     counts = {r: roles.count(r) for r in set(roles)}
     stop = min(end + 1, len(values[0]))
     movers, flat = [], []
@@ -56,7 +61,7 @@ def attack_text(tags, roles, values, start: int, end: int, scales: dict) -> str:
             movers.append((onset(x, start, base, scales[tag]) or start, name, d))
     movers.sort()
     if not movers:
-        return f"No series shows a clear step. Change starts near second {start}. Answer: attack"
+        return f"No series shows a clear step. Change starts near second {start}. Answer: attack", True
     t0, name, d = movers[0]
     s = f"The {name} {d} from second {t0}"
     if flat:
@@ -64,7 +69,7 @@ def attack_text(tags, roles, values, start: int, end: int, scales: dict) -> str:
     s += "."
     for t, name, d in movers[1:]:
         s += f" The {name} {d} {'with it' if t - t0 <= 2 else 'after it'}."
-    return f"{s} Change starts near second {start}. Answer: attack"
+    return f"{s} Change starts near second {start}. Answer: attack", False
 
 
 def normal_text(tags, roles, values, scales: dict) -> str:
@@ -98,8 +103,9 @@ def normal_text(tags, roles, values, scales: dict) -> str:
     return " ".join(parts) + " Answer: normal"
 
 
-def answer(row, scales: dict) -> str:
+def answer(row, scales: dict) -> tuple[str, bool]:
+    """(answer text, no_visible_change). The second is True only for an attack example whose series show no clear step."""
     tags, roles, values = list(row.tags), list(row.roles), [np.asarray(v) for v in row.values]
     if row.label == "attack":
         return attack_text(tags, roles, values, int(row.attack_start_s), int(row.attack_end_s), scales)
-    return normal_text(tags, roles, values, scales)
+    return normal_text(tags, roles, values, scales), False

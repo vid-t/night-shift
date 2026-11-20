@@ -46,6 +46,18 @@ NOT_VERIFIED = [
     "It has not been tuned otherwise.",
     "Validation holds only 15 attacks (21.03 test4 and 22.04 test3); 20.07 and 23.05 have no validation file, so their "
     "baseline scores are not measured here.",
+    "The baseline tables compare three models on those 15 attacks. A difference of one or two attacks between them is "
+    "within chance. The neighbour variant is reported, not chosen: it does not settle whether the loop view hides evidence.",
+    "Each attack is scored on one window with a random start second. Another draw of the scored windows would move the "
+    "counts by an attack or two.",
+    "The training sample keeps two normal examples from attack windows and two from normal windows per attack example. "
+    "That ratio is a choice, not a tuned value.",
+    "`no_visible_change` comes from the same simple rule as the direction words. An example marked this way may still "
+    "hold a change the rule is too coarse to see; a missed slow ramp is the likely case.",
+    "23.05: P1_B4002 is not matched. x1003_18_SETPOINT_OUT sits in its 22.04 range, but both are nearly constant, so "
+    "the match cannot be confirmed. The 23.05 temperature loop therefore has no target series.",
+    "Setpoint attacks on the temperature loop name P1_B4002. It is now in the loop view for 20.07, 21.03 and 22.04. "
+    "Whether it moves during those attacks was not checked.",
     "The manual's hours per file (p. 2) were not compared with the row counts; the row counts come from the files.",
 ]
 
@@ -107,8 +119,10 @@ def write(*, versions, included, excluded, facts, checks, before, unmatched, ren
             "A setpoint shows as a correlation near 1 unless it is constant. This is the evidence for the 23.05 data matches.", "",
             md(tracks), ""]
     out += ["## 4. Windows and loop examples", "",
-            "Windows are 300 s. Attack windows: six per attack, the attack starting at second 30, 75, 120, 165, 210, 255; "
-            "a window that would leave its file is skipped. Normal windows: at least 600 s from any attack, half from attack "
+            "Windows are 300 s. Attack windows: six per attack. The attack starts at a random second between 30 and 270, "
+            "one draw from each of six equal bands (fixed seed), so a model cannot answer the start second without reading "
+            "the curves. One of the six, picked at random, is the scored window of that attack. "
+            "A window that would leave its file is skipped. Normal windows: at least 600 s from any attack, half from attack "
             "files and half from the normal file (normal-file windows go to train). A window whose only attacked loops are "
             "outside the six (P2-TC, P1-CC, P1-HC) is dropped.", ""]
     wk = wins.groupby(["version", "kind", "kept"]).size().unstack("kept", fill_value=0).reset_index()
@@ -131,6 +145,30 @@ def write(*, versions, included, excluded, facts, checks, before, unmatched, ren
     out += [md(vsl), ""]
     lp = ex[ex.label == "attack"].groupby(["version", "loop"]).size().unstack("loop", fill_value=0).reset_index()
     out += ["Attack loop examples per loop:", "", md(lp), ""]
+    att = ex[ex.label == "attack"]
+    sc = att[att.scored]
+    out += ["Start second of the attack inside its window (attack loop examples):", "",
+            md(pd.DataFrame([
+                {"windows": "all six per attack", "examples": len(att), "distinct_start_seconds": att.attack_start_s.nunique(),
+                 "min": int(att.attack_start_s.min()), "median": int(att.attack_start_s.median()), "max": int(att.attack_start_s.max()),
+                 "largest_share_of_one_second": round(float(att.attack_start_s.value_counts(normalize=True).iloc[0]), 3)},
+                {"windows": "scored window only", "examples": len(sc), "distinct_start_seconds": sc.attack_start_s.nunique(),
+                 "min": int(sc.attack_start_s.min()), "median": int(sc.attack_start_s.median()), "max": int(sc.attack_start_s.max()),
+                 "largest_share_of_one_second": round(float(sc.attack_start_s.value_counts(normalize=True).iloc[0]), 3)}])), ""]
+    out += ["Attack loop examples with no visible change in their series (`no_visible_change`). They are left out of "
+            "training and counted on their own in scoring:", "",
+            md(att.groupby(["version", "split"]).agg(attack_examples=("label", "size"),
+                                                     no_visible_change=("no_visible_change", "sum")).reset_index()), ""]
+    tr = ex[ex.split == "train"].assign(kind=lambda d: [
+        "attack, visible change" if lab == "attack" and not hid else "attack, no visible change" if lab == "attack"
+        else "normal, loop in an attack window" if wk == "attack" else "normal, normal window"
+        for lab, hid, wk in zip(d.label, d.no_visible_change, d.window_kind)])
+    ts = tr.groupby("kind").agg(train_split=("label", "size"), training_sample=("train_use", "sum")).reset_index()
+    used = ex[ex.train_use]
+    out += ["Training sample (`train_use`). The full train split is kept for counting; the sample is what a model trains on:", "",
+            md(ts), "",
+            f"The training sample holds {len(used)} examples, {round(100 * float((used.label == 'attack').mean()), 1)}% of them attack. "
+            f"The full train split holds {len(tr)}, {round(100 * float((tr.label == 'attack').mean()), 1)}% attack.", ""]
     out += ["Series per loop and version (a missing series is in the name map):", ""]
     sp = ex.drop_duplicates(["version", "loop"]).assign(series=lambda d: d.tags.apply(" ".join))
     out += [md(sp[["version", "loop", "series"]]), ""]
@@ -141,17 +179,29 @@ def write(*, versions, included, excluded, facts, checks, before, unmatched, ren
     out += [""]
     attack_s = ex[ex.label == "attack"]
     out += [f"Attack answers that name no clear step (`No series shows a clear step`): "
-            f"{int(attack_s.answer.str.startswith('No series').sum())} of {len(attack_s)}.", ""]
+            f"{int(attack_s.no_visible_change.sum())} of {len(attack_s)}.", ""]
     out += [f"Attack examples whose attack started before the window: {(attack_s.attack_start_s < 0).sum()}. "
             f"Examples in windows that touch a `loop uncertain` attack: {int(ex.loop_uncertain.sum())}.", ""]
 
     out += ["## 5. Baselines (validation split only)", "",
-            "Scored per attack on the window where the attack starts at second 120. "
+            "Scored per attack on its one scored window, where the start second is random. "
             "`found_on_attacked_loop`: an attacked loop is flagged. `detected_any_loop`: any loop is flagged. "
             "`right_loop_only`: every attacked loop is flagged and no other loop. "
-            "False alarms are per 100 loop examples from normal windows. The test split is not read.", ""]
+            "`visible_loops` and `hidden_loops` count the attacked loop examples in those windows with and without a "
+            "visible change; `*_flagged` says how many of each were flagged. "
+            "False alarms are per 100 loop examples from normal windows. Gradient boosting trains on the training sample. "
+            "The test split is not read.", ""]
     for name, df in base.items():
         out += [f"**{name.replace('_', ' ')}**", "", md(df), ""]
+    out += ["Gate from the plan: the loop reader must find most validation attacks, in each version.", ""]
+    gate = []
+    for name, df in base.items():
+        if name == "range_alarm":
+            continue
+        for r in df[df.version != "all"].itertuples():
+            gate.append({"model": name.replace("_", " "), "version": r.version, "found": r.found_on_attacked_loop,
+                         "attacks": r.attacks, "more_than_half": "yes" if 2 * r.found_on_attacked_loop > r.attacks else "no"})
+    out += [md(pd.DataFrame(gate)), ""]
 
     out += ["## 6. Not verified", ""] + [f"- {x}" for x in NOT_VERIFIED] + [""]
     (ROOT / "REPORT.md").write_text("\n".join(out))

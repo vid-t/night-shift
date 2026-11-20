@@ -13,7 +13,7 @@ from hai import attacks_pdf, check_table, download, report
 from hai.answers import answer
 from hai.baselines import run as run_baselines
 from hai.config import DATA_FILES, ENABLED, FROZEN, NORMAL_FILES, PROCESSED
-from hai.dataset import build_examples
+from hai.dataset import SEED, build_examples
 from hai.loaders import count_rows, load, standard_tags
 
 
@@ -29,6 +29,31 @@ def norm_stats(version: str) -> tuple[dict, dict]:
         s = float(x.quantile(0.99) - x.quantile(0.01))
         scales[(version, tag)] = s if s > 0 else max(abs(float(x.median())), 1.0)
     return ranges, scales
+
+
+TRAIN_NORMAL_PER_ATTACK = 2  # normal examples kept per attack example, from each of the two kinds of window
+
+
+def training_sample(ex: pd.DataFrame) -> np.ndarray:
+    """Which rows to train on. The full train split is 96% normal, which would teach a model to say `normal`.
+
+    Kept, per version: every train attack example with a visible change, twice as many normal
+    examples from attack windows (loops that were not attacked) and twice as many from normal
+    windows, drawn with a fixed seed. Validation and test keep every row and are never sampled.
+    """
+    rng = np.random.default_rng([SEED, 7])
+    use = np.zeros(len(ex), bool)
+    train = (ex.split == "train").to_numpy()
+    attack = (ex.label == "attack").to_numpy()
+    for version in sorted(ex.version.unique()):
+        v = train & (ex.version == version).to_numpy()
+        pos = np.flatnonzero(v & attack & ~ex.no_visible_change.to_numpy())
+        use[pos] = True
+        for kind in ("attack", "normal"):
+            pool = np.flatnonzero(v & ~attack & (ex.window_kind == kind).to_numpy())
+            n = min(TRAIN_NORMAL_PER_ATTACK * len(pos), len(pool))
+            use[rng.choice(pool, size=n, replace=False)] = True
+    return use
 
 
 def file_facts(version: str) -> pd.DataFrame:
@@ -112,7 +137,10 @@ def main(argv=None) -> None:
     wins, ex = pd.concat(wins, ignore_index=True), pd.concat(exs, ignore_index=True)
 
     print("5. answer text", flush=True)
-    ex["answer"] = [answer(r, {t: scales[(r.version, t)] for t in r.tags}) for r in ex.itertuples()]
+    texts = [answer(r, {t: scales[(r.version, t)] for t in r.tags}) for r in ex.itertuples()]
+    ex["answer"] = [t for t, _ in texts]
+    ex["no_visible_change"] = [hidden for _, hidden in texts]
+    ex["train_use"] = training_sample(ex)
 
     wins.to_parquet(PROCESSED / "windows.parquet", index=False)
     ex.to_parquet(PROCESSED / "examples.parquet", index=False)

@@ -39,7 +39,7 @@ To recount the rows and rerun the table check against the flags: `uv run python 
 | Boiler pressure (P1-PC) | `P1_B2016` | `P1_PIT01` | `P1_PCV01D`, `P1_PCV02D` |
 | Boiler level (P1-LC) | `P1_B3004` | `P1_LIT01` | `P1_LCV01D` |
 | Boiler flow (P1-FC) | `P1_B3005` | `P1_FT03` | `P1_FCV03D` |
-| Boiler temperature (P1-TC) | `P1_B4022` | `P1_TIT01` | `P1_FCV01D`, `P1_FCV02D` |
+| Boiler temperature (P1-TC) | `P1_B4022`, `P1_B4002` | `P1_TIT01` | `P1_FCV01D`, `P1_FCV02D` |
 | Turbine speed (P2-SC) | `P2_AutoSD` | `P2_SIT01` | `P2_SCO` |
 | Water level (P3-LC) | `P3_LH01`, `P3_LL01` | `P3_LIT01` | `P3_LCP01D`, `P3_LCV01D` |
 
@@ -54,6 +54,21 @@ By whole file, so no attack crosses splits. Normal-file windows go to train.
 | Train | test1 | test1, test2, test3 | test1, test2 | hai-test2 |
 | Validation | | test4 | test3 | |
 | Test | test2 | test5 | test4 | hai-test1 |
+
+## Using the examples
+
+`data/processed/examples.parquet` has one row per loop example. Four columns decide how to use a row:
+
+| Column | Meaning | Use |
+|---|---|---|
+| `attack_start_s` | Second of the window where the attack starts | Random between 30 and 270, so it cannot be guessed |
+| `scored` | True for one of the six windows of each attack, picked at random | Score per attack on these windows only |
+| `no_visible_change` | True for an attack example whose series show no clear step | Leave out of training; count on its own line in scoring |
+| `train_use` | True for the training sample | Train on these rows; the full train split is 96% normal |
+
+The training sample holds every train attack example with a visible change, plus two normal examples from attack windows and two from normal windows for each. Validation and test are never sampled.
+
+To add the neighbouring loops' measurements to an example, join the other rows with the same `window_id`. `hai.baselines.neighbour_features` does this for the boosting baseline.
 
 ## Data
 

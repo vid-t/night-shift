@@ -239,6 +239,7 @@ Standard names are the 22.04 names. `data/frozen/tag_map.csv` gives the source c
 | 23.05 | P1_B3004 | P1-LC | target | x1002_07_SETPOINT_OUT | data match, not in the manual: in hai-train3 P1_LIT01 tracks it as closely as P1_LIT01 tracks P1_B3004 in 22.04 (target tracking table in REPORT.md); block 1002 is the level controller in the 23.05 attack table |
 | 23.05 | P1_B3005 | P1-FC | target | x1002_08_SETPOINT_OUT | data match, not in the manual: in hai-train3 P1_FT03 tracks it as closely as P1_FT03 tracks P1_B3005 in 22.04, over the same range (target tracking table in REPORT.md) |
 | 23.05 | P1_B4022 | P1-TC | target |  | open, left out: no P1_B4022 column in 23.05; x1003_24_SUM_OUT has the range of P1_B4022 in 22.04, but P1_TIT01 tracks P1_B4022 weakly in every version (REPORT.md), so tracking cannot confirm the match |
+| 23.05 | P1_B4002 | P1-TC | target |  | open, left out: no P1_B4002 column in 23.05; x1003_18_SETPOINT_OUT sits in the range of P1_B4002 in 22.04, but both are nearly constant, so tracking cannot confirm the match |
 | 20.07 | P2_AutoSD | P2-SC | target |  | dropped: manual tag table p. 14 confirms P2_SD01, but it is constant in each file (0 in test1 and test2, 20 in train1), so it would only tell files apart |
 | 21.03 | P2_AutoSD | P2-SC | target |  | dropped: P2_ASD is the name match, but it is 0 in every row of every 21.03 file, including the 9 attacks that name P2_AutoSD |
 | 20.07 | P2_SCO | P2-SC | command |  | missing: no speed-controller output in 20.07 (manual tag table p. 15 has no 20.07 mark) |
@@ -268,12 +269,14 @@ Target tracking in each version's normal file: correlation of 10-minute means of
 | 21.03 | P1-LC | P1_B3004 | P1_LIT01 | False | 0.999 |
 | 21.03 | P1-FC | P1_B3005 | P1_FT03 | False | 0.997 |
 | 21.03 | P1-TC | P1_B4022 | P1_TIT01 | False | 0.024 |
+| 21.03 | P1-TC | P1_B4002 | P1_TIT01 | False | 0.025 |
 | 21.03 | P3-LC | P3_LH01 | P3_LIT01 | True |  |
 | 21.03 | P3-LC | P3_LL01 | P3_LIT01 | True |  |
 | 22.04 | P1-PC | P1_B2016 | P1_PIT01 | False | 0.969 |
 | 22.04 | P1-LC | P1_B3004 | P1_LIT01 | False | 0.999 |
 | 22.04 | P1-FC | P1_B3005 | P1_FT03 | False | 0.998 |
 | 22.04 | P1-TC | P1_B4022 | P1_TIT01 | False | 0.592 |
+| 22.04 | P1-TC | P1_B4002 | P1_TIT01 | False | 0.607 |
 | 22.04 | P2-SC | P2_AutoSD | P2_SIT01 | False | 0.999 |
 | 22.04 | P3-LC | P3_LH01 | P3_LIT01 | True |  |
 | 22.04 | P3-LC | P3_LL01 | P3_LIT01 | True |  |
@@ -281,6 +284,7 @@ Target tracking in each version's normal file: correlation of 10-minute means of
 | 20.07 | P1-LC | P1_B3004 | P1_LIT01 | False | 1.0 |
 | 20.07 | P1-FC | P1_B3005 | P1_FT03 | False | 1.0 |
 | 20.07 | P1-TC | P1_B4022 | P1_TIT01 | False | 0.231 |
+| 20.07 | P1-TC | P1_B4002 | P1_TIT01 | False | 0.254 |
 | 20.07 | P3-LC | P3_LH01 | P3_LIT01 | True |  |
 | 20.07 | P3-LC | P3_LL01 | P3_LIT01 | True |  |
 | 23.05 | P1-PC | P1_B2016 | P1_PIT01 | False | 0.983 |
@@ -292,7 +296,7 @@ Target tracking in each version's normal file: correlation of 10-minute means of
 
 ## 4. Windows and loop examples
 
-Windows are 300 s. Attack windows: six per attack, the attack starting at second 30, 75, 120, 165, 210, 255; a window that would leave its file is skipped. Normal windows: at least 600 s from any attack, half from attack files and half from the normal file (normal-file windows go to train). A window whose only attacked loops are outside the six (P2-TC, P1-CC, P1-HC) is dropped.
+Windows are 300 s. Attack windows: six per attack. The attack starts at a random second between 30 and 270, one draw from each of six equal bands (fixed seed), so a model cannot answer the start second without reading the curves. One of the six, picked at random, is the scored window of that attack. A window that would leave its file is skipped. Normal windows: at least 600 s from any attack, half from attack files and half from the normal file (normal-file windows go to train). A window whose only attacked loops are outside the six (P2-TC, P1-CC, P1-HC) is dropped.
 
 | version | kind | dropped | kept |
 |---|---|---|---|
@@ -350,6 +354,39 @@ Attack loop examples per loop:
 | 22.04 | 78 | 72 | 90 | 48 | 72 | 66 |
 | 23.05 | 66 | 78 | 90 | 54 | 18 | 6 |
 
+Start second of the attack inside its window (attack loop examples):
+
+| windows | examples | distinct_start_seconds | min | median | max | largest_share_of_one_second |
+|---|---|---|---|---|---|---|
+| all six per attack | 1458 | 241 | 30 | 149 | 270 | 0.013 |
+| scored window only | 243 | 123 | 30 | 137 | 269 | 0.029 |
+
+Attack loop examples with no visible change in their series (`no_visible_change`). They are left out of training and counted on their own in scoring:
+
+| version | split | attack_examples | no_visible_change |
+|---|---|---|---|
+| 20.07 | test | 108 | 3 |
+| 20.07 | train | 234 | 6 |
+| 21.03 | test | 108 | 4 |
+| 21.03 | train | 210 | 7 |
+| 21.03 | validation | 60 | 1 |
+| 22.04 | test | 192 | 48 |
+| 22.04 | train | 150 | 14 |
+| 22.04 | validation | 84 | 22 |
+| 23.05 | test | 84 | 11 |
+| 23.05 | train | 228 | 41 |
+
+Training sample (`train_use`). The full train split is kept for counting; the sample is what a model trains on:
+
+| kind | train_split | training_sample |
+|---|---|---|
+| attack, no visible change | 68 | 0 |
+| attack, visible change | 754 | 754 |
+| normal, loop in an attack window | 3138 | 1508 |
+| normal, normal window | 14676 | 1508 |
+
+The training sample holds 3770 examples, 20.0% of them attack. The full train split holds 18636, 4.4% attack.
+
 Series per loop and version (a missing series is in the name map):
 
 | version | loop | series |
@@ -357,19 +394,19 @@ Series per loop and version (a missing series is in the name map):
 | 21.03 | P1-PC | P1_B2016 P1_PIT01 P1_PCV01D P1_PCV02D |
 | 21.03 | P1-LC | P1_B3004 P1_LIT01 P1_LCV01D |
 | 21.03 | P1-FC | P1_B3005 P1_FT03 P1_FCV03D |
-| 21.03 | P1-TC | P1_B4022 P1_TIT01 P1_FCV01D P1_FCV02D |
+| 21.03 | P1-TC | P1_B4022 P1_B4002 P1_TIT01 P1_FCV01D P1_FCV02D |
 | 21.03 | P2-SC | P2_SIT01 P2_SCO |
 | 21.03 | P3-LC | P3_LH01 P3_LL01 P3_LIT01 P3_LCP01D P3_LCV01D |
 | 22.04 | P1-PC | P1_B2016 P1_PIT01 P1_PCV01D P1_PCV02D |
 | 22.04 | P1-LC | P1_B3004 P1_LIT01 P1_LCV01D |
 | 22.04 | P1-FC | P1_B3005 P1_FT03 P1_FCV03D |
-| 22.04 | P1-TC | P1_B4022 P1_TIT01 P1_FCV01D P1_FCV02D |
+| 22.04 | P1-TC | P1_B4022 P1_B4002 P1_TIT01 P1_FCV01D P1_FCV02D |
 | 22.04 | P2-SC | P2_AutoSD P2_SIT01 P2_SCO |
 | 22.04 | P3-LC | P3_LH01 P3_LL01 P3_LIT01 P3_LCP01D P3_LCV01D |
 | 20.07 | P1-PC | P1_B2016 P1_PIT01 P1_PCV01D P1_PCV02D |
 | 20.07 | P1-LC | P1_B3004 P1_LIT01 P1_LCV01D |
 | 20.07 | P1-FC | P1_B3005 P1_FT03 P1_FCV03D |
-| 20.07 | P1-TC | P1_B4022 P1_TIT01 P1_FCV01D P1_FCV02D |
+| 20.07 | P1-TC | P1_B4022 P1_B4002 P1_TIT01 P1_FCV01D P1_FCV02D |
 | 20.07 | P2-SC | P2_SIT01 |
 | 20.07 | P3-LC | P3_LH01 P3_LL01 P3_LIT01 P3_LCP01D P3_LCV01D |
 | 23.05 | P1-PC | P1_B2016 P1_PIT01 P1_PCV01D P1_PCV02D |
@@ -381,38 +418,55 @@ Series per loop and version (a missing series is in the name map):
 
 Sample answers:
 
-- `23.05/hai-test1/20220812T182847/P1-PC` (attack): The first valve command falls from second 223 while the target stays flat. The measurement falls after it. The second valve command rises after it. Change starts near second 210. Answer: attack
-- `21.03/test2/20200710T153721/P1-FC` (attack): The command rises from second 165 while the target stays flat. The measurement rises after it. Change starts near second 165. Answer: attack
-- `23.05/hai-test2/20220817T103532/P1-LC` (attack): No series shows a clear step. Change starts near second 30. Answer: attack
-- `23.05/hai-test1/20220812T162434/P1-PC` (attack): The first valve command rises from second 33. The target rises with it. The measurement rises after it. The second valve command rises after it. Change starts near second 30. Answer: attack
-- `22.04/test2/20210714T135145/P3-LC` (normal): The target and the measurement stay flat. The command stays flat. Answer: normal
+- `23.05/hai-test1/20220812T182850/P1-PC` (attack): The first valve command falls from second 220 while the target stays flat. The measurement falls after it. The second valve command rises after it. Change starts near second 207. Answer: attack
+- `21.03/test2/20200710T153659/P1-FC` (attack): The command rises from second 187 while the target stays flat. The measurement rises after it. Change starts near second 187. Answer: attack
+- `23.05/hai-test2/20220817T103518/P1-LC` (attack): No series shows a clear step. Change starts near second 44. Answer: attack
+- `23.05/hai-test1/20220812T162426/P1-PC` (attack): The first valve command rises from second 47. The target rises with it. The measurement rises after it. The second valve command rises after it. Change starts near second 38. Answer: attack
+- `22.04/test2/20210714T135122/P3-LC` (normal): The target stays flat while the measurement falls. The command stays flat. Answer: normal
 - `20.07/test1/20191101T164719/P2-SC` (normal): The measurement stays flat. Answer: normal
 - `22.04/train1/20210711T225902/P2-SC` (normal): The target and the measurement stay flat. The command stays flat. Answer: normal
 - `20.07/test1/20191031T174219/P2-SC` (normal): The measurement stays flat. Answer: normal
 
-Attack answers that name no clear step (`No series shows a clear step`): 153 of 1458.
+Attack answers that name no clear step (`No series shows a clear step`): 157 of 1458.
 
 Attack examples whose attack started before the window: 0. Examples in windows that touch a `loop uncertain` attack: 144.
 
 ## 5. Baselines (validation split only)
 
-Scored per attack on the window where the attack starts at second 120. `found_on_attacked_loop`: an attacked loop is flagged. `detected_any_loop`: any loop is flagged. `right_loop_only`: every attacked loop is flagged and no other loop. False alarms are per 100 loop examples from normal windows. The test split is not read.
+Scored per attack on its one scored window, where the start second is random. `found_on_attacked_loop`: an attacked loop is flagged. `detected_any_loop`: any loop is flagged. `right_loop_only`: every attacked loop is flagged and no other loop. `visible_loops` and `hidden_loops` count the attacked loop examples in those windows with and without a visible change; `*_flagged` says how many of each were flagged. False alarms are per 100 loop examples from normal windows. Gradient boosting trains on the training sample. The test split is not read.
 
 **range alarm**
 
-| version | attacks | found_on_attacked_loop | detected_any_loop | right_loop_only | normal_examples | false_alarms_per_100 |
-|---|---|---|---|---|---|---|
-| 21.03 | 5 | 3 | 5 | 0 | 204 | 0.5 |
-| 22.04 | 10 | 5 | 8 | 2 | 348 | 9.2 |
-| all | 15 | 8 | 13 | 2 | 552 | 6.0 |
+| version | attacks | found_on_attacked_loop | detected_any_loop | right_loop_only | visible_loops | visible_flagged | hidden_loops | hidden_flagged | normal_examples | false_alarms_per_100 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 21.03 | 5 | 3 | 5 | 0 | 10 | 3 | 0 | 0 | 204 | 0.5 |
+| 22.04 | 10 | 5 | 9 | 2 | 11 | 5 | 3 | 1 | 348 | 9.2 |
+| all | 15 | 8 | 14 | 2 | 21 | 8 | 3 | 1 | 552 | 6.0 |
 
 **gradient boosting**
 
-| version | attacks | found_on_attacked_loop | detected_any_loop | right_loop_only | normal_examples | false_alarms_per_100 |
-|---|---|---|---|---|---|---|
-| 21.03 | 5 | 5 | 5 | 5 | 204 | 0.5 |
-| 22.04 | 10 | 5 | 5 | 3 | 348 | 0.0 |
-| all | 15 | 10 | 10 | 8 | 552 | 0.2 |
+| version | attacks | found_on_attacked_loop | detected_any_loop | right_loop_only | visible_loops | visible_flagged | hidden_loops | hidden_flagged | normal_examples | false_alarms_per_100 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 21.03 | 5 | 5 | 5 | 4 | 10 | 10 | 0 | 0 | 204 | 0.5 |
+| 22.04 | 10 | 6 | 6 | 5 | 11 | 6 | 3 | 2 | 348 | 0.3 |
+| all | 15 | 11 | 11 | 9 | 21 | 16 | 3 | 2 | 552 | 0.4 |
+
+**gradient boosting with neighbours**
+
+| version | attacks | found_on_attacked_loop | detected_any_loop | right_loop_only | visible_loops | visible_flagged | hidden_loops | hidden_flagged | normal_examples | false_alarms_per_100 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 21.03 | 5 | 5 | 5 | 4 | 10 | 10 | 0 | 0 | 204 | 0.5 |
+| 22.04 | 10 | 6 | 6 | 5 | 11 | 6 | 3 | 2 | 348 | 0.9 |
+| all | 15 | 11 | 11 | 9 | 21 | 16 | 3 | 2 | 552 | 0.7 |
+
+Gate from the plan: the loop reader must find most validation attacks, in each version.
+
+| model | version | found | attacks | more_than_half |
+|---|---|---|---|---|
+| gradient boosting | 21.03 | 5 | 5 | yes |
+| gradient boosting | 22.04 | 6 | 10 | yes |
+| gradient boosting with neighbours | 21.03 | 5 | 5 | yes |
+| gradient boosting with neighbours | 22.04 | 6 | 10 | yes |
 
 ## 6. Not verified
 
@@ -431,4 +485,10 @@ Scored per attack on the window where the attack starts at second 120. `found_on
 - Attack windows can overlap a second attack on another loop. Those loops are labelled `attack` too, with their own start second.
 - Gradient boosting uses shape statistics per series plus how the measurement relates to the target and the command; no absolute levels, so it cannot tell files apart by their set points. The feature set was chosen after one comparison on validation (shape alone against shape plus relations); the relational features found more validation attacks and were kept. It has not been tuned otherwise.
 - Validation holds only 15 attacks (21.03 test4 and 22.04 test3); 20.07 and 23.05 have no validation file, so their baseline scores are not measured here.
+- The baseline tables compare three models on those 15 attacks. A difference of one or two attacks between them is within chance. The neighbour variant is reported, not chosen: it does not settle whether the loop view hides evidence.
+- Each attack is scored on one window with a random start second. Another draw of the scored windows would move the counts by an attack or two.
+- The training sample keeps two normal examples from attack windows and two from normal windows per attack example. That ratio is a choice, not a tuned value.
+- `no_visible_change` comes from the same simple rule as the direction words. An example marked this way may still hold a change the rule is too coarse to see; a missed slow ramp is the likely case.
+- 23.05: P1_B4002 is not matched. x1003_18_SETPOINT_OUT sits in its 22.04 range, but both are nearly constant, so the match cannot be confirmed. The 23.05 temperature loop therefore has no target series.
+- Setpoint attacks on the temperature loop name P1_B4002. It is now in the loop view for 20.07, 21.03 and 22.04. Whether it moves during those attacks was not checked.
 - The manual's hours per file (p. 2) were not compared with the row counts; the row counts come from the files.

@@ -1,9 +1,11 @@
 """Steps 6, 7 and 9: windows, loop examples and splits.
 
-A window is 300 seconds of one file. Attack windows: six per attack, with the
-attack starting at second 30, 75, 120, 165, 210 and 255. Normal windows: at
-least 600 seconds from any attack, half from attack files, half from the
-version's normal file. A loop example is one window seen through one loop.
+A window is 300 seconds of one file. Attack windows: six per attack. The attack
+starts at a random second between 30 and 270, one draw from each of six equal
+bands, so the start second cannot be guessed. One of the six, picked at random,
+is the scored window of that attack. Normal windows: at least 600 seconds from
+any attack, half from attack files, half from the version's normal file.
+A loop example is one window seen through one loop.
 """
 import numpy as np
 import pandas as pd
@@ -12,7 +14,8 @@ from hai.config import DATA_FILES, NORMAL_FILES, split_of
 from hai.loaders import load, tag_map
 
 WIN = 300
-OFFSETS = (30, 75, 120, 165, 210, 255)
+N_PER_ATTACK = 6
+START_LO, START_HI = 30, 270  # the attack starts at a random second in this range
 GAP = 600
 SEED = 20261120
 NORMAL_PER_VERSION = 750  # 4 versions x 750 = about 3,000 normal windows
@@ -20,7 +23,8 @@ LOOPS = ("P1-PC", "P1-LC", "P1-FC", "P1-TC", "P2-SC", "P3-LC")
 LOOP_NAMES = {"P1-PC": "boiler pressure", "P1-LC": "boiler level", "P1-FC": "boiler flow",
               "P1-TC": "boiler temperature", "P2-SC": "turbine speed", "P3-LC": "water level"}
 # label of each series in the answer text; roles with two series get a qualifier
-SERIES_LABEL = {"P1_PCV01D": "first valve command", "P1_PCV02D": "second valve command",
+SERIES_LABEL = {"P1_B4022": "demand target", "P1_B4002": "outlet target",
+                "P1_PCV01D": "first valve command", "P1_PCV02D": "second valve command",
                 "P1_FCV01D": "first valve command", "P1_FCV02D": "second valve command",
                 "P3_LH01": "high-level target", "P3_LL01": "low-level target",
                 "P3_LCP01D": "pump command", "P3_LCV01D": "valve command"}
@@ -40,16 +44,29 @@ def file_spans(version: str) -> pd.DataFrame:
     return pd.DataFrame(rows).set_index("file")
 
 
-def attack_windows(version: str, attacks: pd.DataFrame, spans: pd.DataFrame) -> pd.DataFrame:
+def attack_windows(version: str, attacks: pd.DataFrame, spans: pd.DataFrame, rng) -> pd.DataFrame:
+    """Six windows per attack, one start second drawn from each of six equal bands.
+
+    Fixed start seconds would let a model answer the start without reading the curves.
+    One window per attack is marked `scored`: scoring uses it, so the true start second
+    of the scored window is spread over the whole range.
+    """
+    edges = np.linspace(START_LO, START_HI, N_PER_ATTACK + 1).astype(int)
     rows = []
     for _, a in attacks.iterrows():
         f = spans.loc[a.file]
-        for off in OFFSETS:
+        mine = []
+        for k in range(N_PER_ATTACK):
+            last_band = k == N_PER_ATTACK - 1
+            off = int(rng.integers(edges[k], edges[k + 1] + (1 if last_band else 0)))
             start = a.flag_start - pd.Timedelta(seconds=off)
             if start < f["first"] or start + pd.Timedelta(seconds=WIN - 1) > f["last"]:
                 continue
-            rows.append({"version": version, "file": a.file, "kind": "attack", "anchor": a.attack_id,
-                         "offset": off, "start": start})
+            mine.append({"version": version, "file": a.file, "kind": "attack", "anchor": a.attack_id,
+                         "offset": off, "start": start, "scored": False})
+        if mine:
+            mine[int(rng.integers(len(mine)))]["scored"] = True
+        rows += mine
     return pd.DataFrame(rows)
 
 
@@ -78,7 +95,7 @@ def normal_windows(version: str, steps: pd.DataFrame, spans: pd.DataFrame, rng) 
         rows.append({"file": pool[i][0], "start": pool[i][1]})
     out = pd.DataFrame(rows)
     out.insert(0, "version", version)
-    out["kind"], out["anchor"], out["offset"] = "normal", "", -1
+    out["kind"], out["anchor"], out["offset"], out["scored"] = "normal", "", -1, False
     return out
 
 
@@ -89,9 +106,11 @@ def build_examples(version: str, attacks: pd.DataFrame, steps: pd.DataFrame) -> 
     steps: attack steps joined with their flag runs (file, flag_start, flag_end, loop).
     """
     rng = np.random.default_rng([SEED, int(version.replace(".", ""))])
+    rng_starts = np.random.default_rng([SEED, int(version.replace(".", "")), 1])  # own stream: normal windows stay put
     spans = file_spans(version)
-    wins = pd.concat([attack_windows(version, attacks, spans), normal_windows(version, steps, spans, rng)],
-                     ignore_index=True)
+    wins = pd.concat([attack_windows(version, attacks, spans, rng_starts),
+                      normal_windows(version, steps, spans, rng)], ignore_index=True)
+    wins["scored"] = wins["scored"].astype(bool)
     wins["end"] = wins["start"] + pd.Timedelta(seconds=WIN - 1)
     wins["split"] = [split_of(version, f) or ("train" if f == NORMAL_FILES[version] else None) for f in wins.file]
     tags = loop_tags(version)
@@ -115,7 +134,7 @@ def build_examples(version: str, attacks: pd.DataFrame, steps: pd.DataFrame) -> 
             examples.append({
                 "window_id": f"{version}/{w.file}/{w.start:%Y%m%dT%H%M%S}",
                 "version": version, "file": w.file, "split": w.split, "window_kind": w.kind,
-                "anchor": w.anchor, "offset": w.offset, "start": w.start, "loop": loop,
+                "anchor": w.anchor, "offset": w.offset, "scored": bool(w.scored), "start": w.start, "loop": loop,
                 "label": label,
                 "attack_ids": " ".join(sorted(on.attack_id.unique())),
                 "loop_uncertain": bool(hit.note.str.contains("loop uncertain").any()),
