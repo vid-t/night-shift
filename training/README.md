@@ -126,6 +126,31 @@ HAI_JSONL_DIR=<repo>/data/processed/opentslm uv run --project <repo>/external/Op
     python <repo>/training/smoke_cpu.py <repo>/external/OpenTSLM unsloth/Llama-3.2-1B
 ```
 
+### Outcome on 2026-11-20: did not finish
+
+Run on a Mac mini (Apple silicon, 16 GB RAM, 10 cores, CPU only), with a 45-minute time box (11:00 to 11:45). The first 4 minutes went to downloading the `unsloth/Llama-3.2-1B` weights (2.47 GB). The run then got this far:
+
+```
+[smoke] model loaded in 288 s
+Loading checkpoint from previous stage:  results/Llama_3_2_1B/OpenTSLMSP/stage5_ecg_cot/checkpoints/best_model.pt and model type:  OpenTSLMSP and llm_id:  unsloth/Llama-3.2-1B
+📂 Loading best model from stage5_ecg_cot:
+   Achieved at epoch: 20
+   Validation loss: 0.0509
+   seeded_from: OpenTSLM/llama-3.2-1b-tsqa-sp/model_checkpoint.pt
+🔧 Enabling LoRA for stage6_hai
+✅ LoRA enabled:
+   LoRA parameters: 11,272,192
+   Total parameters: 1,247,086,592
+HAI overfit check: train, validation and test are the same 4 training rows
+📈 Total training steps: 1
+🆕 Starting fresh training for stage6_hai
+Epoch 1/1:   0%|          | 0/1 [00:00<?, ?it/s]
+```
+
+The single training step had not finished after about 40 minutes, and the time box stopped the run there. No generation ran. The cause is unknown: the run left no error, and nobody measured CPU or memory during the step.
+
+What this shows: the patched `curriculum_learning.py` imports, `stage6_hai` is a known stage, the seeded checkpoint loads into OpenTSLMSP with the `unsloth/Llama-3.2-1B` llm id, LoRA turns on for `stage6_hai`, and the dataset class reads and formats the JSONL rows. What it does not show: a forward and backward pass, a generation, or the predictions file. Step 3 (overfit 50 examples) on the GPU is the first real test of those.
+
 ## Tests
 
 `uv run --group training pytest tests/test_training.py` tests the patcher on the pinned commit (needs `external/OpenTSLM`), the scorer on made-up predictions and the dataset class on a 20-row JSONL (needs torch, hence the `training` group). Without the checkout or torch those tests skip.
