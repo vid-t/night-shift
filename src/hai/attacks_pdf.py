@@ -49,6 +49,7 @@ CORRECTIONS = {
 # Version-wide fixes found by the flag check.
 DURATION_OFFSET = {
     "22.04": (1, "every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length"),
+    "23.05": (1, "every 23.05 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length"),
 }
 # Attack-level fixes found by the flag check (hai.check_table). The flags are the source.
 DUR_2007 = ("20.07: printed duration differs from the flag; the start minute and the per-process flags match "

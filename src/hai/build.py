@@ -44,6 +44,24 @@ def file_facts(version: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def tracking(version: str) -> pd.DataFrame:
+    """Does each loop's measurement follow its target in the normal file? Correlation of 10-minute means."""
+    from hai.dataset import loop_tags
+
+    d = load(version, NORMAL_FILES[version])
+    g = d.drop(columns="time").groupby(np.arange(len(d)) // 600).mean()
+    rows = []
+    for loop, tags in loop_tags(version).items():
+        meas = [t for t, r in tags if r == "measurement"][0]
+        for t, r in tags:
+            if r == "target":
+                c = g[meas].corr(g[t]) if g[t].std() > 0 else np.nan
+                rows.append({"version": version, "loop": loop, "target": t, "measurement": meas,
+                             "target_constant": bool(g[t].std() == 0),
+                             "corr_10min_means": None if pd.isna(c) else round(float(c), 3)})
+    return pd.DataFrame(rows)
+
+
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--versions", default=",".join(ENABLED), help="comma-separated, default: %(default)s")
@@ -64,8 +82,10 @@ def main(argv=None) -> None:
 
     print("3. table vs flags, per version", flush=True)
     facts, checks, before, unmatched, renames, included, excluded = [], [], [], [], [], [], {}
+    tracks = []
     for v in versions:
         facts.append(file_facts(v))
+        tracks.append(tracking(v))
         c, u = check_table.check(v)
         b, _ = check_table.check(v, printed)
         checks.append(c), before.append(b), unmatched.append(u)
@@ -106,7 +126,8 @@ def main(argv=None) -> None:
     report.write(versions=versions, included=included, excluded=excluded,
                  facts=pd.concat(facts, ignore_index=True), checks=checks, before=before,
                  unmatched=pd.concat(unmatched, ignore_index=True),
-                 renames=pd.concat(renames, ignore_index=True), wins=wins, ex=ex, base=base)
+                 renames=pd.concat(renames, ignore_index=True), tracks=pd.concat(tracks, ignore_index=True),
+                 wins=wins, ex=ex, base=base)
     print("done")
 
 

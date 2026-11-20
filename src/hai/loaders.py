@@ -56,8 +56,14 @@ def load_2305(stem: str) -> pd.DataFrame:
     df = read_raw("23.05", stem)
     if stem.startswith("hai-test"):
         labels = pd.read_csv(raw_path("23.05", f"label-{stem.removeprefix('hai-')}.csv"))
-        if len(labels) != len(df) or not (labels["timestamp"].to_numpy() == df["timestamp"].to_numpy()).all():
-            raise ValueError(f"23.05 {stem}: label file does not line up with the data file")
+        if len(labels) != len(df):
+            raise ValueError(f"23.05 {stem}: label file has {len(labels)} rows, data file {len(df)}")
+        if not (labels["timestamp"].to_numpy() == df["timestamp"].to_numpy()).all():
+            # label-test2.csv prints its times to the minute ("2022-08-17 0:00"): rows must still line up
+            lt = pd.to_datetime(labels["timestamp"], format="%Y-%m-%d %H:%M")
+            dt = pd.to_datetime(df["timestamp"], format="%Y-%m-%d %H:%M:%S").dt.floor("min")
+            if not (lt.to_numpy() == dt.to_numpy()).all():
+                raise ValueError(f"23.05 {stem}: label file does not line up with the data file")
         attack = labels["label"]
     else:
         attack = pd.Series(0, index=df.index)

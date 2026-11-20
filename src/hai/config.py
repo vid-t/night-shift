@@ -12,7 +12,7 @@ RAW_URL = f"https://raw.githubusercontent.com/icsdataset/hai/{COMMIT}"
 LFS_URL = f"https://media.githubusercontent.com/media/icsdataset/hai/{COMMIT}"
 
 VERSIONS = ["21.03", "22.04", "20.07", "23.05"]  # build order
-ENABLED = ["21.03", "22.04", "20.07"]  # versions added to the build so far
+ENABLED = ["21.03", "22.04", "20.07", "23.05"]  # versions added to the build so far
 
 # (version, stem, url base, file name)
 FILES = (

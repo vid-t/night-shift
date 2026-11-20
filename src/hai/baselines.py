@@ -2,8 +2,9 @@
 
 1. Range alarm: flag a loop when its measurement leaves the range seen in that
    version's normal file.
-2. Gradient boosting on per-loop window statistics (shape only, no absolute
-   levels), trained on the train split of all versions together.
+2. Gradient boosting on per-loop window statistics (shape of each series and how
+   the measurement relates to the target and command; no absolute levels),
+   trained on the train split of all versions together.
 
 Per-attack scoring uses the window where the attack starts at second 120.
 The test split is never read here.
@@ -39,6 +40,32 @@ def _stats(x: np.ndarray, scale: float) -> list[float]:
 N_STATS = 7
 
 
+def _relations(r, scales: dict) -> list[float]:
+    """How the measurement relates to the target and the first command (spoofing breaks these)."""
+    by = {}
+    for t, ro, x in zip(r.tags, r.roles, r.values):
+        by.setdefault(ro, []).append((t, np.asarray(x, "float64") / scales[(r.version, t)]))
+    m = by["measurement"][0][1]
+    out = []
+    if "target" in by:
+        e = m - by["target"][0][1]
+        out += [np.abs(e - e[:60].mean()).max(), e[-60:].mean() - e[:60].mean()]
+    else:
+        out += [np.nan, np.nan]
+    if "command" in by:
+        c = by["command"][0][1]
+        dm, dc = np.diff(m), np.diff(c)
+        ok = dm.std() > 0 and dc.std() > 0
+        out += [float(np.corrcoef(dm, dc)[0, 1]) if ok else np.nan]
+        h = len(dm) // 2
+        a = float(np.corrcoef(dm[:h], dc[:h])[0, 1]) if dm[:h].std() > 0 and dc[:h].std() > 0 else np.nan
+        b = float(np.corrcoef(dm[h:], dc[h:])[0, 1]) if dm[h:].std() > 0 and dc[h:].std() > 0 else np.nan
+        out += [b - a]
+    else:
+        out += [np.nan, np.nan]
+    return out
+
+
 def features(ex: pd.DataFrame, scales: dict) -> np.ndarray:
     """Per role, up to two series; missing series are NaN. Plus one-hot loop."""
     rows = []
@@ -48,6 +75,7 @@ def features(ex: pd.DataFrame, scales: dict) -> np.ndarray:
             xs = [(t, x) for t, ro, x in zip(r.tags, r.roles, r.values) if ro == role][:n]
             for k in range(n):
                 f += _stats(xs[k][1], scales[(r.version, xs[k][0])]) if k < len(xs) else [np.nan] * N_STATS
+        f += _relations(r, scales)
         f += [float(r.loop == l) for l in LOOPS]
         rows.append(f)
     return np.asarray(rows, "float64")

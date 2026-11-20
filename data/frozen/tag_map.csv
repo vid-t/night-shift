@@ -18,7 +18,7 @@ P1_PCV02D,P1-PC,command,23.05,P1_PCV02D,same name
 P1_B3004,P1-LC,target,20.07,P1_B3004,same name
 P1_B3004,P1-LC,target,21.03,P1_B3004,same name
 P1_B3004,P1-LC,target,22.04,P1_B3004,same name
-P1_B3004,P1-LC,target,23.05,,open: no P1_B3004 column in 23.05; match not resolved yet
+P1_B3004,P1-LC,target,23.05,x1002_07_SETPOINT_OUT,"data match, not in the manual: in hai-train3 P1_LIT01 tracks it as closely as P1_LIT01 tracks P1_B3004 in 22.04 (target tracking table in REPORT.md); block 1002 is the level controller in the 23.05 attack table"
 P1_LIT01,P1-LC,measurement,20.07,P1_LIT01,same name
 P1_LIT01,P1-LC,measurement,21.03,P1_LIT01,same name
 P1_LIT01,P1-LC,measurement,22.04,P1_LIT01,same name
@@ -30,7 +30,7 @@ P1_LCV01D,P1-LC,command,23.05,P1_LCV01D,same name
 P1_B3005,P1-FC,target,20.07,P1_B3005,same name
 P1_B3005,P1-FC,target,21.03,P1_B3005,same name
 P1_B3005,P1-FC,target,22.04,P1_B3005,same name
-P1_B3005,P1-FC,target,23.05,,open: no P1_B3005 column in 23.05; match not resolved yet
+P1_B3005,P1-FC,target,23.05,x1002_08_SETPOINT_OUT,"data match, not in the manual: in hai-train3 P1_FT03 tracks it as closely as P1_FT03 tracks P1_B3005 in 22.04, over the same range (target tracking table in REPORT.md)"
 P1_FT03,P1-FC,measurement,20.07,P1_FT03,same name
 P1_FT03,P1-FC,measurement,21.03,P1_FT03,same name
 P1_FT03,P1-FC,measurement,22.04,P1_FT03,same name
@@ -42,7 +42,7 @@ P1_FCV03D,P1-FC,command,23.05,P1_FCV03D,same name
 P1_B4022,P1-TC,target,20.07,P1_B4022,same name
 P1_B4022,P1-TC,target,21.03,P1_B4022,same name
 P1_B4022,P1-TC,target,22.04,P1_B4022,same name
-P1_B4022,P1-TC,target,23.05,,open: no P1_B4022 column in 23.05; match not resolved yet
+P1_B4022,P1-TC,target,23.05,,"open, left out: no P1_B4022 column in 23.05; x1003_24_SUM_OUT has the range of P1_B4022 in 22.04, but P1_TIT01 tracks P1_B4022 weakly in every version (REPORT.md), so tracking cannot confirm the match"
 P1_TIT01,P1-TC,measurement,20.07,P1_TIT01,same name
 P1_TIT01,P1-TC,measurement,21.03,P1_TIT01,same name
 P1_TIT01,P1-TC,measurement,22.04,P1_TIT01,same name
