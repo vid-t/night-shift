@@ -15,8 +15,10 @@ Per version and overall, on the scored window of each attack (one per attack):
   attacks           attacks with at least one attacked loop among the six
   found             an attacked loop answers attack
   right_loop_only   every attacked loop answers attack and every other loop answers normal
-  timed             an attacked loop answers attack with a start second within 30 s of the truth
-                    ("already under way" reads as second 0; a true start before the window counts as 0)
+  timed             the earliest start second stated by the attacked loops that answer attack is
+                    within 30 s of the attack's start (the earliest true start among its attacked
+                    loops). "Already under way" reads as second 0; a start before the window counts as 0.
+                    In the per-loop lines, `timed` compares each loop with its own start.
 On loop examples from normal windows:
   false_alarms_per_100   answers that are not a valid `normal`, per 100 examples
 On all examples:
@@ -97,6 +99,7 @@ def score(pairs: list[tuple[dict, str | None]]) -> dict:
             if r["scored"] and r["window_kind"] == "attack":
                 windows[r["example_id"].rsplit("/", 1)[0]].append(r)
         n = found = right = timed = 0
+        truths = []
         vis = defaultdict(lambda: {"examples": 0, "answered_attack": 0, "timed": 0})
         for w in windows.values():
             hit = [r for r in w if r["label"] == "attack"]
@@ -105,7 +108,10 @@ def score(pairs: list[tuple[dict, str | None]]) -> dict:
             n += 1
             found += any(r["said"] == "attack" for r in hit)
             right += all(r["said"] == "attack" for r in hit) and all(r["said"] == "normal" for r in w if r["label"] == "normal")
-            timed += any(r["said"] == "attack" and _timed(r, r["start"]) for r in hit)
+            truth = min(max(0, int(r["attack_start_s"])) for r in hit)
+            truths.append(truth)
+            said = [r["start"] for r in hit if r["said"] == "attack" and r["start"] is not None]
+            timed += bool(said) and abs(min(said) - truth) <= TIME_TOLERANCE_S
             for r in hit:
                 v = vis["no_visible_change" if r["no_visible_change"] else "visible"]
                 v["examples"] += 1
@@ -122,7 +128,18 @@ def score(pairs: list[tuple[dict, str | None]]) -> dict:
         })
         for kind in ("visible", "no_visible_change"):
             loops.append({"version": version, "kind": kind, **vis[kind]})
-    return {"versions": versions, "loops": loops}
+    return {"versions": versions, "loops": loops, "constant_guess": constant_guess(truths)}
+
+
+def constant_guess(truths: list[int]) -> dict:
+    """How many attacks a model would time right by always stating the same second (over all versions).
+
+    The `timed` count of a real model means little unless it beats the best constant."""
+    def hits(s):
+        return sum(abs(s - t) <= TIME_TOLERANCE_S for t in truths)
+    best = max(range(0, 301), key=hits) if truths else None
+    return {"attacks": len(truths), "timed_at_120": hits(120), "best_second": best,
+            "timed_at_best": hits(best) if truths else 0}
 
 
 def _table(rows: list[dict], cols: list[str]) -> str:
@@ -135,9 +152,12 @@ def report(name: str, result: dict) -> str:
     v_cols = ["version", "attacks", "found", "right_loop_only", "timed", "normal_examples", "false_alarms_per_100",
               "examples", "valid_share", "label_right_share"]
     l_cols = ["version", "kind", "examples", "answered_attack", "timed"]
+    c = result["constant_guess"]
     return (f"== {name} ==\nPer attack (scored windows) and false alarms (normal windows):\n"
             f"{_table(result['versions'], v_cols)}\n\nAttacked loop examples in the scored windows:\n"
-            f"{_table(result['loops'], l_cols)}\n")
+            f"{_table(result['loops'], l_cols)}\n\n"
+            f"Constant guess on timing: always second 120 times {c['timed_at_120']} of {c['attacks']} attacks; "
+            f"the best constant (second {c['best_second']}) times {c['timed_at_best']}.\n")
 
 
 def main(argv=None) -> None:

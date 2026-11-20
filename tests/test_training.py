@@ -108,6 +108,9 @@ def test_always_second_120_scores_low_on_timing():
     assert res["found"] == 20
     assert res["right_loop_only"] == 0
     assert res["timed"] <= 6  # true starts spread over 30..270; only those within 30 s of 120 count
+    guess = run(rows, lambda r: r["answer"])["constant_guess"]
+    assert guess["attacks"] == 20 and guess["timed_at_120"] == res["timed"]
+    assert guess["timed_at_best"] >= guess["timed_at_120"]
     assert res["false_alarms_per_100"] == 100.0
 
 
