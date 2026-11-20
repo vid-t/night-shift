@@ -25,6 +25,12 @@ NOT_VERIFIED = [
     "are marked `loop_uncertain`. The data did not settle it: the boiler loops move together during these attacks.",
     "Other points that do not fit their scenario are kept as printed (for example 22.04 A303 lists P1_B3004, P1_LIT01 for "
     "P1-LC-CO1PV1). The loop label always comes from the scenario code, not the points.",
+    "20.07 A211, A212 and A213 name `P3_SP02`, which is not a 20.07 column. The same scenario (P3-LC-SP2CV2) names P3_LL01 "
+    "elsewhere; kept as printed. The loop (P3-LC) is not affected.",
+    "20.07 durations come from the flags (see the fixes above): the manual's 20.07 durations disagree with the flags for 37 "
+    "of 38 attacks with no pattern, while the start minute and the per-process flags agree for all 38.",
+    "The water-level targets (P3_LH01, P3_LL01 and their older names) are constant in every file, also during the 20.07 "
+    "attacks that name them. Setpoint attacks on that loop leave no trace in the target series.",
     "The loop label says which loop the manual says was attacked. It does not check that the attack is visible in that loop's series.",
     "Attack windows can overlap a second attack on another loop. Those loops are labelled `attack` too, with their own start second.",
     "Gradient boosting uses shape statistics only (no absolute levels), to stop it from telling files apart by their set points. "

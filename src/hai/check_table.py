@@ -123,7 +123,7 @@ def rename_check(version: str, attacks: pd.DataFrame) -> pd.DataFrame:
                 or bool(during.nunique() > 1 and before.nunique() == 1)
             rows.append({"version": version, "standard": std, "source": src, "attack_id": s.attack_id,
                          "scenario": s.scenario, "moves_during_attack": moved})
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=["version", "standard", "source", "attack_id", "scenario", "moves_during_attack"])
 
 
 def normal_file_clean(version: str) -> int:

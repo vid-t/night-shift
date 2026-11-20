@@ -51,12 +51,23 @@ DURATION_OFFSET = {
     "22.04": (1, "every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length"),
 }
 # Attack-level fixes found by the flag check (hai.check_table). The flags are the source.
+DUR_2007 = ("20.07: printed duration differs from the flag; the start minute and the per-process flags match "
+            "for all 38 attacks, so the duration is taken from the flag")
 ATTACK_FIXES = {
+    **{("20.07", aid): ({"duration_s": s}, DUR_2007) for aid, s in {
+        "A101": 559, "A102": 309, "A103": 561, "A104": 260, "A105": 358, "A106": 331, "A107": 511, "A108": 255,
+        "A109": 513, "A110": 365, "A111": 179, "A112": 151, "A113": 346, "A114": 513, "A115": 344, "A116": 365,
+        "A117": 630, "A118": 346, "A119": 508, "A201": 567, "A202": 377, "A203": 179, "A204": 564, "A205": 564,
+        "A206": 305, "A207": 513, "A208": 552, "A209": 513, "A210": 386, "A211": 397, "A212": 378, "A214": 345,
+        "A215": 346, "A216": 2888, "A217": 335, "A218": 312, "A219": 312,
+    }.items()},
     ("21.03", "A209"): ({"duration_s": 199}, "manual says 159 s; the flag is on for 199 s"),
     ("21.03", "A512"): ({"start_time": "2020-07-31 11:20"}, "manual says 11:21; the flag switches on at 11:20:59"),
 }
 # Point names in the manual that do not exist in that version's files, and what they mean.
 POINT_FIXES = {
+    ("20.07", "P3_LCP01"): ("P3_LCP01D", "manual prints P3_LCP01; no such tag in 20.07, the pump command is P3_LCP01D"),
+    ("20.07", "P3_LCV01"): ("P3_LCV01D", "manual prints P3_LCV01; no such tag in 20.07, the valve command is P3_LCV01D"),
     ("21.03", "P2_LCV01D"): ("P3_LCV01D", "manual prints P2_LCV01D for scenario P3-LC-CO2; no such tag, the P3 valve is P3_LCV01D"),
     ("22.04", "P2_LCV01D"): ("P3_LCV01D", "manual prints P2_LCV01D for scenario P3-LC-CO2; no such tag, the P3 valve is P3_LCV01D"),
 }

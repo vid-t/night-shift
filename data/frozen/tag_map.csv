@@ -67,12 +67,12 @@ P2_SCO,P2-SC,command,20.07,,missing: no speed-controller output in 20.07 (manual
 P2_SCO,P2-SC,command,21.03,P2_CO_rpm,name only: not in the manual tag table (pp. 13-18); P2_CO_rpm moves in all 7 attacks that name P2_SCO (REPORT.md)
 P2_SCO,P2-SC,command,22.04,P2_SCO,same name
 P2_SCO,P2-SC,command,23.05,P2_SCO,same name
-P3_LH01,P3-LC,target,20.07,P3_LH,name only: not in the manual tag table (pp. 13-18); see the rename check in REPORT.md
-P3_LH01,P3-LC,target,21.03,P3_LH,name only: not in the manual tag table (pp. 13-18); see the rename check in REPORT.md
+P3_LH01,P3-LC,target,20.07,P3_LH,"name only: not in the manual tag table (pp. 13-18); constant in every file of the version, as the 22.04 tag is, so no attack response can confirm it"
+P3_LH01,P3-LC,target,21.03,P3_LH,"name only: not in the manual tag table (pp. 13-18); constant in every file of the version, as the 22.04 tag is, so no attack response can confirm it"
 P3_LH01,P3-LC,target,22.04,P3_LH01,same name
 P3_LH01,P3-LC,target,23.05,P3_LH01,same name
-P3_LL01,P3-LC,target,20.07,P3_LL,name only: not in the manual tag table (pp. 13-18); see the rename check in REPORT.md
-P3_LL01,P3-LC,target,21.03,P3_LL,name only: not in the manual tag table (pp. 13-18); see the rename check in REPORT.md
+P3_LL01,P3-LC,target,20.07,P3_LL,"name only: not in the manual tag table (pp. 13-18); constant in every file of the version, as the 22.04 tag is, so no attack response can confirm it"
+P3_LL01,P3-LC,target,21.03,P3_LL,"name only: not in the manual tag table (pp. 13-18); constant in every file of the version, as the 22.04 tag is, so no attack response can confirm it"
 P3_LL01,P3-LC,target,22.04,P3_LL01,same name
 P3_LL01,P3-LC,target,23.05,P3_LL01,same name
 P3_LIT01,P3-LC,measurement,20.07,P3_LT01,manual tag table p. 15: P3_LIT01 row lists (LT01)

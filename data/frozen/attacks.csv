@@ -1,61 +1,61 @@
 version,attack_id,start_time,duration_s,scenario,loop,points,primitive,note
-20.07,A101,2019-10-29 13:40,370,P1-LC-SP1PV1,P1-LC,P1_B3004 P1_LIT01,AP12,
-20.07,A102,2019-10-29 14:35,312,P1-LC-CV1,P1-LC,P1_LCV01D,AP13,
-20.07,A103,2019-10-29 15:45,868,P1-LC-CV1PV1,P1-LC,P1_LCV01D P1_LIT01,AP14,
-20.07,A104,2019-10-29 16:30,262,P1-FC-SP1,P1-FC,P1_B3005,AP06,
-20.07,A105,2019-10-30 08:50,371,P1-LC-SP1,P1-LC,P1_B3004,AP11,
-20.07,A106,2019-10-30 09:40,334,P1-PC-SP1,P1-PC,P1_B2016,AP01,
-20.07,A107,2019-10-30 10:35,504,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,
-20.07,A108,2019-10-30 11:37,268,P1-PC-CV1,P1-PC,P1_PCV01D,AP03,
-20.07,A109,2019-10-30 12:30,518,P1-PC-CV1PV1,P1-PC,P1_PCV01D P1_PIT01,AP04,
-20.07,A110,2019-10-30 14:30,370,P2-SC-SP1PV1,P2-SC,P2_SD01 P2_SIT01,AP17,
-20.07,A111,2019-10-30 15:35,180,P3-LC-SP1CV1,P3-LC,P3_LH01 P3_LCP01,AP26,
-20.07,A112,2019-10-30 16:33,154,P3-LC-SP2CV2,P3-LC,P3_LL01 P3_LCV01,AP27,
-20.07,A113,2019-10-31 08:42,348,P2-SC-SP1,P2-SC,P2_SD01,AP16,
-20.07,A114,2019-10-31 10:30,518,P2-SC-SP1PV1,P2-SC,P2_SD01 P2_SIT01,AP17,
-20.07,A114,2019-10-31 10:30,518,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,
-20.07,A115,2019-10-31 11:33,346,P2-SC-SP1,P2-SC,P2_SD01,AP16,
-20.07,A115,2019-10-31 11:33,346,P1-PC-CV1,P1-PC,P1_PCV01D,AP03,
-20.07,A116,2019-10-31 13:25,368,P2-SC-SP1PV1,P2-SC,P2_SD01 P2_SIT01,AP17,
-20.07,A117,2019-10-31 14:30,396,P2-SC-SP1PV1,P2-SC,P2_SD01 P2_SIT01,AP17,
-20.07,A117,2019-10-31 14:30,396,P1-LC-CV1PV1,P1-LC,P1_LCV01D P1_LIT01,AP14,
-20.07,A118,2019-10-31 15:41,348,P2-SC-SP1,P2-SC,P2_SD01,AP16,
-20.07,A118,2019-10-31 15:41,348,P1-FC-SP1,P1-FC,P1_B3005,AP06,
-20.07,A119,2019-10-31 16:29,398,P3-LC-SP1CV1,P3-LC,P3_LH01 P3_LCP01,AP26,
-20.07,A119,2019-10-31 16:29,398,P1-PC-SP1,P1-PC,P1_B2016,AP01,
-20.07,A201,2019-11-01 09:29,560,P3-LC-SP1CV1,P3-LC,P3_LH01 P3_LCP01,AP26,
-20.07,A201,2019-11-01 09:29,560,P1-LC-SP1PV1,P1-LC,P1_B3004 P1_LIT01,AP12,
-20.07,A202,2019-11-01 10:41,310,P3-LC-SP1CV1,P3-LC,P3_LH01 P3_LCP01,AP26,
-20.07,A202,2019-11-01 10:41,310,P1-LC-CV1,P1-LC,P1_LCV01D,AP13,
-20.07,A203,2019-11-01 11:23,180,P3-LC-SP1CV1,P3-LC,P3_LH01 P3_LCP01,AP26,
-20.07,A204,2019-11-01 12:31,506,P1-LC-SP1,P1-LC,P1_B3004,AP11,
-20.07,A204,2019-11-01 12:31,506,P1-FC-SP1PV1,P1-FC,P1_B3005 P1_FT03,AP07,
-20.07,A205,2019-11-01 13:41,580,P1-PC-CV1,P1-PC,P1_PCV01D,AP03,
-20.07,A205,2019-11-01 13:41,580,P1-FC-SP1PV1,P1-FC,P1_B3005 P1_FT03,AP07,
-20.07,A206,2019-11-01 14:23,310,P1-PC-SP1,P1-PC,P1_B2016,AP01,
-20.07,A207,2019-11-01 15:31,520,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,
-20.07,A207,2019-11-01 15:31,520,P1-FC-SP1,P1-FC,P1_B3005,AP06,
-20.07,A208,2019-11-01 16:18,560,P1-FC-SP1PV1,P1-FC,P1_B3005 P1_FT03,AP07,
-20.07,A209,2019-11-01 17:20,520,P3-LC-SP2CV2,P3-LC,P3_LL01 P3_LCV01,AP27,
-20.07,A209,2019-11-01 17:20,520,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,
-20.07,A210,2019-11-04 15:31,410,P1-PC-SP1,P1-PC,P1_B2016,AP01,
-20.07,A210,2019-11-04 15:31,410,P1-FC-SP1,P1-FC,P1_B3005,AP06,
-20.07,A211,2019-11-04 17:20,520,P3-LC-SP2CV2,P3-LC,P3_SP02 P3_LCV01,AP24,
-20.07,A211,2019-11-04 17:20,520,P1-PC-SP1,P1-PC,P1_B2016,AP01,
-20.07,A212,2019-11-05 09:30,380,P3-LC-SP2CV2,P3-LC,P3_SP02 P3_LCV01,AP24,
-20.07,A212,2019-11-05 09:30,380,P1-LC-CV1,P1-LC,P1_LCV01D,AP13,
-20.07,A213,2019-11-05 10:20,290,P3-LC-SP2CV2,P3-LC,P3_SP02 P3_LCV01,AP24,
+20.07,A101,2019-10-29 13:40,559,P1-LC-SP1PV1,P1-LC,P1_B3004 P1_LIT01,AP12,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A102,2019-10-29 14:35,309,P1-LC-CV1,P1-LC,P1_LCV01D,AP13,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A103,2019-10-29 15:45,561,P1-LC-CV1PV1,P1-LC,P1_LCV01D P1_LIT01,AP14,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A104,2019-10-29 16:30,260,P1-FC-SP1,P1-FC,P1_B3005,AP06,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A105,2019-10-30 08:50,358,P1-LC-SP1,P1-LC,P1_B3004,AP11,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A106,2019-10-30 09:40,331,P1-PC-SP1,P1-PC,P1_B2016,AP01,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A107,2019-10-30 10:35,511,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A108,2019-10-30 11:37,255,P1-PC-CV1,P1-PC,P1_PCV01D,AP03,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A109,2019-10-30 12:30,513,P1-PC-CV1PV1,P1-PC,P1_PCV01D P1_PIT01,AP04,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A110,2019-10-30 14:30,365,P2-SC-SP1PV1,P2-SC,P2_SD01 P2_SIT01,AP17,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A111,2019-10-30 15:35,179,P3-LC-SP1CV1,P3-LC,P3_LH01 P3_LCP01D,AP26,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag | manual prints P3_LCP01; no such tag in 20.07, the pump command is P3_LCP01D"
+20.07,A112,2019-10-30 16:33,151,P3-LC-SP2CV2,P3-LC,P3_LL01 P3_LCV01D,AP27,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag | manual prints P3_LCV01; no such tag in 20.07, the valve command is P3_LCV01D"
+20.07,A113,2019-10-31 08:42,346,P2-SC-SP1,P2-SC,P2_SD01,AP16,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A114,2019-10-31 10:30,513,P2-SC-SP1PV1,P2-SC,P2_SD01 P2_SIT01,AP17,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A114,2019-10-31 10:30,513,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A115,2019-10-31 11:33,344,P2-SC-SP1,P2-SC,P2_SD01,AP16,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A115,2019-10-31 11:33,344,P1-PC-CV1,P1-PC,P1_PCV01D,AP03,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A116,2019-10-31 13:25,365,P2-SC-SP1PV1,P2-SC,P2_SD01 P2_SIT01,AP17,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A117,2019-10-31 14:30,630,P2-SC-SP1PV1,P2-SC,P2_SD01 P2_SIT01,AP17,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A117,2019-10-31 14:30,630,P1-LC-CV1PV1,P1-LC,P1_LCV01D P1_LIT01,AP14,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A118,2019-10-31 15:41,346,P2-SC-SP1,P2-SC,P2_SD01,AP16,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A118,2019-10-31 15:41,346,P1-FC-SP1,P1-FC,P1_B3005,AP06,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A119,2019-10-31 16:29,508,P3-LC-SP1CV1,P3-LC,P3_LH01 P3_LCP01D,AP26,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag | manual prints P3_LCP01; no such tag in 20.07, the pump command is P3_LCP01D"
+20.07,A119,2019-10-31 16:29,508,P1-PC-SP1,P1-PC,P1_B2016,AP01,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A201,2019-11-01 09:29,567,P3-LC-SP1CV1,P3-LC,P3_LH01 P3_LCP01D,AP26,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag | manual prints P3_LCP01; no such tag in 20.07, the pump command is P3_LCP01D"
+20.07,A201,2019-11-01 09:29,567,P1-LC-SP1PV1,P1-LC,P1_B3004 P1_LIT01,AP12,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A202,2019-11-01 10:41,377,P3-LC-SP1CV1,P3-LC,P3_LH01 P3_LCP01D,AP26,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag | manual prints P3_LCP01; no such tag in 20.07, the pump command is P3_LCP01D"
+20.07,A202,2019-11-01 10:41,377,P1-LC-CV1,P1-LC,P1_LCV01D,AP13,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A203,2019-11-01 11:23,179,P3-LC-SP1CV1,P3-LC,P3_LH01 P3_LCP01D,AP26,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag | manual prints P3_LCP01; no such tag in 20.07, the pump command is P3_LCP01D"
+20.07,A204,2019-11-01 12:31,564,P1-LC-SP1,P1-LC,P1_B3004,AP11,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A204,2019-11-01 12:31,564,P1-FC-SP1PV1,P1-FC,P1_B3005 P1_FT03,AP07,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A205,2019-11-01 13:41,564,P1-PC-CV1,P1-PC,P1_PCV01D,AP03,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A205,2019-11-01 13:41,564,P1-FC-SP1PV1,P1-FC,P1_B3005 P1_FT03,AP07,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A206,2019-11-01 14:23,305,P1-PC-SP1,P1-PC,P1_B2016,AP01,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A207,2019-11-01 15:31,513,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A207,2019-11-01 15:31,513,P1-FC-SP1,P1-FC,P1_B3005,AP06,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A208,2019-11-01 16:18,552,P1-FC-SP1PV1,P1-FC,P1_B3005 P1_FT03,AP07,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A209,2019-11-01 17:20,513,P3-LC-SP2CV2,P3-LC,P3_LL01 P3_LCV01D,AP27,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag | manual prints P3_LCV01; no such tag in 20.07, the valve command is P3_LCV01D"
+20.07,A209,2019-11-01 17:20,513,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A210,2019-11-04 15:31,386,P1-PC-SP1,P1-PC,P1_B2016,AP01,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A210,2019-11-04 15:31,386,P1-FC-SP1,P1-FC,P1_B3005,AP06,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A211,2019-11-04 17:20,397,P3-LC-SP2CV2,P3-LC,P3_SP02 P3_LCV01D,AP24,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag | manual prints P3_LCV01; no such tag in 20.07, the valve command is P3_LCV01D"
+20.07,A211,2019-11-04 17:20,397,P1-PC-SP1,P1-PC,P1_B2016,AP01,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A212,2019-11-05 09:30,378,P3-LC-SP2CV2,P3-LC,P3_SP02 P3_LCV01D,AP24,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag | manual prints P3_LCV01; no such tag in 20.07, the valve command is P3_LCV01D"
+20.07,A212,2019-11-05 09:30,378,P1-LC-CV1,P1-LC,P1_LCV01D,AP13,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A213,2019-11-05 10:20,290,P3-LC-SP2CV2,P3-LC,P3_SP02 P3_LCV01D,AP24,"manual prints P3_LCV01; no such tag in 20.07, the valve command is P3_LCV01D"
 20.07,A213,2019-11-05 10:20,290,P1-FC-SP1,P1-FC,P1_B3005,AP06,
-20.07,A214,2019-11-05 11:23,340,P2-SC-SP1,P2-SC,P2_SD01,AP16,
-20.07,A215,2019-11-05 12:30,340,P2-SC-SP1,P2-SC,P2_SD01,AP16,
-20.07,A215,2019-11-05 12:30,340,P3-LC-SP2CV2,P3-LC,P3_LL01 P3_LCV01,AP27,
-20.07,A216,2019-11-05 14:45,2880,P2-SC-SP1,P2-SC,P2_SD01,AP16,
-20.07,A216,2019-11-05 14:45,2880,P1-LC-SP1,P1-LC,P1_B3004,AP11,
-20.07,A217,2019-11-05 16:20,330,P1-LC-SP1,P1-LC,P1_B3004,AP11,
-20.07,A217,2019-11-05 16:20,330,P1-PC-SP1,P1-PC,P1_B2016,AP01,
-20.07,A218,2019-11-05 17:23,310,P1-LC-CV1,P1-LC,P1_LCV01D,AP13,
-20.07,A219,2019-11-06 08:58,310,P1-LC-CV1,P1-LC,P1_LCV01D,AP13,
-20.07,A219,2019-11-06 08:58,310,P1-PC-CV1,P1-PC,P1_PCV01D,AP03,
+20.07,A214,2019-11-05 11:23,345,P2-SC-SP1,P2-SC,P2_SD01,AP16,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A215,2019-11-05 12:30,346,P2-SC-SP1,P2-SC,P2_SD01,AP16,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A215,2019-11-05 12:30,346,P3-LC-SP2CV2,P3-LC,P3_LL01 P3_LCV01D,AP27,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag | manual prints P3_LCV01; no such tag in 20.07, the valve command is P3_LCV01D"
+20.07,A216,2019-11-05 14:45,2888,P2-SC-SP1,P2-SC,P2_SD01,AP16,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A216,2019-11-05 14:45,2888,P1-LC-SP1,P1-LC,P1_B3004,AP11,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A217,2019-11-05 16:20,335,P1-LC-SP1,P1-LC,P1_B3004,AP11,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A217,2019-11-05 16:20,335,P1-PC-SP1,P1-PC,P1_B2016,AP01,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A218,2019-11-05 17:23,312,P1-LC-CV1,P1-LC,P1_LCV01D,AP13,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A219,2019-11-06 08:58,312,P1-LC-CV1,P1-LC,P1_LCV01D,AP13,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
+20.07,A219,2019-11-06 08:58,312,P1-PC-CV1,P1-PC,P1_PCV01D,AP03,"20.07: printed duration differs from the flag; the start minute and the per-process flags match for all 38 attacks, so the duration is taken from the flag"
 21.03,A101,2020-07-07 15:35,192,P1-PC-SP1,P1-PC,P1_B2016,AP01,
 21.03,A102,2020-07-07 17:28,98,P1-FC-SP1,P1-FC,P1_B3005,AP06,
 21.03,A103,2020-07-07 18:59,190,P1-LC-CO1,P1-LC,P1_LCV01D,AP13,
