@@ -118,6 +118,7 @@ def build_examples(version: str, attacks: pd.DataFrame, steps: pd.DataFrame) -> 
                 "anchor": w.anchor, "offset": w.offset, "start": w.start, "loop": loop,
                 "label": label,
                 "attack_ids": " ".join(sorted(on.attack_id.unique())),
+                "loop_uncertain": bool(hit.note.str.contains("loop uncertain").any()),
                 "attack_start_s": int((first.flag_start - w.start).total_seconds()) if first is not None else -1,
                 "attack_end_s": int((first.flag_end - w.start).total_seconds()) if first is not None else -1,
                 "tags": [t for t, _ in tags.get(loop, [])],

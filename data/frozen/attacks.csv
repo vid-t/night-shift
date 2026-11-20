@@ -131,89 +131,89 @@ version,attack_id,start_time,duration_s,scenario,loop,points,primitive,note
 21.03,A511,2020-07-31 10:40,120,P3-LC-CO2,P3-LC,P3_LCV01D,AP25,"manual prints P2_LCV01D for scenario P3-LC-CO2; no such tag, the P3 valve is P3_LCV01D"
 21.03,A512,2020-07-31 11:20,262,P1-FC-SP1,P1-FC,P1_B3005,AP06,manual says 11:21; the flag switches on at 11:20:59
 21.03,A512,2020-07-31 11:20,262,P1-FC-CO1PV1,P1-FC,P1_FCV03D P1_FT03,AP09,manual says 11:21; the flag switches on at 11:20:59
-22.04,A101,2021-07-10 05:41,190,P1-PC-CO1,P1-PC,P1_PCV01D,AP04,
-22.04,A102,2021-07-10 07:19,54,P1-LC-CO1-ST,P1-LC,P1_LCV01D,AP18,
-22.04,A103,2021-07-10 11:25,126,P1-FC-CO1PV1,P1-FC,P1_FCV03D P1_FT03,AP11,
-22.04,A104,2021-07-10 15:39,54,P3-LC-CO2,P3-LC,P3_LCV01D,AP37,
-22.04,A105,2021-07-10 16:42,296,P1-LC-SP1,P1-LC,P1_B3004,AP14,
-22.04,A106,2021-07-10 19:21,91,P1-CC-CO1,P1-CC,P1_PP04,AP13,
-22.04,A107,2021-07-10 22:35,67,P1-TC-CO1,P1-TC,P1_FCV01D,AP19,
-22.04,A201,2021-07-13 16:38,257,P1-PC-SP1,P1-PC,P1_B2016,AP01,
-22.04,A202,2021-07-13 17:21,65,P1-FC-CO1-ST,P1-FC,P1_FCV03D,AP13,
-22.04,A203,2021-07-13 18:13,45,P2-SC-SP1-ST,P2-SC,P2_AutoSD,AP31,
-22.04,A204,2021-07-13 20:28,248,P1-PC-CO1,P1-PC,P1_PCV01D,AP04,
-22.04,A204,2021-07-13 20:28,248,P2-SC-CO1,P2-SC,P2_SCO,AP29,
-22.04,A205,2021-07-13 21:10,55,P3-LC-CO2,P3-LC,P3_LCV01D,AP37,
-22.04,A206,2021-07-13 21:58,176,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,
-22.04,A206,2021-07-13 21:58,176,P2-SC-SP1PV1,P2-SC,P2_AutoSD P2_SIT01,AP27,
-22.04,A207,2021-07-13 23:40,284,P1-LC-CO1,P1-LC,P1_LCV01D,AP16,
-22.04,A208,2021-07-14 01:15,152,P2-SC-CO1PV1,P2-SC,P2_SCO P2_SIT01,AP30,
-22.04,A209,2021-07-14 01:40,162,P1-PC-SP1PV1PV2,P1-PC,P1_B2016 P1_PIT01 P1_FIT01,AP03,
-22.04,A210,2021-07-14 03:23,97,P2-SC-SP1,P2-SC,P2_AutoSD,AP26,
-22.04,A211,2021-07-14 07:21,151,P1-PC-CO1PV1,P1-PC,P1_PCV01D P1_PIT01,AP05,
-22.04,A212,2021-07-14 08:11,55,P3-LC-CO1,P3-LC,P3_LCP01D,AP35,
-22.04,A213,2021-07-14 10:35,80,P1-CC-CO1-ST,P1-CC,P1_PP04,AP24,
-22.04,A214,2021-07-14 11:23,613,P3-LC-CO2-LT,P3-LC,P3_LCV01D,AP39,
-22.04,A215,2021-07-14 12:17,168,P1-FC-SP1PV1,P1-FC,P1_B3005 P1_FT03,AP09,
-22.04,A216,2021-07-14 13:52,158,P1-PC-SP1,P1-PC,P1_B2016,AP01,
-22.04,A216,2021-07-14 13:52,158,P1-FC-SP1,P1-FC,P1_B3005,AP08,
-22.04,A217,2021-07-14 14:31,98,P1-FC-CO1,P1-FC,P1_FCV03D,AP10,
-22.04,A301,2021-07-14 18:21,348,P3-LC-CO2,P3-LC,P3_LCV01D,AP16,"manual prints P2_LCV01D for scenario P3-LC-CO2; no such tag, the P3 valve is P3_LCV01D"
-22.04,A301,2021-07-14 18:21,348,P1-FC-CO1,P1-FC,P1_FCV03D,AP10,
-22.04,A302,2021-07-14 20:16,358,P1-LC-SP1PV1,P1-LC,P1_LCV01D,AP15,
-22.04,A303,2021-07-14 23:22,143,P1-LC-CO1PV1,P1-LC,P1_B3004 P1_LIT01,AP17,
-22.04,A303,2021-07-14 23:22,143,P3-LC-CO2,P3-LC,P3_LCV01D,AP37,
-22.04,A304,2021-07-15 01:41,91,P3-LC-CO2PV1,P3-LC,P1_LCV01D P1_LIT01,AP38,
-22.04,A305,2021-07-15 02:09,94,P1-LC-CO1-ST,P1-LC,P3_LCV01D,AP18,
-22.04,A306,2021-07-15 03:37,353,P1-PC-CO1,P1-PC,P1_LCV01D,AP04,
-22.04,A306,2021-07-15 03:37,353,P1-LC-SP1PV1,P1-LC,P1_B3004 P1_LIT01,AP15,
-22.04,A307,2021-07-15 05:35,151,P1-TC-CO1PV1,P1-TC,P1_FCV01D P1_TIT01,AP20,
-22.04,A308,2021-07-15 06:53,173,P1-PC-CO1PV1,P1-PC,P1_PCV01D P1_PIT01,AP05,
-22.04,A308,2021-07-15 06:53,173,P1-CC-CO1,P1-CC,P1_PP04,AP23,
-22.04,A309,2021-07-15 07:42,96,P1-FC-SP1,P1-FC,P1_B3005,AP08,
-22.04,A309,2021-07-15 07:42,96,P1-TC-CO1,P1-TC,P1_FCV01D,AP19,
-22.04,A310,2021-07-15 09:52,2024,P3-LC-CO1,P3-LC,P3_LCP01D,AP35,
-22.04,A310,2021-07-15 09:52,2024,P3-LC-CO2,P3-LC,P3_LCV01D,AP37,
-22.04,A401,2021-07-15 12:42,38,P2-SC-SP2,P2-SC,P2_ManualSD,AP28,
-22.04,A402,2021-07-15 13:20,88,P1-TC-CO1-ST,P1-TC,P1_FCV01D,AP21,
-22.04,A403,2021-07-15 13:57,96,P2-TC-SP3,P2-TC,P2_RTR,AP34,
-22.04,A404,2021-07-15 15:08,97,P2-SC-SP1,P2-SC,P2_AutoSD,AP26,
-22.04,A404,2021-07-15 15:08,97,P3-LC-CO2,P3-LC,P3_LCV01D,AP37,
-22.04,A405,2021-07-15 16:07,505,P1-TC-SP1-LT,P1-TC,P1_B4002,AP22,
-22.04,A406,2021-07-15 17:22,186,P1-FC-SP1PV1,P1-FC,P1_B3005 P1_FT03,AP09,
-22.04,A406,2021-07-15 17:22,186,P1-TC-CO1,P1-TC,P1_FCV01D,AP19,
-22.04,A407,2021-07-15 19:45,122,P1-FC-CO1-ST,P1-FC,P1_FCV03D,AP13,
-22.04,A407,2021-07-15 19:45,122,P1-LC-CO1PV1,P1-LC,P1_LCV01D P1_LIT01,AP17,
-22.04,A408,2021-07-15 20:29,673,P1-PC-CO1PV1,P1-PC,P1_PCV01D P1_PIT01,AP05,
-22.04,A408,2021-07-15 20:29,673,P1-LC-CO1PV1,P1-LC,P1_LCV01D P1_LIT01,AP17,
-22.04,A409,2021-07-15 22:41,63,P1-LC-CO1-ST8,P1-LC,P1_LCV01D,AP18,
-22.04,A409,2021-07-15 22:41,63,P1-TC-CO1-ST9,P1-TC,P1_FCV01D,AP21,
-22.04,A410,2021-07-16 01:07,179,P1-FC-CO1PV1,P1-FC,P1_FCV03D P1_FT03,AP11,
-22.04,A410,2021-07-16 01:07,179,P2-SC-SP1PV1,P2-SC,P2_AutoSD P2_SIT01,AP27,
-22.04,A411,2021-07-16 03:35,99,P1-CC-CO1,P1-CC,P1_PP04,AP23,
-22.04,A411,2021-07-16 03:35,99,P2-TC-SP3,P2-TC,P2_RTR,AP34,
-22.04,A412,2021-07-16 04:02,156,P1-TC-CO1PV1,P1-TC,P1_FCV01D P1_TIT01,AP20,
-22.04,A412,2021-07-16 04:02,156,P1-PC-SP1,P1-PC,P1_B2016,AP01,
-22.04,A413,2021-07-16 04:59,153,P1-LC-CO1,P1-LC,P1_LCV01D,AP16,
-22.04,A413,2021-07-16 04:59,153,P2-SC-SP1PV1,P2-SC,P2_AutoSD P2_SIT01,AP27,
-22.04,A414,2021-07-16 07:20,77,P2-TC-SP2,P2-TC,P2_VTR02,AP33,
-22.04,A414,2021-07-16 07:20,77,P3-LC-CO1PV1,P3-LC,P3_LCP01D P3_LIT01,AP36,
-22.04,A415,2021-07-16 09:17,77,P2-TC-SP2,P2-TC,P2_VTR02,AP33,manual prints AP3; scenario P2-TC-SP2 on P2_VTR02 is AP33 everywhere else in 22.04
-22.04,A416,2021-07-16 10:39,134,P1-FC-CO1PV1PV2,P1-FC,P1_FCV03D P1_FT03 P1_LIT01,AP12,
-22.04,A417,2021-07-16 11:22,544,P1-CC-SP1-LT,P1-CC,P1_PP04_SP,AP25,
-22.04,A418,2021-07-16 13:23,342,P1-PC-SP1,P1-PC,P1_B2016,AP01,
-22.04,A418,2021-07-16 13:23,342,P1-LC-SP1,P1-LC,P1_B3004,AP14,
-22.04,A419,2021-07-16 14:59,163,P1-PC-SP1,P1-PC,P1_B2016,AP01,
-22.04,A419,2021-07-16 14:59,163,P3-LC-CO1,P3-LC,P3_LCP01D,AP35,
-22.04,A420,2021-07-16 15:57,89,P1-PC-CO1-ST,P1-PC,P1_PCV01D,AP07,
-22.04,A421,2021-07-16 17:34,152,P2-SC-CO1PV1,P2-SC,P2_SCO P2_SIT01,AP30,
-22.04,A421,2021-07-16 17:34,152,P1-CC-CO1,P1-CC,P1_PP04,AP23,
-22.04,A422,2021-07-16 20:08,165,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,
-22.04,A422,2021-07-16 20:08,165,P2-SC-SP1,P2-SC,P2_AutoSD,AP26,
-22.04,A423,2021-07-16 22:17,115,P1-FC-SP1,P1-FC,P1_B3005,AP08,
-22.04,A423,2021-07-16 22:17,115,P2-SC-CO1,P2-SC,P2_SCO,AP29,
-22.04,A424,2021-07-16 23:05,86,P1-FC-CO1,P1-FC,P1_FCV03D,AP10,
-22.04,A424,2021-07-16 23:05,86,P1-CC-CO1,P1-CC,P1_PP04,AP23,
+22.04,A101,2021-07-10 05:41,191,P1-PC-CO1,P1-PC,P1_PCV01D,AP04,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A102,2021-07-10 07:19,55,P1-LC-CO1-ST,P1-LC,P1_LCV01D,AP18,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A103,2021-07-10 11:25,127,P1-FC-CO1PV1,P1-FC,P1_FCV03D P1_FT03,AP11,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A104,2021-07-10 15:39,55,P3-LC-CO2,P3-LC,P3_LCV01D,AP37,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A105,2021-07-10 16:42,297,P1-LC-SP1,P1-LC,P1_B3004,AP14,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A106,2021-07-10 19:21,92,P1-CC-CO1,P1-CC,P1_PP04,AP13,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A107,2021-07-10 22:35,68,P1-TC-CO1,P1-TC,P1_FCV01D,AP19,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A201,2021-07-13 16:38,258,P1-PC-SP1,P1-PC,P1_B2016,AP01,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A202,2021-07-13 17:21,66,P1-FC-CO1-ST,P1-FC,P1_FCV03D,AP13,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A203,2021-07-13 18:13,46,P2-SC-SP1-ST,P2-SC,P2_AutoSD,AP31,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A204,2021-07-13 20:28,249,P1-PC-CO1,P1-PC,P1_PCV01D,AP04,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A204,2021-07-13 20:28,249,P2-SC-CO1,P2-SC,P2_SCO,AP29,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A205,2021-07-13 21:10,56,P3-LC-CO2,P3-LC,P3_LCV01D,AP37,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A206,2021-07-13 21:58,177,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A206,2021-07-13 21:58,177,P2-SC-SP1PV1,P2-SC,P2_AutoSD P2_SIT01,AP27,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A207,2021-07-13 23:40,285,P1-LC-CO1,P1-LC,P1_LCV01D,AP16,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A208,2021-07-14 01:15,153,P2-SC-CO1PV1,P2-SC,P2_SCO P2_SIT01,AP30,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A209,2021-07-14 01:40,163,P1-PC-SP1PV1PV2,P1-PC,P1_B2016 P1_PIT01 P1_FIT01,AP03,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A210,2021-07-14 03:23,98,P2-SC-SP1,P2-SC,P2_AutoSD,AP26,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A211,2021-07-14 07:21,152,P1-PC-CO1PV1,P1-PC,P1_PCV01D P1_PIT01,AP05,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A212,2021-07-14 08:11,56,P3-LC-CO1,P3-LC,P3_LCP01D,AP35,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A213,2021-07-14 10:35,81,P1-CC-CO1-ST,P1-CC,P1_PP04,AP24,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A214,2021-07-14 11:23,614,P3-LC-CO2-LT,P3-LC,P3_LCV01D,AP39,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A215,2021-07-14 12:17,169,P1-FC-SP1PV1,P1-FC,P1_B3005 P1_FT03,AP09,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A216,2021-07-14 13:52,159,P1-PC-SP1,P1-PC,P1_B2016,AP01,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A216,2021-07-14 13:52,159,P1-FC-SP1,P1-FC,P1_B3005,AP08,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A217,2021-07-14 14:31,99,P1-FC-CO1,P1-FC,P1_FCV03D,AP10,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A301,2021-07-14 18:21,349,P3-LC-CO2,P3-LC,P3_LCV01D,AP16,"every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length | loop uncertain: scenario P3-LC-CO2, but AP16 is P1-LC-CO1 elsewhere in 22.04 | manual prints P2_LCV01D for scenario P3-LC-CO2; no such tag, the P3 valve is P3_LCV01D"
+22.04,A301,2021-07-14 18:21,349,P1-FC-CO1,P1-FC,P1_FCV03D,AP10,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A302,2021-07-14 20:16,359,P1-LC-SP1PV1,P1-LC,P1_LCV01D,AP15,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A303,2021-07-14 23:22,144,P1-LC-CO1PV1,P1-LC,P1_B3004 P1_LIT01,AP17,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A303,2021-07-14 23:22,144,P3-LC-CO2,P3-LC,P3_LCV01D,AP37,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A304,2021-07-15 01:41,92,P3-LC-CO2PV1,P3-LC,P1_LCV01D P1_LIT01,AP38,"every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length | loop uncertain: scenario P3-LC-CO2PV1 (AP36-AP39 are P3-LC), but points are P1_LCV01D, P1_LIT01"
+22.04,A305,2021-07-15 02:09,95,P1-LC-CO1-ST,P1-LC,P3_LCV01D,AP18,"every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length | loop uncertain: scenario P1-LC-CO1-ST (AP18 elsewhere is P1-LC), but point is P3_LCV01D"
+22.04,A306,2021-07-15 03:37,354,P1-PC-CO1,P1-PC,P1_LCV01D,AP04,"every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length | loop uncertain: scenario P1-PC-CO1 (AP04 elsewhere is P1-PC), but point is P1_LCV01D"
+22.04,A306,2021-07-15 03:37,354,P1-LC-SP1PV1,P1-LC,P1_B3004 P1_LIT01,AP15,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A307,2021-07-15 05:35,152,P1-TC-CO1PV1,P1-TC,P1_FCV01D P1_TIT01,AP20,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A308,2021-07-15 06:53,174,P1-PC-CO1PV1,P1-PC,P1_PCV01D P1_PIT01,AP05,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A308,2021-07-15 06:53,174,P1-CC-CO1,P1-CC,P1_PP04,AP23,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A309,2021-07-15 07:42,97,P1-FC-SP1,P1-FC,P1_B3005,AP08,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A309,2021-07-15 07:42,97,P1-TC-CO1,P1-TC,P1_FCV01D,AP19,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A310,2021-07-15 09:52,2025,P3-LC-CO1,P3-LC,P3_LCP01D,AP35,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A310,2021-07-15 09:52,2025,P3-LC-CO2,P3-LC,P3_LCV01D,AP37,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A401,2021-07-15 12:42,39,P2-SC-SP2,P2-SC,P2_ManualSD,AP28,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A402,2021-07-15 13:20,89,P1-TC-CO1-ST,P1-TC,P1_FCV01D,AP21,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A403,2021-07-15 13:57,97,P2-TC-SP3,P2-TC,P2_RTR,AP34,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A404,2021-07-15 15:08,98,P2-SC-SP1,P2-SC,P2_AutoSD,AP26,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A404,2021-07-15 15:08,98,P3-LC-CO2,P3-LC,P3_LCV01D,AP37,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A405,2021-07-15 16:07,506,P1-TC-SP1-LT,P1-TC,P1_B4002,AP22,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A406,2021-07-15 17:22,187,P1-FC-SP1PV1,P1-FC,P1_B3005 P1_FT03,AP09,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A406,2021-07-15 17:22,187,P1-TC-CO1,P1-TC,P1_FCV01D,AP19,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A407,2021-07-15 19:45,123,P1-FC-CO1-ST,P1-FC,P1_FCV03D,AP13,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A407,2021-07-15 19:45,123,P1-LC-CO1PV1,P1-LC,P1_LCV01D P1_LIT01,AP17,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A408,2021-07-15 20:29,674,P1-PC-CO1PV1,P1-PC,P1_PCV01D P1_PIT01,AP05,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A408,2021-07-15 20:29,674,P1-LC-CO1PV1,P1-LC,P1_LCV01D P1_LIT01,AP17,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A409,2021-07-15 22:41,64,P1-LC-CO1-ST8,P1-LC,P1_LCV01D,AP18,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A409,2021-07-15 22:41,64,P1-TC-CO1-ST9,P1-TC,P1_FCV01D,AP21,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A410,2021-07-16 01:07,180,P1-FC-CO1PV1,P1-FC,P1_FCV03D P1_FT03,AP11,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A410,2021-07-16 01:07,180,P2-SC-SP1PV1,P2-SC,P2_AutoSD P2_SIT01,AP27,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A411,2021-07-16 03:35,100,P1-CC-CO1,P1-CC,P1_PP04,AP23,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A411,2021-07-16 03:35,100,P2-TC-SP3,P2-TC,P2_RTR,AP34,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A412,2021-07-16 04:02,157,P1-TC-CO1PV1,P1-TC,P1_FCV01D P1_TIT01,AP20,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A412,2021-07-16 04:02,157,P1-PC-SP1,P1-PC,P1_B2016,AP01,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A413,2021-07-16 04:59,154,P1-LC-CO1,P1-LC,P1_LCV01D,AP16,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A413,2021-07-16 04:59,154,P2-SC-SP1PV1,P2-SC,P2_AutoSD P2_SIT01,AP27,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A414,2021-07-16 07:20,78,P2-TC-SP2,P2-TC,P2_VTR02,AP33,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A414,2021-07-16 07:20,78,P3-LC-CO1PV1,P3-LC,P3_LCP01D P3_LIT01,AP36,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A415,2021-07-16 09:17,78,P2-TC-SP2,P2-TC,P2_VTR02,AP33,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length | manual prints AP3; scenario P2-TC-SP2 on P2_VTR02 is AP33 everywhere else in 22.04
+22.04,A416,2021-07-16 10:39,135,P1-FC-CO1PV1PV2,P1-FC,P1_FCV03D P1_FT03 P1_LIT01,AP12,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A417,2021-07-16 11:22,545,P1-CC-SP1-LT,P1-CC,P1_PP04_SP,AP25,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A418,2021-07-16 13:23,343,P1-PC-SP1,P1-PC,P1_B2016,AP01,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A418,2021-07-16 13:23,343,P1-LC-SP1,P1-LC,P1_B3004,AP14,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A419,2021-07-16 14:59,164,P1-PC-SP1,P1-PC,P1_B2016,AP01,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A419,2021-07-16 14:59,164,P3-LC-CO1,P3-LC,P3_LCP01D,AP35,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A420,2021-07-16 15:57,90,P1-PC-CO1-ST,P1-PC,P1_PCV01D,AP07,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A421,2021-07-16 17:34,153,P2-SC-CO1PV1,P2-SC,P2_SCO P2_SIT01,AP30,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A421,2021-07-16 17:34,153,P1-CC-CO1,P1-CC,P1_PP04,AP23,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A422,2021-07-16 20:08,166,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A422,2021-07-16 20:08,166,P2-SC-SP1,P2-SC,P2_AutoSD,AP26,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A423,2021-07-16 22:17,116,P1-FC-SP1,P1-FC,P1_B3005,AP08,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A423,2021-07-16 22:17,116,P2-SC-CO1,P2-SC,P2_SCO,AP29,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A424,2021-07-16 23:05,87,P1-FC-CO1,P1-FC,P1_FCV03D,AP10,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
+22.04,A424,2021-07-16 23:05,87,P1-CC-CO1,P1-CC,P1_PP04,AP23,every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length
 23.05,A101,2022-08-12 16:25,237,P1-PC-SP1,P1-PC,P1_B2016,AP01,
 23.05,A102,2022-08-12 17:35,198,P1-PC-SP1PV1,P1-PC,P1_B2016 P1_PIT01,AP02,
 23.05,A103,2022-08-12 18:32,156,P1-PC-CO1,P1-PC,P1_PCV01D,AP04,

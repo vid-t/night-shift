@@ -21,8 +21,10 @@ NOT_VERIFIED = [
     "The answer text has not been read by eye against charts. The plan asks for 100 examples to be checked before training.",
     "The direction words come from a simple rule: a shift of the mean larger than three times the noise in the 60 seconds before, "
     "or 2% of the tag's normal-file range. Slow ramps (`-ST`, `-LT` scenarios) may read as `stays flat` early in the window.",
-    "Points named in the attack table that differ from the scenario code (for example 22.04 A301, A304-A306) are kept as printed "
-    "unless a fix is listed above. The loop label comes from the scenario code, not the points.",
+    "22.04 A301, A304, A305 and A306 name one loop in the scenario and another in the points. They keep the scenario's loop and "
+    "are marked `loop_uncertain`. The data did not settle it: the boiler loops move together during these attacks.",
+    "Other points that do not fit their scenario are kept as printed (for example 22.04 A303 lists P1_B3004, P1_LIT01 for "
+    "P1-LC-CO1PV1). The loop label always comes from the scenario code, not the points.",
     "The loop label says which loop the manual says was attacked. It does not check that the attack is visible in that loop's series.",
     "Attack windows can overlap a second attack on another loop. Those loops are labelled `attack` too, with their own start second.",
     "Gradient boosting uses shape statistics only (no absolute levels), to stop it from telling files apart by their set points. "
@@ -58,10 +60,13 @@ def write(*, versions, included, excluded, facts, checks, before, unmatched, ren
     out += [md(bad[["version", "attack_id", "table_start", "table_duration", "status", "detail"]]) if len(bad) else "None.", ""]
     from hai.check_table import attacks_table
     notes = attacks_table()
-    notes = notes[notes.note != ""].drop_duplicates(["version", "attack_id", "note"])
-    notes = notes[notes.version.isin(versions)]
-    out += ["Fixes applied to the table (the flags and tag lists are the source):", ""]
-    out += [md(notes[["version", "attack_id", "primitive", "scenario", "points", "note"]]) if len(notes) else "None.", ""]
+    notes = notes[(notes.note != "") & notes.version.isin(versions)].assign(note=lambda d: d.note.str.split(" | ", regex=False)).explode("note")
+    notes = notes.drop_duplicates(["version", "attack_id", "note"])
+    fixes = notes.groupby(["version", "note"], sort=False).attack_id.agg(
+        lambda s: f"all {len(s)} attacks" if len(s) > 12 else ", ".join(s)).reset_index()
+    out += ["Fixes and flags applied to the table (the flags and tag lists are the source). "
+            "A `loop uncertain` row keeps the scenario's loop; its examples carry `loop_uncertain = True`.", ""]
+    out += [md(fixes[["version", "attack_id", "note"]].rename(columns={"attack_id": "attacks"})) if len(fixes) else "None.", ""]
     out += ["Mismatches **after** the fixes:", ""]
     after = checks[checks.status != "ok"]
     out += [md(after[["version", "attack_id", "status", "detail"]]) if len(after) else "None.", ""]
@@ -90,8 +95,15 @@ def write(*, versions, included, excluded, facts, checks, before, unmatched, ren
     wk.columns = [str(c) if c not in (True, False) else ("kept" if c else "dropped") for c in wk.columns]
     out += [md(wk), ""]
     a = wins[wins.kind == "attack"]
-    out += [f"Attacks with at least one window kept: {a[a.kept].anchor.nunique()} of {checks[checks.status == 'ok'].shape[0]} "
-            "checked attacks.", ""]
+    kept = a[a.kept].groupby("version").anchor.nunique()
+    okc = checks[checks.status == "ok"].groupby("version").size()
+    out += ["Attacks with at least one window kept, of the attacks that pass the flag check: " +
+            ", ".join(f"{v}: {int(kept.get(v, 0))} of {int(okc.get(v, 0))}" for v in okc.index) + ".", ""]
+    n = wins[wins.kind == "normal"].assign(source=lambda d: [
+        "normal file" if f.startswith(("train", "hai-train")) else "attack files" for f in d.file])
+    out += ["Normal windows by source (asked: 375 from attack files and 375 from the normal file per version; "
+            "fewer means the source holds fewer non-overlapping 300 s windows that are 600 s from any attack):", "",
+            md(n.groupby(["version", "source"]).size().rename("windows").reset_index()), ""]
     out += ["Loop examples per split and label:", ""]
     sl = ex.groupby(["split", "label"]).size().unstack("label", fill_value=0).reset_index()
     out += [md(sl), ""]
@@ -108,7 +120,8 @@ def write(*, versions, included, excluded, facts, checks, before, unmatched, ren
             out.append(f"- `{r.example_id}` ({r.label}): {r.answer}")
     out += [""]
     attack_s = ex[ex.label == "attack"]
-    out += [f"Attack examples whose attack started before the window: {(attack_s.attack_start_s < 0).sum()}.", ""]
+    out += [f"Attack examples whose attack started before the window: {(attack_s.attack_start_s < 0).sum()}. "
+            f"Examples in windows that touch a `loop uncertain` attack: {int(ex.loop_uncertain.sum())}.", ""]
 
     out += ["## 5. Baselines (validation split only)", "",
             "Scored per attack on the window where the attack starts at second 120. "

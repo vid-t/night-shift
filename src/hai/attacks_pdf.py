@@ -39,6 +39,16 @@ CORRECTIONS = {
         {"primitive": "AP33"},
         "manual prints AP3; scenario P2-TC-SP2 on P2_VTR02 is AP33 everywhere else in 22.04",
     ),
+    # Rows whose scenario and points name different loops. The loop stays the scenario's;
+    # the note marks the examples as loop_uncertain.
+    ("22.04", "A301", "AP16"): ({}, "loop uncertain: scenario P3-LC-CO2, but AP16 is P1-LC-CO1 elsewhere in 22.04"),
+    ("22.04", "A304", "AP38"): ({}, "loop uncertain: scenario P3-LC-CO2PV1 (AP36-AP39 are P3-LC), but points are P1_LCV01D, P1_LIT01"),
+    ("22.04", "A305", "AP18"): ({}, "loop uncertain: scenario P1-LC-CO1-ST (AP18 elsewhere is P1-LC), but point is P3_LCV01D"),
+    ("22.04", "A306", "AP04"): ({}, "loop uncertain: scenario P1-PC-CO1 (AP04 elsewhere is P1-PC), but point is P1_LCV01D"),
+}
+# Version-wide fixes found by the flag check.
+DURATION_OFFSET = {
+    "22.04": (1, "every 22.04 flag run is exactly 1 s longer than the printed duration (both end seconds counted); duration set to the flag length"),
 }
 # Attack-level fixes found by the flag check (hai.check_table). The flags are the source.
 ATTACK_FIXES = {
@@ -159,6 +169,10 @@ def apply_fixes(rows: list[dict]) -> list[dict]:
             fields, why = ATTACK_FIXES[key[:2]]
             r.update(fields)
             notes.append(why)
+        if r["version"] in DURATION_OFFSET:
+            off, why = DURATION_OFFSET[r["version"]]
+            r["duration_s"] += off
+            notes.append(why)
         if key in CORRECTIONS:
             fields, why = CORRECTIONS[key]
             r.update(fields)
@@ -173,7 +187,7 @@ def apply_fixes(rows: list[dict]) -> list[dict]:
             else:
                 fixed.append(p)
         r["points"] = " ".join(fixed)
-        r["note"] = "; ".join(dict.fromkeys(notes))
+        r["note"] = " | ".join(dict.fromkeys(notes))
     return rows
 
 
