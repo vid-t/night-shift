@@ -30,7 +30,7 @@ SPLIT_FILES = ("train", "validation", "test", "test_full", "test_shuffled")
 
 TABLE_COLUMNS = ["example_id", "window_id", "version", "file", "split", "window_kind", "anchor", "scored", "start",
                  "loop", "label", "attack_ids", "loop_uncertain", "attack_start_s", "attack_end_s",
-                 "no_visible_change", "train_use", "tags", "roles", "source_tags", "answer"]
+                 "no_visible_change", "reacting", "train_use", "tags", "roles", "source_tags", "answer"]
 
 
 def read_examples(path: Path = PROCESSED / "examples.parquet") -> pd.DataFrame:
@@ -63,7 +63,7 @@ def record(r) -> dict:
               for t, ro, x in zip(r.tags, roles, r.values)]
     return {"example_id": r.example_id, "version": r.version, "loop": r.loop, "loop_name": LOOP_NAMES[r.loop],
             "split": r.split, "label": r.label, "attack_start_s": int(r.attack_start_s), "scored": bool(r.scored),
-            "no_visible_change": bool(r.no_visible_change), "window_kind": r.window_kind, "answer": r.answer,
+            "no_visible_change": bool(r.no_visible_change), "reacting": bool(r.reacting), "window_kind": r.window_kind, "answer": r.answer,
             "series": series}
 
 

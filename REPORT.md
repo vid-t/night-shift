@@ -361,31 +361,76 @@ Start second of the attack inside its window (attack loop examples):
 | all six per attack | 1458 | 241 | 30 | 149 | 270 | 0.013 |
 | scored window only | 243 | 123 | 30 | 137 | 269 | 0.029 |
 
-Attack loop examples with no visible change in their series (`no_visible_change`). They are left out of training and counted on their own in scoring:
+### Swing test
 
-| version | split | attack_examples | no_visible_change |
+The level-shift rule misses a series that starts or stops oscillating. The swing test compares the noise (standard deviation) of the one-second steps after the attack start with the 60 seconds before: a change when one is more than 3 times the other and the larger exceeds 0.002 of the tag's normal-file scale (at least 5 steps on each side), and the swinging side goes up and down: its path (the sum of its absolute steps) is at least 3 times its range. Without that second condition a smooth ramp, hump or single step also passes, and the words `starts swinging` would not match the chart. It dates the change to the first second where the 10-second step noise crosses the geometric mean of the two. The words are `starts swinging` and `stops swinging`.
+
+Some loops swing on their own, so the test counts only in loops that rarely do. The rate below is the share of quiet examples (normal windows, train and validation splits) that show a swing change in any series at a placebo second drawn with a fixed seed from the real attack starts and ends. A loop is eligible when its rate, pooled over versions, is below 10%. The choice is per loop, not per (version, loop), so that one loop uses the same words in every version; a per-version cut would let P1-PC, P1-FC and P1-TC switch vocabulary between versions on rates that sit near the limit or differ by version.
+
+| loop | quiet_examples | swinging | rate | eligible | rate_20.07 | rate_21.03 | rate_22.04 | rate_23.05 |
+|---|---|---|---|---|---|---|---|---|
+| P1-FC | 2538 | 50 | 0.02 | True | 0.0 | 0.003 | 0.08 | 0.004 |
+| P1-LC | 2538 | 8 | 0.003 | True | 0.003 | 0.002 | 0.004 | 0.004 |
+| P1-PC | 2538 | 42 | 0.017 | True | 0.026 | 0.024 | 0.014 | 0.003 |
+| P1-TC | 2538 | 372 | 0.147 | False | 0.077 | 0.045 | 0.238 | 0.23 |
+| P2-SC | 2538 | 5 | 0.002 | True | 0.0 | 0.0 | 0.004 | 0.004 |
+| P3-LC | 2538 | 174 | 0.069 | True | 0.013 | 0.009 | 0.115 | 0.137 |
+
+Attack loop examples with no visible change in their series (`no_visible_change`). They are left out of training and counted on their own in scoring. `level_rule_only` is the count under the level-shift rule alone (before the swing test); `made_visible` moved out of the hidden group because an eligible series swings:
+
+| version | split | attack_examples | level_rule_only | no_visible_change | made_visible |
+|---|---|---|---|---|---|
+| 20.07 | test | 108 | 3 | 3 | 0 |
+| 20.07 | train | 234 | 6 | 6 | 0 |
+| 21.03 | test | 108 | 4 | 4 | 0 |
+| 21.03 | train | 210 | 7 | 7 | 0 |
+| 21.03 | validation | 60 | 1 | 1 | 0 |
+| 22.04 | test | 192 | 48 | 27 | 21 |
+| 22.04 | train | 150 | 14 | 8 | 6 |
+| 22.04 | validation | 84 | 22 | 11 | 11 |
+| 23.05 | test | 84 | 11 | 6 | 5 |
+| 23.05 | train | 228 | 41 | 25 | 16 |
+| all | all | 1458 | 157 | 98 | 59 |
+
+The same by loop:
+
+| loop | level_rule_only | no_visible_change |
+|---|---|---|
+| P1-FC | 48 | 10 |
+| P1-LC | 32 | 17 |
+| P1-PC | 14 | 8 |
+| P1-TC | 24 | 24 |
+| P2-SC | 11 | 11 |
+| P3-LC | 28 | 28 |
+
+### Reacting neighbours
+
+`reacting` marks a row labelled `normal` in an attack window, in a swing-eligible loop, whose window holds an attacked loop of the same process (P1 boiler, P2 turbine, P3 water) and whose series show a swing change at that attack's start (earliest start, latest end of the same-process attacks that start at second 10 or later). The label stays `normal`. Reacting rows are never in the training sample and count neither for nor against `right_loop_only`. 323 of the 5058 normal rows in attack windows are reacting.
+
+| loop | reacting |
+|---|---|
+| P1-FC | 51 |
+| P1-LC | 104 |
+| P1-PC | 168 |
+
+| version | test | train | validation |
 |---|---|---|---|
-| 20.07 | test | 108 | 3 |
-| 20.07 | train | 234 | 6 |
-| 21.03 | test | 108 | 4 |
-| 21.03 | train | 210 | 7 |
-| 21.03 | validation | 60 | 1 |
-| 22.04 | test | 192 | 48 |
-| 22.04 | train | 150 | 14 |
-| 22.04 | validation | 84 | 22 |
-| 23.05 | test | 84 | 11 |
-| 23.05 | train | 228 | 41 |
+| 20.07 | 16 | 43 | 0 |
+| 21.03 | 31 | 64 | 23 |
+| 22.04 | 41 | 34 | 20 |
+| 23.05 | 35 | 16 | 0 |
 
 Training sample (`train_use`). The full train split is kept for counting; the sample is what a model trains on:
 
 | kind | train_split | training_sample |
 |---|---|---|
-| attack, no visible change | 68 | 0 |
-| attack, visible change | 754 | 754 |
-| normal, loop in an attack window | 3138 | 1508 |
-| normal, normal window | 14676 | 1508 |
+| attack, no visible change | 46 | 0 |
+| attack, visible change | 776 | 776 |
+| normal, loop in an attack window | 2981 | 1552 |
+| normal, normal window | 14676 | 1552 |
+| normal, reacting neighbour | 157 | 0 |
 
-The training sample holds 3770 examples, 20.0% of them attack. The full train split holds 18636, 4.4% attack.
+The training sample holds 3880 examples, 20.0% of them attack. The full train split holds 18636, 4.4% attack.
 
 Series per loop and version (a missing series is in the name map):
 
@@ -420,58 +465,61 @@ Sample answers:
 
 - `23.05/hai-test1/20220812T182850/P1-PC` (attack): The first valve command falls from second 220 while the target stays flat. The measurement falls after it. The second valve command rises after it. Change starts near second 207. Answer: attack
 - `21.03/test2/20200710T153659/P1-FC` (attack): The command rises from second 187 while the target stays flat. The measurement rises after it. Change starts near second 187. Answer: attack
-- `23.05/hai-test2/20220817T103518/P1-LC` (attack): No series shows a clear step. Change starts near second 44. Answer: attack
+- `23.05/hai-test2/20220817T103518/P1-LC` (attack): The measurement starts swinging from second 44 while the target and command stay flat. Change starts near second 44. Answer: attack
 - `23.05/hai-test1/20220812T162426/P1-PC` (attack): The first valve command rises from second 47. The target rises with it. The measurement rises after it. The second valve command rises after it. Change starts near second 38. Answer: attack
 - `22.04/test2/20210714T135122/P3-LC` (normal): The target stays flat while the measurement falls. The command stays flat. Answer: normal
 - `20.07/test1/20191101T164719/P2-SC` (normal): The measurement stays flat. Answer: normal
 - `22.04/train1/20210711T225902/P2-SC` (normal): The target and the measurement stay flat. The command stays flat. Answer: normal
 - `20.07/test1/20191031T174219/P2-SC` (normal): The measurement stays flat. Answer: normal
 
-Attack answers that name no clear step (`No series shows a clear step`): 157 of 1458.
+Attack answers that name no clear step (`No series shows a clear step`): 98 of 1458.
 
 Attack examples whose attack started before the window: 0. Examples in windows that touch a `loop uncertain` attack: 144.
 
 ## 5. Baselines (validation split only)
 
-Scored per attack on its one scored window, where the start second is random. `found_on_attacked_loop`: an attacked loop is flagged. `detected_any_loop`: any loop is flagged. `right_loop_only`: every attacked loop is flagged and no other loop. `visible_loops` and `hidden_loops` count the attacked loop examples in those windows with and without a visible change; `*_flagged` says how many of each were flagged. False alarms are per 100 loop examples from normal windows. Gradient boosting trains on the training sample. The test split is not read.
+Scored per attack on its one scored window, where the start second is random. `found_on_attacked_loop`: an attacked loop is flagged. `detected_any_loop`: any loop is flagged. `right_loop_only`: every attacked loop is flagged and no other loop. `visible_loops` and `hidden_loops` count the attacked loop examples in those windows with and without a visible change; `*_flagged` says how many of each were flagged. `reacting_loops` counts the reacting rows in those windows; they do not count for or against `right_loop_only`. False alarms are per 100 loop examples from normal windows. Gradient boosting trains on the training sample. The test split is not read.
 
 **range alarm**
 
-| version | attacks | found_on_attacked_loop | detected_any_loop | right_loop_only | visible_loops | visible_flagged | hidden_loops | hidden_flagged | normal_examples | false_alarms_per_100 |
-|---|---|---|---|---|---|---|---|---|---|---|
-| 21.03 | 5 | 3 | 5 | 0 | 10 | 3 | 0 | 0 | 204 | 0.5 |
-| 22.04 | 10 | 5 | 9 | 2 | 11 | 5 | 3 | 1 | 348 | 9.2 |
-| all | 15 | 8 | 14 | 2 | 21 | 8 | 3 | 1 | 552 | 6.0 |
+| version | attacks | found_on_attacked_loop | detected_any_loop | right_loop_only | visible_loops | visible_flagged | hidden_loops | hidden_flagged | reacting_loops | reacting_flagged | normal_examples | false_alarms_per_100 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 21.03 | 5 | 3 | 5 | 0 | 10 | 3 | 0 | 0 | 3 | 1 | 204 | 0.5 |
+| 22.04 | 10 | 5 | 9 | 2 | 13 | 6 | 1 | 0 | 2 | 2 | 348 | 9.2 |
+| all | 15 | 8 | 14 | 2 | 23 | 9 | 1 | 0 | 5 | 3 | 552 | 6.0 |
 
 **gradient boosting**
 
-| version | attacks | found_on_attacked_loop | detected_any_loop | right_loop_only | visible_loops | visible_flagged | hidden_loops | hidden_flagged | normal_examples | false_alarms_per_100 |
-|---|---|---|---|---|---|---|---|---|---|---|
-| 21.03 | 5 | 5 | 5 | 4 | 10 | 10 | 0 | 0 | 204 | 0.5 |
-| 22.04 | 10 | 6 | 6 | 5 | 11 | 6 | 3 | 2 | 348 | 0.3 |
-| all | 15 | 11 | 11 | 9 | 21 | 16 | 3 | 2 | 552 | 0.4 |
+| version | attacks | found_on_attacked_loop | detected_any_loop | right_loop_only | visible_loops | visible_flagged | hidden_loops | hidden_flagged | reacting_loops | reacting_flagged | normal_examples | false_alarms_per_100 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 21.03 | 5 | 5 | 5 | 4 | 10 | 10 | 0 | 0 | 3 | 0 | 204 | 1.0 |
+| 22.04 | 10 | 7 | 7 | 6 | 13 | 9 | 1 | 0 | 2 | 0 | 348 | 2.9 |
+| all | 15 | 12 | 12 | 10 | 23 | 19 | 1 | 0 | 5 | 0 | 552 | 2.2 |
 
 **gradient boosting with neighbours**
 
-| version | attacks | found_on_attacked_loop | detected_any_loop | right_loop_only | visible_loops | visible_flagged | hidden_loops | hidden_flagged | normal_examples | false_alarms_per_100 |
-|---|---|---|---|---|---|---|---|---|---|---|
-| 21.03 | 5 | 5 | 5 | 4 | 10 | 10 | 0 | 0 | 204 | 0.5 |
-| 22.04 | 10 | 6 | 6 | 5 | 11 | 6 | 3 | 2 | 348 | 0.9 |
-| all | 15 | 11 | 11 | 9 | 21 | 16 | 3 | 2 | 552 | 0.7 |
+| version | attacks | found_on_attacked_loop | detected_any_loop | right_loop_only | visible_loops | visible_flagged | hidden_loops | hidden_flagged | reacting_loops | reacting_flagged | normal_examples | false_alarms_per_100 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 21.03 | 5 | 5 | 5 | 4 | 10 | 10 | 0 | 0 | 3 | 0 | 204 | 0.5 |
+| 22.04 | 10 | 6 | 7 | 5 | 13 | 8 | 1 | 0 | 2 | 0 | 348 | 1.4 |
+| all | 15 | 11 | 12 | 9 | 23 | 18 | 1 | 0 | 5 | 0 | 552 | 1.1 |
 
 Gate from the plan: the loop reader must find most validation attacks, in each version.
 
 | model | version | found | attacks | more_than_half |
 |---|---|---|---|---|
 | gradient boosting | 21.03 | 5 | 5 | yes |
-| gradient boosting | 22.04 | 6 | 10 | yes |
+| gradient boosting | 22.04 | 7 | 10 | yes |
 | gradient boosting with neighbours | 21.03 | 5 | 5 | yes |
 | gradient boosting with neighbours | 22.04 | 6 | 10 | yes |
 
 ## 6. Not verified
 
-- The answer text has not been read by eye against charts. The plan asks for 100 examples to be checked before training.
+- The answer text has been read by eye against charts for 24 examples only (the label-repair check: hidden attacks made visible, reacting rows, normal rows that mention swinging). The plan asks for 100 examples to be checked before training.
 - The direction words come from a simple rule: a shift of the mean larger than three times the noise in the 60 seconds before, or 2% of the tag's normal-file range. Slow ramps (`-ST`, `-LT` scenarios) may read as `stays flat` early in the window.
+- The swing words come from a second simple rule (section 4): the noise of the one-second steps after the start against the 60 seconds before. Its thresholds were set on the train and validation splits from three ratios and three floors; they were not tuned further. A slow oscillation (period well above a minute) can pass as a level shift or as flat.
+- `reacting` marks normal rows whose series swing when a loop of the same process is attacked. It is a mark, not a label: the label stays `normal`. Whether these loops are physically pushed by the attack or merely move by chance at that second is not settled; quiet loops in the same eligible loops swing at the placebo second in under 10% of examples. The after stretch runs to the attack's end, so a row can be marked for a swing that begins well after the attack starts (2 of the 8 reacting rows drawn for the eye check).
+- P3-LC is swing-eligible under the final rule (rate below 10%) although the first measurement, without the turns condition, put it at 62%. Its slow pump and valve cycles are smooth; the turns condition removes them. No P3-LC attack row became visible through the swing test, and P3-LC has no same-process neighbour, so it has no `reacting` rows.
 - 22.04 A301, A304, A305 and A306 name one loop in the scenario and another in the points. They keep the scenario's loop and are marked `loop_uncertain`. The data did not settle it: the boiler loops move together during these attacks.
 - Other points that do not fit their scenario are kept as printed (for example 22.04 A303 lists P1_B3004, P1_LIT01 for P1-LC-CO1PV1). The loop label always comes from the scenario code, not the points.
 - 20.07 A211, A212 and A213 name `P3_SP02`, which is not a 20.07 column. The same scenario (P3-LC-SP2CV2) names P3_LL01 elsewhere; kept as printed. The loop (P3-LC) is not affected.
@@ -488,7 +536,7 @@ Gate from the plan: the loop reader must find most validation attacks, in each v
 - The baseline tables compare three models on those 15 attacks. A difference of one or two attacks between them is within chance. The neighbour variant is reported, not chosen: it does not settle whether the loop view hides evidence.
 - Each attack is scored on one window with a random start second. Another draw of the scored windows would move the counts by an attack or two.
 - The training sample keeps two normal examples from attack windows and two from normal windows per attack example. That ratio is a choice, not a tuned value.
-- `no_visible_change` comes from the same simple rule as the direction words. An example marked this way may still hold a change the rule is too coarse to see; a missed slow ramp is the likely case.
+- `no_visible_change` comes from the direction rule and, in swing-eligible loops, the swing rule. An example marked this way may still hold a change the rules are too coarse to see; a missed slow ramp, or a swing change in P1-TC or P3-LC (not eligible), is the likely case.
 - 23.05: P1_B4002 is not matched. x1003_18_SETPOINT_OUT sits in its 22.04 range, but both are nearly constant, so the match cannot be confirmed. The 23.05 temperature loop therefore has no target series.
 - Setpoint attacks on the temperature loop name P1_B4002. It is now in the loop view for 20.07, 21.03 and 22.04. Whether it moves during those attacks was not checked.
 - The manual's hours per file (p. 2) were not compared with the row counts; the row counts come from the files.

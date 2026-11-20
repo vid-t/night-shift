@@ -57,16 +57,19 @@ By whole file, so no attack crosses splits. Normal-file windows go to train.
 
 ## Using the examples
 
-`data/processed/examples.parquet` has one row per loop example. Four columns decide how to use a row:
+`data/processed/examples.parquet` has one row per loop example. Five columns decide how to use a row:
 
 | Column | Meaning | Use |
 |---|---|---|
 | `attack_start_s` | Second of the window where the attack starts | Random between 30 and 270, so it cannot be guessed |
 | `scored` | True for one of the six windows of each attack, picked at random | Score per attack on these windows only |
-| `no_visible_change` | True for an attack example whose series show no clear step | Leave out of training; count on its own line in scoring |
+| `no_visible_change` | True for an attack example whose series show no level shift and no swing change (swing-eligible loops only) | Leave out of training; count on its own line in scoring |
+| `reacting` | True for a normal example whose series start or stop swinging when a loop of the same process is attacked in the window | Leave out of training; count on its own line, not for or against `right_loop_only` |
 | `train_use` | True for the training sample | Train on these rows; the full train split is 96% normal |
 
-The training sample holds every train attack example with a visible change, plus two normal examples from attack windows and two from normal windows for each. Validation and test are never sampled.
+The training sample holds every train attack example with a visible change, plus two normal examples from attack windows and two from normal windows for each. It never holds a `reacting` row. Validation and test are never sampled.
+
+The answer text reads each series with two rules. A level shift gives `rises` or `falls`. A change in swinging gives `starts swinging` or `stops swinging`: the one-second steps grow or shrink more than threefold and the swinging side goes up and down. The swing rule counts only in loops that rarely swing on their own; the build measures that rate from quiet windows and lists it in REPORT.md (section 4, "Swing test"). P1-TC swings on its own, so its texts never use the swing words.
 
 To add the neighbouring loops' measurements to an example, join the other rows with the same `window_id`. `hai.baselines.neighbour_features` does this for the boosting baseline.
 

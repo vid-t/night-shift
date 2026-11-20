@@ -19,7 +19,7 @@ LOG = RESULTS / "log.txt"
 PROGRESS_EVERY = 30              # seconds between progress-bar lines in the log
 LLM_ID = "unsloth/Llama-3.2-1B"  # open copy; its weights file has the same SHA-256 as meta-llama/Llama-3.2-1B
 STAGE = Path("results") / "Llama_3_2_1B" / "OpenTSLMSP" / "stage6_hai"
-FULL_ROWS = {"train": 3770, "validation": 1092, "test": 1536}
+FULL_ROWS = {"train": 3880, "validation": 1092, "test": 1536}  # the default; `count_rows` reads the real files
 MAX_EPOCHS = 10
 
 
@@ -95,6 +95,17 @@ def losses(lines: list[str]) -> dict[str, list[float]]:
     return out
 
 
+def count_rows(jsonl: Path) -> dict:
+    """Rows in train, validation and test of a folder of exported files (the default where a file is missing)."""
+    rows = dict(FULL_ROWS)
+    for name in rows:
+        path = Path(jsonl) / f"{name}.jsonl"
+        if path.exists():
+            with open(path, encoding="utf-8") as f:
+                rows[name] = sum(1 for line in f if line.strip())
+    return rows
+
+
 def prepare() -> SimpleNamespace:
     """Lay the run files out like the repo, set up OpenTSLM, report the GPU. Returns the paths."""
     RESULTS.mkdir(parents=True, exist_ok=True)
@@ -150,7 +161,8 @@ def train(paths: SimpleNamespace, rows: int, batch_size: int, dtype: str, epochs
         f"uv run python ../../training/launch.py --model OpenTSLMSP --llm_id {LLM_ID} "
         f"--stages stage6_hai --batch_size {batch_size} --device cuda", cwd=paths.checkout, check=check, **env)
     bars, text = bar_seconds(lines), "\n".join(lines)
-    n = {"train": rows or FULL_ROWS["train"], "validation": rows or FULL_ROWS["validation"], "test": rows or FULL_ROWS["test"]}
+    full = count_rows(paths.jsonl)
+    n = {name: rows or full[name] for name in full}
     later = bars["Epoch"][1:] or bars["Epoch"]   # the first epoch also warms the GPU up
     per_row = {
         "train": sum(later) / (len(later) * n["train"]) if later else None,
@@ -161,7 +173,7 @@ def train(paths: SimpleNamespace, rows: int, batch_size: int, dtype: str, epochs
     scale = re.search(r"loss scale ended at ([\d.e+]+); steps with a gradient that was not finite: (\d+) of (\d+)", text)
     return {"dtype": dtype, "attention": attention or "eager", "batch_size": batch_size, "rows": rows, "exit": code,
             "seconds": round(seconds),
-            "out_of_memory": "OutOfMemoryError" in text, "epochs_run": len(bars["Epoch"]),
+            "rows_used": n, "out_of_memory": "OutOfMemoryError" in text, "epochs_run": len(bars["Epoch"]),
             "epoch_seconds": bars["Epoch"], "seconds_per_row": per_row, "losses": losses(lines),
             "peak_gpu_memory_gb": float(peak.group(1)) if peak else None,
             "loss_scale_at_end": float(scale.group(1)) if scale else None,
@@ -194,11 +206,12 @@ def answer_again(paths: SimpleNamespace, test_file: str, dtype: str, attention: 
             "answer_seconds": bars["Evaluating"][-1] if bars["Evaluating"] else None}
 
 
-def full_run_estimate(per_row: dict) -> dict | None:
+def full_run_estimate(per_row: dict, rows: dict | None = None) -> dict | None:
     """Hours for the full run from the seconds per row of a short one."""
     if not all(per_row.values()):
         return None
-    epoch = (FULL_ROWS["train"] * per_row["train"] + FULL_ROWS["validation"] * per_row["validation"]) / 3600
-    answers = FULL_ROWS["test"] * per_row["answer"] / 3600
+    rows = rows or FULL_ROWS
+    epoch = (rows["train"] * per_row["train"] + rows["validation"] * per_row["validation"]) / 3600
+    answers = rows["test"] * per_row["answer"] / 3600
     return {"hours_per_epoch": round(epoch, 2), "hours_for_test_answers": round(answers, 2),
             "hours_for_max_epochs": round(MAX_EPOCHS * epoch + answers, 2), "max_epochs": MAX_EPOCHS}

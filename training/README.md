@@ -32,7 +32,7 @@ uv run hai-build && uv run hai-export
 `hai-build` downloads about 650 MB from the pinned HAI commit, checks every hash and writes `data/processed/examples.parquet`. `hai-export` then prints the rows per file. On the current build:
 
 ```
-  3770 rows  data/processed/opentslm/train.jsonl
+  3880 rows  data/processed/opentslm/train.jsonl
   1092 rows  data/processed/opentslm/validation.jsonl
   1536 rows  data/processed/opentslm/test.jsonl
   4404 rows  data/processed/opentslm/test_full.jsonl
@@ -76,7 +76,7 @@ python3 ../../training/score.py --only-predicted \
 
 It should print `HAI overfit check: train, validation and test are the same 50 training rows`, `Loading checkpoint from previous stage: results/Llama_3_2_1B/OpenTSLMSP/stage5_ecg_cot/checkpoints/best_model.pt`, `Enabling LoRA for stage6_hai`, then a train and val loss per epoch for up to 10 epochs. Both losses should fall well below their first value. It writes `$STAGE/checkpoints/best_model.pt`, `$STAGE/checkpoints/loss_history.txt`, `$STAGE/results/test_predictions.jsonl` (50 lines) and `$STAGE/results/metrics.json`.
 
-The scorer's `label_right_share` on the `all` line should be close to 1.0. If it is not, the model does not learn the format: stop and look at `generated` in the predictions. Note the wall time: it sizes the full run (3,770 training rows and 1,092 validation rows per epoch, against 50 and 50 here).
+The scorer's `label_right_share` on the `all` line should be close to 1.0. If it is not, the model does not learn the format: stop and look at `generated` in the predictions. Note the wall time: it sizes the full run (3,880 training rows and 1,092 validation rows per epoch, against 50 and 50 here).
 
 ## 4. Delete the overfit result
 
@@ -94,7 +94,7 @@ time uv run python curriculum_learning.py --model OpenTSLMSP \
 cp $STAGE/results/test_predictions.jsonl ../../runs/test_predictions_plain.jsonl
 ```
 
-It prints `HAI rows: train 3770, validation 1092, test 1536`, a loss line per epoch and `New best model saved` when the val loss improves. Early stopping waits 5 epochs; the stage runs at most 10. At the end it loads the best checkpoint, generates an answer for each of the 1,536 rows of `test.jsonl`, and writes `$STAGE/results/test_predictions.jsonl` and `metrics.json` (`test_loss` there is NaN by design of OpenTSLM's evaluation; ignore it). `--gradient_checkpointing` only affects OpenTSLMFlamingo, so it is left out.
+It prints `HAI rows: train 3880, validation 1092, test 1536`, a loss line per epoch and `New best model saved` when the val loss improves. Early stopping waits 5 epochs; the stage runs at most 10. At the end it loads the best checkpoint, generates an answer for each of the 1,536 rows of `test.jsonl`, and writes `$STAGE/results/test_predictions.jsonl` and `metrics.json` (`test_loss` there is NaN by design of OpenTSLM's evaluation; ignore it). `--gradient_checkpointing` only affects OpenTSLMFlamingo, so it is left out.
 
 ## 6. Test predictions on the shuffled file
 
@@ -108,7 +108,7 @@ HAI_TEST_FILE=test_shuffled.jsonl uv run python curriculum_learning.py --model O
 cp $STAGE/results/test_predictions.jsonl ../../runs/test_predictions_shuffled.jsonl
 ```
 
-It prints `EVAL-ONLY MODE` and `HAI rows: train 3770, validation 1092, test 1536`, then writes a new `test_predictions.jsonl` (1,536 lines). Use `HAI_TEST_FILE=test_full.jsonl` the same way to predict every test row (4,404).
+It prints `EVAL-ONLY MODE` and `HAI rows: train 3880, validation 1092, test 1536`, then writes a new `test_predictions.jsonl` (1,536 lines). Use `HAI_TEST_FILE=test_full.jsonl` the same way to predict every test row (4,404).
 
 ## 7. Score
 
@@ -120,7 +120,7 @@ python3 training/score.py \
     --json runs/scores.json
 ```
 
-For each run it prints one line per version and one `all` line: `attacks` (56 in all), `found` (an attacked loop answers attack), `right_loop_only` (attacked loops say attack, the other loops say normal), `timed` (start second within 30 s of the truth), `false_alarms_per_100` on normal-window loop examples, `valid_share` and `label_right_share`. A second table splits the attacked loop examples into `visible` and `no_visible_change`. An empty or unparseable answer is always wrong. The last line gives the constant guess: on the current `test.jsonl`, always answering second 120 times 23 of the 56 attacks, and the best constant (second 108) times 26, because the true start seconds of the 56 scored windows happen to bunch between 95 and 145. A model's `timed` count means something only above that. If the shuffled run scores as well as the plain one, the model is not reading the shape of the curves.
+For each run it prints one line per version and one `all` line: `attacks` (56 in all), `found` (an attacked loop answers attack), `right_loop_only` (attacked loops say attack, the other loops say normal; `reacting` loops count neither way), `right_loop_strict` (the same, but a reacting loop must say normal too: the rule as it was before reacting loops were marked), `timed` (start second within 30 s of the truth), `reacting` and `reacting_said_attack` (normal loops whose series swing in reaction to an attack on another loop of the same process: 18 in the current `test.jsonl`, and how many the model called attack), `false_alarms_per_100` on normal-window loop examples, `valid_share` and `label_right_share`. A second table splits the attacked loop examples into `visible` and `no_visible_change`, and a line under it repeats the reacting count. A test file without the `reacting` field has no reacting loops. An empty or unparseable answer is always wrong. The last line gives the constant guess: on the current `test.jsonl`, always answering second 120 times 23 of the 56 attacks, and the best constant (second 108) times 26, because the true start seconds of the 56 scored windows happen to bunch between 95 and 145. A model's `timed` count means something only above that. If the shuffled run scores as well as the plain one, the model is not reading the shape of the curves.
 
 Each prediction carries `example_id` (added by `add_stage.py`), so the scorer joins on it. Predictions without it are joined by order, and the scorer stops if a `gold` answer does not match the test file.
 
@@ -191,7 +191,7 @@ Setup took 63 to 66 seconds in four runs and 427 seconds in one.
 KAGGLE_TIME_LIMIT=36000 bash training/kaggle/push.sh training/kaggle/full_run.py
 ```
 
-`full_run.py` trains on the 3,770 training rows at batch 1 (a row then looks the same in training as in testing: no padding between its prompt and its answer), answers the 1,536 test rows, answers them again with the seconds shuffled, and scores both. Every five minutes it copies the best checkpoint (164 MB) and the loss history to `/kaggle/working/results`. Set `REHEARSAL_ROWS = 50` at the top to walk through every step in about ten minutes first; that rehearsal passed on 2026-11-20.
+`full_run.py` trains on the 3,880 training rows at batch 1 (a row then looks the same in training as in testing: no padding between its prompt and its answer), answers the 1,536 test rows, answers them again with the seconds shuffled, and scores both. Every five minutes it copies the best checkpoint (164 MB) and the loss history to `/kaggle/working/results`. Set `REHEARSAL_ROWS = 50` at the top to walk through every step in about ten minutes first; that rehearsal passed on 2026-11-20.
 
 ## CPU smoke test (no GPU)
 
