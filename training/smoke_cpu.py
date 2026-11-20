@@ -47,6 +47,9 @@ def main() -> None:
     os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
     sys.path.insert(0, os.path.abspath(opentslm_dir))
     force_float32()
+    import launch  # next to this script
+
+    launch.pad_like_opentslm_expects()
     import curriculum_learning as cl
     from opentslm.time_series_datasets.hai.HAIAttackQADataset import HAIAttackQADataset
 
