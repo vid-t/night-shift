@@ -1,0 +1,89 @@
+standard,loop,role,version,source,basis
+P1_B2016,P1-PC,target,20.07,P1_B2016,same name
+P1_B2016,P1-PC,target,21.03,P1_B2016,same name
+P1_B2016,P1-PC,target,22.04,P1_B2016,same name
+P1_B2016,P1-PC,target,23.05,x1001_15_ASSIGN_OUT,manual HAIEnd table p. 16: 1001.15-OUT duplicates P1_B2016
+P1_PIT01,P1-PC,measurement,20.07,P1_PIT01,same name
+P1_PIT01,P1-PC,measurement,21.03,P1_PIT01,same name
+P1_PIT01,P1-PC,measurement,22.04,P1_PIT01,same name
+P1_PIT01,P1-PC,measurement,23.05,P1_PIT01,same name
+P1_PCV01D,P1-PC,command,20.07,P1_PCV01D,same name
+P1_PCV01D,P1-PC,command,21.03,P1_PCV01D,same name
+P1_PCV01D,P1-PC,command,22.04,P1_PCV01D,same name
+P1_PCV01D,P1-PC,command,23.05,P1_PCV01D,same name
+P1_PCV02D,P1-PC,command,20.07,P1_PCV02D,same name
+P1_PCV02D,P1-PC,command,21.03,P1_PCV02D,same name
+P1_PCV02D,P1-PC,command,22.04,P1_PCV02D,same name
+P1_PCV02D,P1-PC,command,23.05,P1_PCV02D,same name
+P1_B3004,P1-LC,target,20.07,P1_B3004,same name
+P1_B3004,P1-LC,target,21.03,P1_B3004,same name
+P1_B3004,P1-LC,target,22.04,P1_B3004,same name
+P1_B3004,P1-LC,target,23.05,,open: no P1_B3004 column in 23.05; match not resolved yet
+P1_LIT01,P1-LC,measurement,20.07,P1_LIT01,same name
+P1_LIT01,P1-LC,measurement,21.03,P1_LIT01,same name
+P1_LIT01,P1-LC,measurement,22.04,P1_LIT01,same name
+P1_LIT01,P1-LC,measurement,23.05,P1_LIT01,same name
+P1_LCV01D,P1-LC,command,20.07,P1_LCV01D,same name
+P1_LCV01D,P1-LC,command,21.03,P1_LCV01D,same name
+P1_LCV01D,P1-LC,command,22.04,P1_LCV01D,same name
+P1_LCV01D,P1-LC,command,23.05,P1_LCV01D,same name
+P1_B3005,P1-FC,target,20.07,P1_B3005,same name
+P1_B3005,P1-FC,target,21.03,P1_B3005,same name
+P1_B3005,P1-FC,target,22.04,P1_B3005,same name
+P1_B3005,P1-FC,target,23.05,,open: no P1_B3005 column in 23.05; match not resolved yet
+P1_FT03,P1-FC,measurement,20.07,P1_FT03,same name
+P1_FT03,P1-FC,measurement,21.03,P1_FT03,same name
+P1_FT03,P1-FC,measurement,22.04,P1_FT03,same name
+P1_FT03,P1-FC,measurement,23.05,P1_FT03,same name
+P1_FCV03D,P1-FC,command,20.07,P1_FCV03D,same name
+P1_FCV03D,P1-FC,command,21.03,P1_FCV03D,same name
+P1_FCV03D,P1-FC,command,22.04,P1_FCV03D,same name
+P1_FCV03D,P1-FC,command,23.05,P1_FCV03D,same name
+P1_B4022,P1-TC,target,20.07,P1_B4022,same name
+P1_B4022,P1-TC,target,21.03,P1_B4022,same name
+P1_B4022,P1-TC,target,22.04,P1_B4022,same name
+P1_B4022,P1-TC,target,23.05,,open: no P1_B4022 column in 23.05; match not resolved yet
+P1_TIT01,P1-TC,measurement,20.07,P1_TIT01,same name
+P1_TIT01,P1-TC,measurement,21.03,P1_TIT01,same name
+P1_TIT01,P1-TC,measurement,22.04,P1_TIT01,same name
+P1_TIT01,P1-TC,measurement,23.05,P1_TIT01,same name
+P1_FCV01D,P1-TC,command,20.07,P1_FCV01D,same name
+P1_FCV01D,P1-TC,command,21.03,P1_FCV01D,same name
+P1_FCV01D,P1-TC,command,22.04,P1_FCV01D,same name
+P1_FCV01D,P1-TC,command,23.05,P1_FCV01D,same name
+P1_FCV02D,P1-TC,command,20.07,P1_FCV02D,same name
+P1_FCV02D,P1-TC,command,21.03,P1_FCV02D,same name
+P1_FCV02D,P1-TC,command,22.04,P1_FCV02D,same name
+P1_FCV02D,P1-TC,command,23.05,P1_FCV02D,same name
+P2_AutoSD,P2-SC,target,20.07,,"dropped: manual tag table p. 14 confirms P2_SD01, but it is constant in each file (0 in test1 and test2, 20 in train1), so it would only tell files apart"
+P2_AutoSD,P2-SC,target,21.03,,"dropped: P2_ASD is the name match, but it is 0 in every row of every 21.03 file, including the 9 attacks that name P2_AutoSD"
+P2_AutoSD,P2-SC,target,22.04,P2_AutoSD,same name
+P2_AutoSD,P2-SC,target,23.05,P2_AutoSD,same name
+P2_SIT01,P2-SC,measurement,20.07,P2_SIT01,same name
+P2_SIT01,P2-SC,measurement,21.03,P2_SIT01,same name
+P2_SIT01,P2-SC,measurement,22.04,P2_SIT01,same name
+P2_SIT01,P2-SC,measurement,23.05,P2_SIT01,same name
+P2_SCO,P2-SC,command,20.07,,missing: no speed-controller output in 20.07 (manual tag table p. 15 has no 20.07 mark)
+P2_SCO,P2-SC,command,21.03,P2_CO_rpm,name only: not in the manual tag table (pp. 13-18); P2_CO_rpm moves in all 7 attacks that name P2_SCO (REPORT.md)
+P2_SCO,P2-SC,command,22.04,P2_SCO,same name
+P2_SCO,P2-SC,command,23.05,P2_SCO,same name
+P3_LH01,P3-LC,target,20.07,P3_LH,name only: not in the manual tag table (pp. 13-18); see the rename check in REPORT.md
+P3_LH01,P3-LC,target,21.03,P3_LH,name only: not in the manual tag table (pp. 13-18); see the rename check in REPORT.md
+P3_LH01,P3-LC,target,22.04,P3_LH01,same name
+P3_LH01,P3-LC,target,23.05,P3_LH01,same name
+P3_LL01,P3-LC,target,20.07,P3_LL,name only: not in the manual tag table (pp. 13-18); see the rename check in REPORT.md
+P3_LL01,P3-LC,target,21.03,P3_LL,name only: not in the manual tag table (pp. 13-18); see the rename check in REPORT.md
+P3_LL01,P3-LC,target,22.04,P3_LL01,same name
+P3_LL01,P3-LC,target,23.05,P3_LL01,same name
+P3_LIT01,P3-LC,measurement,20.07,P3_LT01,manual tag table p. 15: P3_LIT01 row lists (LT01)
+P3_LIT01,P3-LC,measurement,21.03,P3_LIT01,same name
+P3_LIT01,P3-LC,measurement,22.04,P3_LIT01,same name
+P3_LIT01,P3-LC,measurement,23.05,P3_LIT01,same name
+P3_LCP01D,P3-LC,command,20.07,P3_LCP01D,same name
+P3_LCP01D,P3-LC,command,21.03,P3_LCP01D,same name
+P3_LCP01D,P3-LC,command,22.04,P3_LCP01D,same name
+P3_LCP01D,P3-LC,command,23.05,P3_LCP01D,same name
+P3_LCV01D,P3-LC,command,20.07,P3_LCV01D,same name
+P3_LCV01D,P3-LC,command,21.03,P3_LCV01D,same name
+P3_LCV01D,P3-LC,command,22.04,P3_LCV01D,same name
+P3_LCV01D,P3-LC,command,23.05,P3_LCV01D,same name
