@@ -4,13 +4,15 @@ Seven steps on a Linux machine with one NVIDIA GPU. Run them in order from the r
 
 Needs: `git`, [uv](https://docs.astral.sh/uv/) 0.9 or newer, Python 3.12, CUDA, and a Hugging Face login with access to `meta-llama/Llama-3.2-1B` (export `HF_TOKEN` with a read token before step 3). The starting checkpoint `OpenTSLM/llama-3.2-1b-tsqa-sp` is open.
 
+**Which GPU.** OpenTSLM loads the language model in bfloat16 (`torch_dtype=torch.bfloat16` in `OpenTSLMSP.py`). Pick a GPU that runs bfloat16 natively: an L4, an A10G, an RTX 30- or 40-series card, or newer. A T4 runs it in a slow fallback mode (one write-up measured about four times slower than float16), and a P100 is reported not to support it. None of this was tested here: the first minutes of step 3 show the real speed.
+
 | File | What it does |
 |---|---|
 | `HAIAttackQADataset.py` | OpenTSLM dataset class for the JSONL files of `hai-export` |
 | `add_stage.py` | adds stage `stage6_hai` to `curriculum_learning.py` (safe to rerun; stops if an anchor is missing) |
 | `setup.sh` | clones OpenTSLM at the pinned commit, installs it, copies the class, runs the patcher, seeds the starting checkpoint |
 | `score.py` | scores `test_predictions.jsonl` per attack; standard library only |
-| `smoke_cpu.py` | one training step and one generation on 4 examples, on CPU (wiring check only) |
+| `smoke_cpu.py` | one or more training steps and one generation on 4 examples, on CPU in float32 (wiring check only) |
 
 ## 1. Get the data
 
@@ -126,30 +128,49 @@ HAI_JSONL_DIR=<repo>/data/processed/opentslm uv run --project <repo>/external/Op
     python <repo>/training/smoke_cpu.py <repo>/external/OpenTSLM unsloth/Llama-3.2-1B
 ```
 
-### Outcome on 2026-11-20: did not finish
+The script loads the language model in float32. OpenTSLM asks for bfloat16, which a CPU runs hundreds of times slower: on the Apple M4 used here a 1024x1024 matrix product took 1.4 ms in float32 and 603 ms in bfloat16. The first attempt on 2026-11-20 ran in bfloat16, and its single training step had not finished after 40 minutes.
 
-Run on a Mac mini (Apple silicon, 16 GB RAM, 10 cores, CPU only), with a 45-minute time box (11:00 to 11:45). The first 4 minutes went to downloading the `unsloth/Llama-3.2-1B` weights (2.47 GB). The run then got this far:
+### Outcome on 2026-11-20, in float32: passed
+
+Mac mini (Apple M4, 16 GB RAM, 10 cores, CPU only), weights already in the cache.
 
 ```
-[smoke] model loaded in 288 s
-Loading checkpoint from previous stage:  results/Llama_3_2_1B/OpenTSLMSP/stage5_ecg_cot/checkpoints/best_model.pt and model type:  OpenTSLMSP and llm_id:  unsloth/Llama-3.2-1B
-📂 Loading best model from stage5_ecg_cot:
-   Achieved at epoch: 20
-   Validation loss: 0.0509
-   seeded_from: OpenTSLM/llama-3.2-1b-tsqa-sp/model_checkpoint.pt
-🔧 Enabling LoRA for stage6_hai
-✅ LoRA enabled:
-   LoRA parameters: 11,272,192
-   Total parameters: 1,247,086,592
-HAI overfit check: train, validation and test are the same 4 training rows
-📈 Total training steps: 1
-🆕 Starting fresh training for stage6_hai
-Epoch 1/1:   0%|          | 0/1 [00:00<?, ?it/s]
+[smoke] model loaded in 4 s
+Epoch 1 — train loss: 15.4809
+Epoch 1 — val   loss: 8.1421
+[smoke] 1 training step(s) + evaluation in 103 s; metrics {'test_loss': nan, 'epoch': 1}
+[smoke] predictions: results/Llama_3_2_1B/OpenTSLMSP/stage6_hai/results/test_predictions.jsonl
 ```
 
-The single training step had not finished after about 40 minutes, and the time box stopped the run there. No generation ran. The cause is unknown: the run left no error, and nobody measured CPU or memory during the step.
+It wrote `checkpoints/best_model.pt`, `checkpoints/loss_history.txt`, `results/metrics.json` and `results/test_predictions.jsonl` (4 lines, each with `example_id`, `generated` and `gold`). `score.py --only-predicted` reads that file. After one step none of the four generated answers is valid, as expected.
 
-What this shows: the patched `curriculum_learning.py` imports, `stage6_hai` is a known stage, the seeded checkpoint loads into OpenTSLMSP with the `unsloth/Llama-3.2-1B` llm id, LoRA turns on for `stage6_hai`, and the dataset class reads and formats the JSONL rows. What it does not show: a forward and backward pass, a generation, or the predictions file. Step 3 (overfit 50 examples) on the GPU is the first real test of those.
+What this shows: the forward and backward pass, checkpoint saving, generation and the predictions file all work with the dataset class, the new stage and the seeded checkpoint. What it does not show: bfloat16 on a GPU, speed, memory, or any quality.
+
+### Twelve steps on the same four rows: the loss falls on every step
+
+```bash
+HAI_SMOKE_EPOCHS=12 HAI_JSONL_DIR=<repo>/data/processed/opentslm uv run --project <repo>/external/OpenTSLM \
+    python <repo>/training/smoke_cpu.py <repo>/external/OpenTSLM unsloth/Llama-3.2-1B
+```
+
+It took 712 s on the same machine.
+
+| step | train loss | val loss |
+|---|---|---|
+| 1 | 15.4809 | 8.1209 |
+| 2 | 11.6538 | 7.2132 |
+| 3 | 10.6716 | 6.5420 |
+| 4 | 9.5514 | 6.3706 |
+| 5 | 8.8738 | 6.0114 |
+| 6 | 8.2542 | 5.6493 |
+| 7 | 7.6361 | 5.2491 |
+| 8 | 7.1135 | 4.8427 |
+| 9 | 6.6678 | 4.4874 |
+| 10 | 6.3264 | 4.2135 |
+| 11 | 6.0772 | 4.0310 |
+| 12 | 5.9049 | 3.9393 |
+
+Train and val are the same four rows; the val loss is measured after the step, in evaluation mode. After twelve steps the generated answers use the words of the task (`under attack`, `The change starts`, `Answer:`) but none is a valid answer yet. The loss starts high because the starting checkpoint was trained to give very short answers. Twelve steps on four rows show that training moves in the right direction, nothing more. Step 3 on the GPU is still the first test of whether the model reaches the right answers.
 
 ## Tests
 
