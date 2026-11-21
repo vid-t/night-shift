@@ -17,7 +17,7 @@ Reads the JSONL files that `uv run hai-export` writes. Environment variables:
                      every series flipped around the mean of its first RANGE_HEAD_S seconds, with rises and
                      falls swapped in its answer. Unset: no copies. Validation and test are never touched.
   HAI_TEXT_CLAUSES   comma-separated names from CLAUSES (see `text_clauses`): further clauses in the text line
-                     of each series, view zsize only. Unset or empty: no clauses, the text as before.
+                     of each series, views zsize and looprange only. Unset or empty: no clauses, the text as before.
 """
 import json
 import os
@@ -73,7 +73,7 @@ def series_view() -> str:
             quiet window of the same loop: the 95th percentile, over the quiet training rows, of its
             largest change in range units (see `quiet_units`). A pump command that switches in every
             quiet window gets a large unit, a series that barely moves a small one (at least
-            LOOPRANGE_FLOOR). The text states no numbers.
+            LOOPRANGE_FLOOR). The text states no numbers, unless clauses are on (see `text_clauses`).
     zsize   the zscore curve, but the text states no mean and spread. It states one number: the series'
             largest change from its first RANGE_HEAD_S seconds, in units of its usual quiet change in this
             loop (the looprange unit, see `relative_size`), at most SIZE_CAP. The curve gives the shape,
@@ -85,12 +85,15 @@ def series_view() -> str:
     return view
 
 
-CLAUSES = ("step", "law")
+CLAUSES = ("size", "step", "law")
+CLAUSE_VIEWS = ("zsize", "looprange")   # the views that take clauses
 
 
 def text_clauses() -> tuple[str, ...]:
     """Further clauses in the text line of each series: HAI_TEXT_CLAUSES, names from CLAUSES. Unset or empty: none.
 
+    size    the series' largest change from its first RANGE_HEAD_S seconds, in units of its usual quiet change in
+            this loop (see `size_clause`). The zsize view always states it, named or not.
     step    the series' largest one-second step, in units of its usual one in a quiet window of this loop
             (see `quiet_step_units`), and the second where it lands (see `step_clause`).
     law     on the line of the loop's first command only: for how many seconds that command moves the opposite
@@ -98,16 +101,16 @@ def text_clauses() -> tuple[str, ...]:
             law is fitted on the quiet training rows of the loop (see `fit_laws`, `wrong_way_seconds`, `law_clause`).
             A loop whose law explains less than LAW_MIN_R2 of the command's changes there gets no law clause.
 
-    Only the zsize view takes clauses. On a line the order is fixed, whatever the order of the names: the size,
-    then step, then law.
+    Only the views in CLAUSE_VIEWS take clauses. On a line the order is fixed, whatever the order of the names:
+    size, step, law. With all three, the looprange text is the zsize text with step and law.
     """
     raw = (os.environ.get("HAI_TEXT_CLAUSES") or "").strip()
     names = tuple(n.strip() for n in raw.split(",") if n.strip())
     for n in names:
         if n not in CLAUSES:
             raise RuntimeError(f"HAI_TEXT_CLAUSES takes names from {CLAUSES}, got {n!r}")
-    if names and series_view() != "zsize":
-        raise RuntimeError(f"HAI_TEXT_CLAUSES needs HAI_SERIES_VIEW=zsize, the view is {series_view()!r}")
+    if names and series_view() not in CLAUSE_VIEWS:
+        raise RuntimeError(f"HAI_TEXT_CLAUSES needs HAI_SERIES_VIEW=zsize or looprange, the view is {series_view()!r}")
     return names
 
 
@@ -270,8 +273,14 @@ def unit_for(units: dict, version, loop, name) -> float:
 def relative_size(values, normal_range: float, unit: float) -> float:
     """`largest_change` divided by `unit`, how much the series normally moves in a quiet window (see `quiet_units`)."""
     if not np.isfinite(unit) or unit <= 0:
-        raise RuntimeError(f"the zsize view needs a positive unit, got {unit!r}")
+        raise RuntimeError(f"the size needs a positive unit, got {unit!r}")
     return largest_change(values, normal_range) / float(unit)
+
+
+def size_clause(values, normal_range: float, unit: float) -> str:
+    """The size clause of the text: `relative_size` in `unit`s, at most SIZE_CAP, one decimal."""
+    size = min(relative_size(values, normal_range, unit), SIZE_CAP)
+    return f"its largest change is {size:.1f} times its usual quiet change"
 
 
 def looprange_view(values, normal_range: float, unit: float) -> list[float]:
@@ -568,8 +577,8 @@ class HAIAttackQADataset(QADataset):
                 if self.looprange_units is None:
                     raise RuntimeError("the looprange view needs the units of the training rows: _load_splits sets them")
                 unit = unit_for(self.looprange_units, row["version"], row["loop"], s["name"])
-                prompts.append(TextTimeSeriesPrompt(f"This is the {s['name']}, {ROLE_WORDS[s['role']]}:",
-                                                    looprange_view(s["values"], s["scale"], unit)))
+                text = self._clause_text(row, s, clauses, first_command, size="size" in clauses, unit=unit)
+                prompts.append(TextTimeSeriesPrompt(text, looprange_view(s["values"], s["scale"], unit)))
                 continue
             if view == "zsize":
                 if "scale" not in s:
@@ -577,21 +586,7 @@ class HAIAttackQADataset(QADataset):
                 if self.looprange_units is None:
                     raise RuntimeError("the zsize view needs the units of the training rows: _load_splits sets them")
                 unit = unit_for(self.looprange_units, row["version"], row["loop"], s["name"])
-                size = min(relative_size(s["values"], s["scale"], unit), SIZE_CAP)
-                text = (f"This is the {s['name']}, {ROLE_WORDS[s['role']]}; "
-                        f"its largest change is {size:.1f} times its usual quiet change")
-                if "step" in clauses:
-                    if self.step_units is None:
-                        raise RuntimeError("the step clause needs the step units of the training rows: _load_splits sets them")
-                    step_unit = unit_for(self.step_units, row["version"], row["loop"], s["name"])
-                    text += "; " + step_clause(s["values"], s["scale"], step_unit)
-                if "law" in clauses and s is first_command:
-                    if self.control_laws is None:
-                        raise RuntimeError("the law clause needs the control laws of the training rows: _load_splits sets them")
-                    law = law_clause(row, self.control_laws)
-                    if law is not None:
-                        text += "; " + law
-                text += ":"
+                text = self._clause_text(row, s, clauses, first_command, size=True, unit=unit)
                 prompts.append(TextTimeSeriesPrompt(text, scale(s["values"])[2]))
                 continue
             mean, std, scaled = scale(s["values"])
@@ -599,6 +594,24 @@ class HAIAttackQADataset(QADataset):
                     f"it has mean {mean:.4f} and std {std:.4f}:")
             prompts.append(TextTimeSeriesPrompt(text, scaled))
         return prompts
+
+    def _clause_text(self, row, s, clauses, first_command, size: bool, unit: float) -> str:
+        """`This is the {name}, {role words}`, the clauses that are on (size, step, law, in this order), and `:`."""
+        text = f"This is the {s['name']}, {ROLE_WORDS[s['role']]}"
+        if size:
+            text += "; " + size_clause(s["values"], s["scale"], unit)
+        if "step" in clauses:
+            if self.step_units is None:
+                raise RuntimeError("the step clause needs the step units of the training rows: _load_splits sets them")
+            step_unit = unit_for(self.step_units, row["version"], row["loop"], s["name"])
+            text += "; " + step_clause(s["values"], s["scale"], step_unit)
+        if "law" in clauses and s is first_command:
+            if self.control_laws is None:
+                raise RuntimeError("the law clause needs the control laws of the training rows: _load_splits sets them")
+            law = law_clause(row, self.control_laws)
+            if law is not None:
+                text += "; " + law
+        return text + ":"
 
     def _format_sample(self, row):
         sample = super()._format_sample(row)

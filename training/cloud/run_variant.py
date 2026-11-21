@@ -2,7 +2,7 @@
 
     python3 training/cloud/run_variant.py NAME [--start sleep|run:OTHER] [--view range|zscore|looprange|zsize] [--order label_last]
         [--epochs 4] [--seed 0] [--rows 0] [--dtype bfloat16] [--batch-size 1] [--answers validation]
-        [--lr-encoder 5e-5] [--attack-share 0.35] [--mirror-share 0.5] [--clauses step,law]
+        [--lr-encoder 5e-5] [--attack-share 0.35] [--mirror-share 0.5] [--clauses size,step,law]
         [--choose-pass loss|last|validation]
     python3 training/cloud/run_variant.py NAME --answer-only test test_shuffled
 
@@ -22,10 +22,12 @@ Everything of the run is under work/NAME:
 `--rows 50` is the rehearsal: train, validation and test are the same 50 training rows.
 `--start run:OTHER` starts from work/OTHER/kept/best_model.pt, the saved model of the finished run OTHER.
 
-`--clauses step,law` (view zsize only) adds clauses to the text of the series. `step`: in the text of each series,
-its largest one-second step against the usual one in a quiet window of its loop, and the second of that step. `law`:
-in the text of the loop's first command, for how many seconds it moves the opposite way to what the controller
-would do, by the controller's law fitted on the quiet training rows. `--answer-only` uses the clauses of the run.
+`--clauses size,step,law` (views zsize and looprange only) adds clauses to the text of the series. `size`: in the
+text of each series, its largest change against its usual quiet change in its loop (the zsize view always states it).
+`step`: in the text of each series, its largest one-second step against the usual one in a quiet window of its loop,
+and the second of that step. `law`: in the text of the loop's first command, for how many seconds it moves the
+opposite way to what the controller would do, by the controller's law fitted on the quiet training rows.
+`--answer-only` uses the clauses of the run.
 
 `--choose-pass` picks the pass (epoch) whose model is kept. `loss` (default) keeps OpenTSLM's choice,
 the pass with the lowest validation loss. `last` and `validation` keep the model of every pass, then
@@ -89,8 +91,8 @@ def arguments(argv=None) -> argparse.Namespace:
                     help="share of the training rows that get an added mirrored copy (series flipped, rises and "
                          "falls swapped), in (0, 1] (default: no copies)")
     ap.add_argument("--clauses", default=None,
-                    help="comma-separated further clauses in the text of the series, view zsize only: step, law "
-                         "(for example step,law; default: none)")
+                    help="comma-separated further clauses in the text of the series, views zsize and looprange "
+                         "only: size, step, law (for example size,step,law; default: none)")
     ap.add_argument("--answers", default="validation", choices=sorted(ANSWER_SETS),
                     help="files answered after training (default: %(default)s)")
     ap.add_argument("--choose-pass", default="loss", choices=CHOICES,
@@ -100,8 +102,8 @@ def arguments(argv=None) -> argparse.Namespace:
     ap.add_argument("--answer-only", nargs="+", choices=FILES, metavar="FILE",
                     help="no training: answer these files with the saved model of the finished run NAME")
     args = ap.parse_args(argv)
-    if args.clauses and not args.answer_only and args.view != "zsize":
-        ap.error(f"--clauses needs --view zsize, got --view {args.view}")
+    if args.clauses and not args.answer_only and args.view not in ("zsize", "looprange"):
+        ap.error(f"--clauses needs --view zsize or looprange, got --view {args.view}")
     return args
 
 

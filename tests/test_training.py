@@ -1069,7 +1069,7 @@ def test_text_clauses_setting_is_checked(hai_dataset, monkeypatch):
         mod.text_clauses()
     with pytest.raises(RuntimeError, match="HAI_TEXT_CLAUSES"):
         build("train")
-    for view in ("zscore", "range", "looprange"):
+    for view in ("zscore", "range"):
         monkeypatch.setenv("HAI_SERIES_VIEW", view)
         monkeypatch.setenv("HAI_TEXT_CLAUSES", "step")
         with pytest.raises(RuntimeError, match="needs HAI_SERIES_VIEW=zsize"):
@@ -1358,6 +1358,153 @@ def test_run_variant_takes_the_law_clause():
     rv = _cloud_script("run_variant")
     assert rv.arguments(["x", "--view", "zsize", "--clauses", "step,law"]).clauses == "step,law"
     assert rv.arguments(["x", "--view", "zsize", "--clauses", "law"]).clauses == "law"
+
+
+# --- text clauses of the looprange view, and the size clause ----------------------------------
+
+def test_size_clause_states_the_size_in_usual_quiet_changes():
+    mod = load_script("HAIAttackQADataset")
+    assert mod.CLAUSES == ("size", "step", "law")
+    step = [0.0] * 150 + [0.02 * 7] * 150                          # 7 range units at scale 1
+    assert mod.size_clause(step, 1.0, 7.0) == "its largest change is 1.0 times its usual quiet change"
+    assert mod.size_clause(step, 1.0, 3.0) == "its largest change is 2.3 times its usual quiet change"
+    assert mod.size_clause([-v for v in step], 1.0, 0.25) == "its largest change is 28.0 times its usual quiet change"
+    assert mod.size_clause([5.0] * 300, 3.0, 7.0) == "its largest change is 0.0 times its usual quiet change"
+    assert mod.size_clause([0.0] * 150 + [1e6] * 150, 1.0, 0.25) == (
+        "its largest change is 99.9 times its usual quiet change")
+    noisy = (__import__("numpy").random.default_rng(0).normal(size=300) * 0.3 + 4.0).tolist()
+    want = f"{min(mod.relative_size(noisy, 2.5, 3.0), mod.SIZE_CAP):.1f}"
+    assert mod.size_clause(noisy, 2.5, 3.0) == f"its largest change is {want} times its usual quiet change"
+    for unit in (0.0, -2.0, float("nan")):
+        with pytest.raises(RuntimeError):
+            mod.size_clause(step, 1.0, unit)
+
+
+def _looprange_want(mod, cls, row, s, clauses):
+    """The looprange text line of series `s` of `row`, built from the clause functions."""
+    unit = mod.unit_for(cls.looprange_units, row["version"], row["loop"], s["name"])
+    text = f"This is the {s['name']}, {mod.ROLE_WORDS[s['role']]}"
+    if "size" in clauses:
+        text += "; " + mod.size_clause(s["values"], s["scale"], unit)
+    if "step" in clauses:
+        text += "; " + _step_want(mod, cls.step_units, row, s)
+    first = next(x for x in row["series"] if x["role"] == "command")
+    if "law" in clauses and s is first:
+        law = mod.law_clause(row, cls.control_laws)
+        if law is not None:
+            text += "; " + law
+    return text + ":"
+
+
+@pytest.mark.parametrize("clauses", ["size", "step", "law", "size,step,law"])
+def test_dataset_looprange_clauses(hai_dataset, clauses):
+    import numpy as np
+
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(_lawful(rows))      # P1-PC follows a law, the other loops do not
+    plain = build("train", HAI_SERIES_VIEW="looprange", HAI_TEXT_CLAUSES="")
+    train = build("train", HAI_SERIES_VIEW="looprange", HAI_TEXT_CLAUSES=clauses)
+    swapped = build("train", HAI_SERIES_VIEW="looprange", HAI_TEXT_CLAUSES=",".join(reversed(clauses.split(","))))
+    cls, plain_cls, swapped_cls = type(train), type(plain), type(swapped)
+    names = clauses.split(",")
+    assert cls.looprange_units == mod.quiet_units(scaled)
+    assert cls.step_units == (mod.quiet_step_units(scaled) if "step" in names else None)
+    assert cls.control_laws == (mod.fit_laws(scaled) if "law" in names else None)
+    with_law = 0
+    for split in ("train", "validation", "test"):
+        ds, base, other = cls(split, EOS_TOKEN="<eos>"), plain_cls(split, EOS_TOKEN="<eos>"), swapped_cls(split, EOS_TOKEN="<eos>")
+        assert len(ds) == len(scaled)
+        for i, sample in enumerate(ds):
+            r = scaled[i]
+            assert sample["pre_prompt"] == base[i]["pre_prompt"] and sample["answer"] == base[i]["answer"]
+            assert sample["time_series_text"] == other[i]["time_series_text"]      # the order of the names does not matter
+            first = next(j for j, s in enumerate(r["series"]) if s["role"] == "command")
+            for j, (text, before, s) in enumerate(zip(sample["time_series_text"], base[i]["time_series_text"], r["series"])):
+                assert text == _looprange_want(mod, cls, r, s, names)
+                assert before == f"This is the {s['name']}, {mod.ROLE_WORDS[s['role']]}:"
+                assert text.startswith(before[:-1]) and text.endswith(":")
+                has_law = "controller would" in text
+                assert has_law == ("law" in names and j == first and r["loop"] == "P1-PC")
+                with_law += has_law
+                if "size" in names:
+                    assert "; its largest change is " in text
+                    parts = [text.index(p) for p in ("its largest change", "one-second", "controller would") if p in text]
+                    assert parts == sorted(parts)
+                if clauses == "size,step,law":
+                    assert text.count("; ") == 2 + has_law
+            for a, b in zip(sample["time_series"], base[i]["time_series"]):
+                assert np.array_equal(np.asarray(a), np.asarray(b))     # the curve is that of plain looprange
+    assert ("law" in names) == (with_law > 0)
+
+
+def test_dataset_looprange_with_all_clauses_has_the_texts_of_zsize_with_step_and_law(hai_dataset):
+    import numpy as np
+
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(_lawful(rows))
+    loop = build("train", HAI_SERIES_VIEW="looprange", HAI_TEXT_CLAUSES="size,step,law")
+    zsize = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="step,law")
+    plain = build("train", HAI_SERIES_VIEW="looprange")
+    assert any("controller would" in t for i in range(len(loop)) for t in _texts(loop, i))
+    for i in range(len(loop)):
+        assert _texts(loop, i) == _texts(zsize, i)
+        for a, b in zip(loop[i]["time_series"], plain[i]["time_series"]):
+            assert np.array_equal(np.asarray(a), np.asarray(b))
+        assert loop[i]["pre_prompt"] == plain[i]["pre_prompt"] != zsize[i]["pre_prompt"]
+    s = scaled[6]["series"][2]
+    assert scaled[6]["loop"] == "P1-PC"
+    assert _texts(loop, 6)[2].startswith(f"This is the {s['name']}, {mod.ROLE_WORDS['command']}; its largest change is ")
+
+
+def test_dataset_texts_without_the_new_clauses_are_unchanged(hai_dataset, monkeypatch):
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(_lawful(rows))
+    for value in (None, "", " , "):
+        if value is None:
+            monkeypatch.delenv("HAI_TEXT_CLAUSES", raising=False)
+            ds = build("train", HAI_SERIES_VIEW="looprange")
+        else:
+            ds = build("train", HAI_SERIES_VIEW="looprange", HAI_TEXT_CLAUSES=value)
+        assert type(ds).step_units is None and type(ds).control_laws is None
+        for i in range(len(ds)):
+            assert _texts(ds, i) == [f"This is the {s['name']}, {mod.ROLE_WORDS[s['role']]}:" for s in scaled[i]["series"]]
+    alone = build("train", HAI_SERIES_VIEW="zsize")
+    for clauses in ("step", "law", "step,law"):
+        ds = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES=clauses)
+        with_size = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="size," + clauses)
+        cls = type(ds)
+        for i in range(len(ds)):
+            r = scaled[i]
+            want = []
+            for s in r["series"]:
+                text = (f"This is the {s['name']}, {mod.ROLE_WORDS[s['role']]}; "
+                        f"its largest change is {_zsize_want(mod, cls.looprange_units, r, s)} times its usual quiet change")
+                if "step" in clauses:
+                    text += "; " + _step_want(mod, cls.step_units, r, s)
+                if "law" in clauses and s is r["series"][2] and mod.law_clause(r, cls.control_laws) is not None:
+                    text += "; " + mod.law_clause(r, cls.control_laws)
+                want.append(text + ":")
+            assert _texts(ds, i) == want and _texts(with_size, i) == want
+    size = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="size")
+    for i in range(len(alone)):
+        assert _texts(size, i) == _texts(alone, i)
+        assert all(t.count("its largest change is") == 1 for t in _texts(size, i))
+    for view in ("zscore", "range"):
+        monkeypatch.setenv("HAI_SERIES_VIEW", view)
+        for clauses in ("step", "size"):
+            monkeypatch.setenv("HAI_TEXT_CLAUSES", clauses)
+            with pytest.raises(RuntimeError, match="zsize or looprange"):
+                mod.text_clauses()
+
+
+def test_run_variant_takes_clauses_with_the_looprange_view():
+    rv = _cloud_script("run_variant")
+    args = rv.arguments(["x", "--view", "looprange", "--clauses", "size,step,law"])
+    assert args.view == "looprange" and args.clauses == "size,step,law"
+    assert rv.arguments(["x", "--view", "zsize", "--clauses", "size"]).clauses == "size"
+    for view in ("range", "zscore"):
+        with pytest.raises(SystemExit):
+            rv.arguments(["x", "--view", view, "--clauses", "step"])
 
 
 # --- label-first answers --------------------------------------------------------
