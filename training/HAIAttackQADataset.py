@@ -84,7 +84,7 @@ def series_view() -> str:
     return view
 
 
-CLAUSES = ("step",)
+CLAUSES = ("step", "law")
 
 
 def text_clauses() -> tuple[str, ...]:
@@ -92,8 +92,12 @@ def text_clauses() -> tuple[str, ...]:
 
     step    the series' largest one-second step, in units of its usual one in a quiet window of this loop
             (see `quiet_step_units`), and the second where it lands (see `step_clause`).
+    law     on the line of the loop's first command only: for how many seconds that command moves the opposite
+            way to what the controller would do, given the gap between target and measurement. The controller's
+            law is fitted on the quiet training rows of the loop (see `fit_laws`, `wrong_way_seconds`, `law_clause`).
 
-    Only the zsize view takes clauses.
+    Only the zsize view takes clauses. On a line the order is fixed, whatever the order of the names: the size,
+    then step, then law.
     """
     raw = (os.environ.get("HAI_TEXT_CLAUSES") or "").strip()
     names = tuple(n.strip() for n in raw.split(",") if n.strip())
@@ -167,6 +171,84 @@ def step_clause(values, normal_range: float, unit: float) -> str:
     if size == 0:
         return "it never changes from one second to the next"
     return f"its largest one-second step is {min(size / float(unit), SIZE_CAP):.1f} times its usual one, at second {second}"
+
+
+def _law_series(row: dict):
+    """(target, measurement, first command) series of the row, or None if it has not exactly one target, exactly
+    one measurement and at least one command."""
+    roles = [s["role"] for s in row["series"]]
+    if roles.count("target") != 1 or roles.count("measurement") != 1 or "command" not in roles:
+        return None
+    pick = {}
+    for s in row["series"]:
+        pick.setdefault(s["role"], s)
+    return pick["target"], pick["measurement"], pick["command"]
+
+
+def fit_laws(rows: list[dict]) -> dict:
+    """{(version, loop): ((a, b, c), quiet rows)}: the controller's law du = a*g + b*dg + c, fitted by least squares.
+
+    g = target - measurement and u is the first command, raw values; du and dg are one-second changes. Fitted over
+    all eligible quiet rows of the key (label normal, window_kind normal; see `_law_series`). Keys (None, loop) hold
+    the same over all versions together, for `law_for`.
+    """
+    xs: dict = {}
+    ys: dict = {}
+    counts: dict = {}
+    for r in rows:
+        if r["label"] != "normal" or r["window_kind"] != "normal":
+            continue
+        found = _law_series(r)
+        if found is None:
+            continue
+        t, m, u = (np.asarray(s["values"], dtype=np.float64) for s in found)
+        g = t - m
+        x = np.column_stack([g[1:], np.diff(g), np.ones(len(g) - 1)])
+        for key in ((r["version"], r["loop"]), (None, r["loop"])):
+            xs.setdefault(key, []).append(x)
+            ys.setdefault(key, []).append(np.diff(u))
+            counts[key] = counts.get(key, 0) + 1
+    laws = {}
+    for key in xs:
+        coef = np.linalg.lstsq(np.vstack(xs[key]), np.concatenate(ys[key]), rcond=None)[0]
+        laws[key] = (tuple(float(v) for v in coef), counts[key])
+    return laws
+
+
+def law_for(laws: dict, version, loop):
+    """The (a, b, c) of the key if it has at least LOOPRANGE_MIN_ROWS quiet rows, else that of all versions, else None."""
+    own = laws.get((version, loop))
+    if own is not None and own[1] >= LOOPRANGE_MIN_ROWS:
+        return own[0]
+    pooled = laws.get((None, loop))
+    return pooled[0] if pooled is not None else None
+
+
+def wrong_way_seconds(t, m, u, scale_u: float, law) -> int:
+    """Seconds where the command and the command the law would give are both beyond RANGE_UNIT of the command's
+    range from their first RANGE_HEAD_S seconds, on opposite sides."""
+    if scale_u is None or not np.isfinite(scale_u) or scale_u <= 0:
+        raise RuntimeError(f"the law clause needs a positive `scale` on the command, got {scale_u!r}")
+    a, b, c = law
+    t, m, u = (np.asarray(v, dtype=np.float64) for v in (t, m, u))
+    g = t - m
+    uh = np.cumsum(np.concatenate([[u[0]], a * g[1:] + b * np.diff(g) + c]))
+    du, duh = u - u[:RANGE_HEAD_S].mean(), uh - uh[:RANGE_HEAD_S].mean()
+    thr = RANGE_UNIT * float(scale_u)
+    return int(np.sum((np.abs(du) > thr) & (np.abs(duh) > thr) & (np.sign(du) != np.sign(duh))))
+
+
+def law_clause(row: dict, laws: dict) -> Optional[str]:
+    """The law clause of the first command's text, or None if the row is not eligible or its loop has no law."""
+    found = _law_series(row)
+    law = law_for(laws, row["version"], row["loop"]) if found is not None else None
+    if law is None:
+        return None
+    t, m, u = found
+    n = wrong_way_seconds(t["values"], m["values"], u["values"], u.get("scale"), law)
+    if n == 0:
+        return "it moves the way the controller would"
+    return f"for {n} second{'' if n == 1 else 's'} it moves the opposite way to what the controller would do"
 
 
 def unit_for(units: dict, version, loop, name) -> float:
@@ -344,6 +426,7 @@ def scale(values) -> tuple[float, float, list[float]]:
 class HAIAttackQADataset(QADataset):
     looprange_units = None   # set by _load_splits for the looprange and zsize views: quiet_units of the file's training rows
     step_units = None        # set by _load_splits for the clause `step`: quiet_step_units of the file's training rows
+    control_laws = None      # set by _load_splits for the clause `law`: fit_laws of the file's training rows
 
     def __init__(self, split: Literal["train", "test", "validation"], EOS_TOKEN: str,
                  format_sample_str: bool = False, time_series_format_function=None):
@@ -357,6 +440,7 @@ class HAIAttackQADataset(QADataset):
         train = _read_jsonl(folder / "train.jsonl")
         self.__class__.looprange_units = self._units(train) if series_view() in ("looprange", "zsize") else None
         self.__class__.step_units = self._step_units(train) if "step" in text_clauses() else None
+        self.__class__.control_laws = self._laws(train) if "law" in text_clauses() else None
         share = attack_share()
         mirror = mirror_share()
         overfit = int(os.environ.get("HAI_OVERFIT_ROWS", "0") or 0)
@@ -397,6 +481,15 @@ class HAIAttackQADataset(QADataset):
         span = f"unit {min(own):.2f} to {max(own):.1f}" if own else "no units"
         print(f"HAI step units: {len(own)} series keys from {quiet} quiet training rows, {span}")
         return units
+
+    @staticmethod
+    def _laws(rows: list[dict]) -> dict:
+        """fit_laws, and one line that says what it found."""
+        laws = fit_laws(rows)
+        own = sum(version is not None for version, _ in laws)
+        quiet = sum(n for (version, _), (_, n) in laws.items() if version is None)
+        print(f"HAI control laws: {own} (version, loop) keys from {quiet} eligible quiet training rows")
+        return laws
 
     @staticmethod
     def _with_share(rows: list[dict], share: float) -> list[dict]:
@@ -452,6 +545,7 @@ class HAIAttackQADataset(QADataset):
         prompts = []
         view = series_view()
         clauses = text_clauses()
+        first_command = next((s for s in row["series"] if s["role"] == "command"), None)
         for s in row["series"]:
             if view == "range":
                 if "scale" not in s:
@@ -482,6 +576,12 @@ class HAIAttackQADataset(QADataset):
                         raise RuntimeError("the step clause needs the step units of the training rows: _load_splits sets them")
                     step_unit = unit_for(self.step_units, row["version"], row["loop"], s["name"])
                     text += "; " + step_clause(s["values"], s["scale"], step_unit)
+                if "law" in clauses and s is first_command:
+                    if self.control_laws is None:
+                        raise RuntimeError("the law clause needs the control laws of the training rows: _load_splits sets them")
+                    law = law_clause(row, self.control_laws)
+                    if law is not None:
+                        text += "; " + law
                 text += ":"
                 prompts.append(TextTimeSeriesPrompt(text, scale(s["values"])[2]))
                 continue
