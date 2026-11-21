@@ -606,6 +606,150 @@ def test_series_view_setting_is_checked(hai_dataset, monkeypatch):
     monkeypatch.setenv("HAI_SERIES_VIEW", "wavelets")
     with pytest.raises(RuntimeError):
         mod.series_view()
+    monkeypatch.setenv("HAI_SERIES_VIEW", "looprange")
+    assert mod.series_view() == "looprange"
+
+
+# --- the looprange view: change against the series' usual quiet movement ---------
+
+def _quiet_row(version, loop, label, kind, moves, scale=1.0):
+    """A row with one series `cmd`: flat 30 seconds at 0, then a step of `moves` range units (2% of scale each)."""
+    values = [0.0] * 30 + [moves * 0.02 * scale] * 30
+    return {"example_id": f"{version}/{loop}/{label}/{kind}/{moves}", "version": version, "loop": loop,
+            "label": label, "window_kind": kind, "answer": "Answer: normal",
+            "series": [{"role": "command", "name": "cmd", "values": values, "scale": scale}]}
+
+
+def test_quiet_units_measure_how_much_each_series_moves_in_quiet_rows():
+    import numpy as np
+
+    mod = load_script("HAIAttackQADataset")
+    calm = [0.05, 0.1, 0.1, 0.2, 0.1, 0.15]                        # barely moves: below the floor
+    pump = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0]                    # swings in every quiet window
+    rows = [_quiet_row("21.03", "P1-LC", "normal", "normal", m) for m in calm]
+    rows += [_quiet_row("21.03", "P2-SC", "normal", "normal", m, scale=3.0) for m in pump]
+    rows += [_quiet_row("21.03", "P2-SC", "attack", "attack", 500.0),      # attack rows are ignored
+             _quiet_row("21.03", "P2-SC", "normal", "attack", 400.0),      # and so are neighbour rows
+             _quiet_row("21.03", "P1-LC", "normal", "attack", 400.0)]
+    rows += [_quiet_row("22.04", "P2-SC", "normal", "normal", m) for m in (1.0, 2.0)]   # too few rows of its own
+    units = mod.quiet_units(rows)
+    assert isinstance(units, dict)
+    assert units[("21.03", "P1-LC", "cmd")] == (mod.LOOPRANGE_FLOOR, 6)
+    assert units[("21.03", "P2-SC", "cmd")] == (pytest.approx(np.percentile(pump, 95)), 6)
+    assert units[("22.04", "P2-SC", "cmd")][1] == 2
+    assert units[(None, "P2-SC", "cmd")] == (pytest.approx(np.percentile(pump + [1.0, 2.0], 95)), 8)
+    assert mod.unit_for(units, "21.03", "P1-LC", "cmd") == mod.LOOPRANGE_FLOOR
+    assert mod.unit_for(units, "21.03", "P2-SC", "cmd") == pytest.approx(np.percentile(pump, 95))
+    assert mod.unit_for(units, "22.04", "P2-SC", "cmd") == pytest.approx(np.percentile(pump + [1.0, 2.0], 95))
+    assert mod.unit_for(units, "22.04", "P1-LC", "cmd") == mod.LOOPRANGE_FLOOR        # pooled, no 22.04 rows
+    assert mod.unit_for(units, "21.03", "P3-LC", "cmd") == 1.0                         # unknown loop
+    assert mod.unit_for(units, "21.03", "P1-LC", "other") == 1.0
+    assert mod.quiet_units([r for r in rows if r["window_kind"] == "attack"]) == {}
+
+
+def test_quiet_units_take_the_largest_change_from_the_first_seconds():
+    mod = load_script("HAIAttackQADataset")
+    row = _quiet_row("21.03", "P1-LC", "normal", "normal", 0.0, scale=2.0)
+    row["series"][0]["values"] = [1.0, 3.0] * 15 + [2.0] * 20 + [-1.0] * 10   # head mean 2, largest change 3
+    units = mod.quiet_units([row])
+    assert units[("21.03", "P1-LC", "cmd")] == (pytest.approx(3.0 / (0.02 * 2.0)), 1)
+    del row["series"][0]["scale"]
+    with pytest.raises(RuntimeError):
+        mod.quiet_units([row])
+
+
+def test_looprange_view_divides_the_range_view_change_by_the_unit():
+    import numpy as np
+
+    mod = load_script("HAIAttackQADataset")
+    step = [10.0] * 150 + [10.5] * 150
+    noisy = (np.random.default_rng(0).normal(size=300) * 0.3 + 4.0).tolist()
+    for values, scale in ((step, 1.0), (noisy, 2.5), ([5.0] * 300, 3.0)):
+        assert mod.looprange_view(values, scale, 1.0) == mod.range_view(values, scale)
+    one = np.array(mod.looprange_view([0.0] * 150 + [0.02 * 7] * 150, 1.0, 7.0))
+    assert one[-1] == pytest.approx(np.log1p(1.0)) and one[0] == 0             # one unit of quiet movement
+    down = np.array(mod.looprange_view([0.0] * 150 + [-0.02 * 7] * 150, 1.0, 7.0))
+    assert down[-1] == pytest.approx(-np.log1p(1.0))                            # the sign survives
+    wide = np.array(mod.looprange_view(step, 1.0, 40.0))
+    assert 0 < wide[-1] < mod.range_view(step, 1.0)[-1]                         # a swinging series shrinks
+    for scale, unit in ((0.0, 1.0), (-1.0, 1.0), (float("nan"), 1.0), (1.0, 0.0), (1.0, -2.0)):
+        with pytest.raises(RuntimeError):
+            mod.looprange_view(step, scale, unit)
+
+
+def _write_scaled_rows(rows):
+    """The fixture's rows with `scale` on every series, written to all three files of HAI_JSONL_DIR."""
+    folder = __import__("pathlib").Path(__import__("os").environ["HAI_JSONL_DIR"])
+    scaled = [{**r, "series": [{**s, "scale": 2.0} for s in r["series"]]} for r in rows]
+    for name in ("train", "validation", "test"):
+        (folder / f"{name}.jsonl").write_text("".join(json.dumps(r) + "\n" for r in scaled))
+    return scaled
+
+
+def test_dataset_looprange_view(hai_dataset):
+    import re
+
+    import numpy as np
+
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    assert sum(r["label"] == "normal" and r["window_kind"] == "normal" for r in scaled) >= 1
+    train = build("train", HAI_SERIES_VIEW="looprange")
+    cls = type(train)
+    units = cls.looprange_units
+    assert units == mod.quiet_units(scaled) and units
+    for split in ("train", "validation", "test"):
+        ds = cls(split, EOS_TOKEN="<eos>")
+        assert len(ds) == len(scaled)
+        for i, sample in enumerate(ds):
+            r = scaled[i]
+            assert "measured against how much it normally moves in this loop" in sample["pre_prompt"]
+            assert "measured against its normal range" not in sample["pre_prompt"]
+            for text, s, got in zip(sample["time_series_text"], r["series"], sample["time_series"]):
+                assert not re.search(r"\d", text) and "mean" not in text and text.endswith(":")
+                want = mod.looprange_view(s["values"], 2.0, mod.unit_for(units, r["version"], r["loop"], s["name"]))
+                assert np.allclose(np.asarray(got, dtype=float), want, atol=1e-5)
+
+
+def test_dataset_looprange_units_come_from_the_file_rows(hai_dataset, monkeypatch):
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    want = mod.quiet_units(scaled)
+    for env in ({"HAI_OVERFIT_ROWS": "5"}, {"HAI_ATTACK_SHARE": "0.5"}, {"HAI_MIRROR_SHARE": "0.5"},
+                {"HAI_OVERFIT_ROWS": "10", "HAI_ATTACK_SHARE": "0.5", "HAI_MIRROR_SHARE": "1"}):
+        for k in ("HAI_OVERFIT_ROWS", "HAI_ATTACK_SHARE", "HAI_MIRROR_SHARE"):
+            monkeypatch.delenv(k, raising=False)
+        assert type(build("train", HAI_SERIES_VIEW="looprange", **env)).looprange_units == want
+    assert type(build("train", HAI_SERIES_VIEW="range")).looprange_units is None
+
+
+def test_range_and_zscore_views_are_unchanged_by_looprange(hai_dataset):
+    import numpy as np
+
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    ds = build("train", HAI_SERIES_VIEW="range")
+    for i in (0, 1, 7):
+        sample = ds[i]
+        assert sample["pre_prompt"].count("Each series is shown") == 1
+        assert "measured against its normal range" in sample["pre_prompt"]
+        for text, s, got in zip(sample["time_series_text"], scaled[i]["series"], sample["time_series"]):
+            assert text == f"This is the {s['name']}, {mod.ROLE_WORDS[s['role']]}:"
+            assert np.allclose(np.asarray(got, dtype=float), mod.range_view(s["values"], 2.0), atol=1e-5)
+    zs = build("train", HAI_SERIES_VIEW="zscore")
+    for i in (0, 1, 7):
+        sample = zs[i]
+        assert "Each series is shown" not in sample["pre_prompt"]
+        for text, s, got in zip(sample["time_series_text"], scaled[i]["series"], sample["time_series"]):
+            mean, std, values = mod.scale(s["values"])
+            assert text == f"This is the {s['name']}, {mod.ROLE_WORDS[s['role']]}; it has mean {mean:.4f} and std {std:.4f}:"
+            assert np.allclose(np.asarray(got, dtype=float), values, atol=1e-5)
+
+
+def test_run_variant_takes_the_looprange_view():
+    rv = _cloud_script("run_variant")
+    assert rv.arguments(["x", "--view", "looprange"]).view == "looprange"
+    assert rv.arguments(["x"]).view == "range"
 
 
 # --- label-first answers --------------------------------------------------------
