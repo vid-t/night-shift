@@ -2,7 +2,7 @@
 
     python3 training/cloud/run_variant.py NAME [--start sleep|run:OTHER] [--view range|zscore|looprange|zsize] [--order label_last]
         [--epochs 4] [--seed 0] [--rows 0] [--dtype bfloat16] [--batch-size 1] [--answers validation]
-        [--lr-encoder 5e-5] [--attack-share 0.35] [--mirror-share 0.5] [--clauses size,step,law]
+        [--lr-encoder 5e-5] [--attack-share 0.35] [--mirror-share 0.5] [--clauses size,step,law,plant]
         [--choose-pass loss|last|validation]
     python3 training/cloud/run_variant.py NAME --answer-only test test_shuffled
 
@@ -27,7 +27,9 @@ text of each series, its largest change against its usual quiet change in its lo
 `step`: in the text of each series, its largest one-second step against the usual one in a quiet window of its loop,
 and the second of that step. `law`: in the text of the loop's first command, for how many seconds it moves the
 opposite way to what the controller would do, by the controller's law fitted on the quiet training rows.
-`--answer-only` uses the clauses of the run.
+`plant`: in the text of the measurement, how far it strays from what its command predicts, against how far it
+usually strays, by a plant model of the loop fitted on the quiet training rows. Do not combine `law` or `plant`
+with `--mirror-share`. `--answer-only` uses the clauses of the run.
 
 `--choose-pass` picks the pass (epoch) whose model is kept. `loss` (default) keeps OpenTSLM's choice,
 the pass with the lowest validation loss. `last` and `validation` keep the model of every pass, then
@@ -92,7 +94,7 @@ def arguments(argv=None) -> argparse.Namespace:
                          "falls swapped), in (0, 1] (default: no copies)")
     ap.add_argument("--clauses", default=None,
                     help="comma-separated further clauses in the text of the series, views zsize and looprange "
-                         "only: size, step, law (for example size,step,law; default: none)")
+                         "only: size, step, law, plant (for example size,step,law; default: none)")
     ap.add_argument("--answers", default="validation", choices=sorted(ANSWER_SETS),
                     help="files answered after training (default: %(default)s)")
     ap.add_argument("--choose-pass", default="loss", choices=CHOICES,

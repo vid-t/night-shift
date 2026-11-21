@@ -57,6 +57,8 @@ LOOPRANGE_FLOOR = 0.25   # the smallest quiet-window unit of the looprange view,
 LOOPRANGE_MIN_ROWS = 5   # a (version, loop, series) key with fewer quiet rows uses the unit of all versions
 SIZE_CAP = 99.9   # the zsize view prints at most this size
 LAW_MIN_R2 = 0.4   # the law clause is written only for a loop whose fitted law explains this share of du on its quiet rows
+PLANT_MIN_R2 = 0.5   # the plant clause is written only for a loop whose fitted plant explains this share of the measurement
+PLANT_LAGS = (0, 5, 10, 15, 20, 25, 30)   # the plant model reads the first command this many seconds back
 
 
 def series_view() -> str:
@@ -85,7 +87,7 @@ def series_view() -> str:
     return view
 
 
-CLAUSES = ("size", "step", "law")
+CLAUSES = ("size", "step", "law", "plant")
 CLAUSE_VIEWS = ("zsize", "looprange")   # the views that take clauses
 
 
@@ -100,9 +102,16 @@ def text_clauses() -> tuple[str, ...]:
             way to what the controller would do, given the gap between target and measurement. The controller's
             law is fitted on the quiet training rows of the loop (see `fit_laws`, `wrong_way_seconds`, `law_clause`).
             A loop whose law explains less than LAW_MIN_R2 of the command's changes there gets no law clause.
+    plant   on the line of the measurement only: how far the measurement strays from what its first command (and
+            target) predict, in units of how far it usually strays in a quiet window of the loop. The plant model is
+            fitted on the quiet training rows of the loop, all versions together (see `fit_plants`, `plant_ratio`,
+            `plant_clause`). A loop whose model explains less than PLANT_MIN_R2 of the measurement there gets no
+            plant clause, and so does a row without exactly one target, one measurement and a command.
 
     Only the views in CLAUSE_VIEWS take clauses. On a line the order is fixed, whatever the order of the names:
-    size, step, law. With all three, the looprange text is the zsize text with step and law.
+    size, step, law, plant. With size, step and law, the looprange text is the zsize text with step and law.
+    Known limit: the law and plant clauses are not valid for mirrored copies (HAI_MIRROR_SHARE): a mirrored command
+    and measurement no longer follow the fitted law or plant. Do not combine them.
     """
     raw = (os.environ.get("HAI_TEXT_CLAUSES") or "").strip()
     names = tuple(n.strip() for n in raw.split(",") if n.strip())
@@ -259,6 +268,81 @@ def law_clause(row: dict, laws: dict) -> Optional[str]:
     if n == 0:
         return "it moves the way the controller would"
     return f"for {n} second{'' if n == 1 else 's'} it moves the opposite way to what the controller would do"
+
+
+def _plant_design(row: dict):
+    """(X, y) of the plant model for the row, or None if `_law_series` finds no target, measurement and command.
+
+    Each series is its change from the mean of its first RANGE_HEAD_S seconds, in units of RANGE_UNIT of its scale.
+    For each second i from RANGE_HEAD_S on, y is the measurement and the row of X is the first command at the lags of
+    PLANT_LAGS, the target, and 1."""
+    found = _law_series(row)
+    if found is None:
+        return None
+    z = []
+    for s in found:
+        sc = s.get("scale")
+        if sc is None or not np.isfinite(sc) or sc <= 0:
+            raise RuntimeError(f"the plant clause needs a positive `scale` on the target, measurement and command, got {sc!r}")
+        v = np.asarray(s["values"], dtype=np.float64)
+        z.append((v - v[:RANGE_HEAD_S].mean()) / (RANGE_UNIT * float(sc)))
+    tt, mm, uu = z
+    n, h = len(mm), RANGE_HEAD_S
+    x = np.column_stack([uu[h - lag:n - lag] for lag in PLANT_LAGS] + [tt[h:], np.ones(n - h)])
+    return x, mm[h:]
+
+
+def fit_plants(rows: list[dict]) -> dict:
+    """{loop: (coefficients, res95, quiet rows, r2)}: the measurement explained by the first command and the target.
+
+    Least squares over all eligible quiet rows of the loop (label normal, window_kind normal; see `_plant_design`),
+    all versions together. res95 is the 95th percentile, over those rows, of the largest absolute residual of a row.
+    r2 is 1 - SS_res / SS_tot of the fit on those rows, 0.0 if the measurement never varies.
+    """
+    found: dict = {}
+    for r in rows:
+        if r["label"] != "normal" or r["window_kind"] != "normal":
+            continue
+        d = _plant_design(r)
+        if d is not None:
+            found.setdefault(r["loop"], []).append(d)
+    plants = {}
+    for loop, ds in found.items():
+        x, y = np.vstack([a for a, _ in ds]), np.concatenate([b for _, b in ds])
+        coef = np.linalg.lstsq(x, y, rcond=None)[0]
+        ss_tot = float(np.sum((y - y.mean()) ** 2))
+        r2 = 1.0 - float(np.sum((y - x @ coef) ** 2)) / ss_tot if ss_tot > 0 else 0.0
+        res95 = float(np.percentile([np.abs(b - a @ coef).max() for a, b in ds], 95))
+        plants[loop] = (tuple(float(v) for v in coef), res95, len(ds), r2)
+    return plants
+
+
+def plant_for(plants: dict, loop):
+    """The fit of the loop, or None if it has none, its r2 is under PLANT_MIN_R2 or its res95 is not positive and finite."""
+    fit = plants.get(loop)
+    if fit is None or fit[3] < PLANT_MIN_R2 or not np.isfinite(fit[1]) or fit[1] <= 0:
+        return None
+    return fit
+
+
+def plant_ratio(row: dict, plants: dict) -> Optional[float]:
+    """The row's largest absolute residual under its loop's plant model, in res95 units, at most SIZE_CAP, one
+    decimal; None if the row is not eligible or its loop has no plant model (see `plant_for`)."""
+    d = _plant_design(row)
+    fit = plant_for(plants, row["loop"]) if d is not None else None
+    if fit is None:
+        return None
+    x, y = d
+    ratio = float(np.abs(y - x @ np.asarray(fit[0])).max()) / fit[1]
+    return float(f"{min(ratio, SIZE_CAP):.1f}")
+
+
+def plant_clause(row: dict, plants: dict) -> Optional[str]:
+    """The plant clause of the measurement's text, or None if the row has no `plant_ratio`."""
+    ratio = plant_ratio(row, plants)
+    if ratio is None:
+        return None
+    return f"it strays from what its command predicts by {ratio:.1f} times its usual amount"
 
 
 def unit_for(units: dict, version, loop, name) -> float:
@@ -443,6 +527,7 @@ class HAIAttackQADataset(QADataset):
     looprange_units = None   # set by _load_splits for the looprange and zsize views: quiet_units of the file's training rows
     step_units = None        # set by _load_splits for the clause `step`: quiet_step_units of the file's training rows
     control_laws = None      # set by _load_splits for the clause `law`: fit_laws of the file's training rows
+    plant_models = None      # set by _load_splits for the clause `plant`: fit_plants of the file's training rows
 
     def __init__(self, split: Literal["train", "test", "validation"], EOS_TOKEN: str,
                  format_sample_str: bool = False, time_series_format_function=None):
@@ -457,6 +542,7 @@ class HAIAttackQADataset(QADataset):
         self.__class__.looprange_units = self._units(train) if series_view() in ("looprange", "zsize") else None
         self.__class__.step_units = self._step_units(train) if "step" in text_clauses() else None
         self.__class__.control_laws = self._laws(train) if "law" in text_clauses() else None
+        self.__class__.plant_models = self._plants(train) if "plant" in text_clauses() else None
         share = attack_share()
         mirror = mirror_share()
         overfit = int(os.environ.get("HAI_OVERFIT_ROWS", "0") or 0)
@@ -508,6 +594,16 @@ class HAIAttackQADataset(QADataset):
         print(f"HAI control laws: {good} of {own} (version, loop) keys explain the command (R2 at least {LAW_MIN_R2}), "
               f"from {quiet} eligible quiet training rows")
         return laws
+
+    @staticmethod
+    def _plants(rows: list[dict]) -> dict:
+        """fit_plants, and one line that says what it found."""
+        plants = fit_plants(rows)
+        good = sum(plant_for(plants, loop) is not None for loop in plants)
+        quiet = sum(n for _, _, n, _ in plants.values())
+        print(f"HAI plant models: {good} of {len(plants)} loops explain the measurement (R2 at least {PLANT_MIN_R2}), "
+              f"from {quiet} eligible quiet training rows")
+        return plants
 
     @staticmethod
     def _with_share(rows: list[dict], share: float) -> list[dict]:
@@ -596,7 +692,7 @@ class HAIAttackQADataset(QADataset):
         return prompts
 
     def _clause_text(self, row, s, clauses, first_command, size: bool, unit: float) -> str:
-        """`This is the {name}, {role words}`, the clauses that are on (size, step, law, in this order), and `:`."""
+        """`This is the {name}, {role words}`, the clauses that are on (size, step, law, plant, in this order), and `:`."""
         text = f"This is the {s['name']}, {ROLE_WORDS[s['role']]}"
         if size:
             text += "; " + size_clause(s["values"], s["scale"], unit)
@@ -611,6 +707,12 @@ class HAIAttackQADataset(QADataset):
             law = law_clause(row, self.control_laws)
             if law is not None:
                 text += "; " + law
+        if "plant" in clauses and s["role"] == "measurement":
+            if self.plant_models is None:
+                raise RuntimeError("the plant clause needs the plant models of the training rows: _load_splits sets them")
+            plant = plant_clause(row, self.plant_models)
+            if plant is not None:
+                text += "; " + plant
         return text + ":"
 
     def _format_sample(self, row):

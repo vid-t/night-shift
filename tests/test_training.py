@@ -1364,7 +1364,7 @@ def test_run_variant_takes_the_law_clause():
 
 def test_size_clause_states_the_size_in_usual_quiet_changes():
     mod = load_script("HAIAttackQADataset")
-    assert mod.CLAUSES == ("size", "step", "law")
+    assert mod.CLAUSES == ("size", "step", "law", "plant")
     step = [0.0] * 150 + [0.02 * 7] * 150                          # 7 range units at scale 1
     assert mod.size_clause(step, 1.0, 7.0) == "its largest change is 1.0 times its usual quiet change"
     assert mod.size_clause(step, 1.0, 3.0) == "its largest change is 2.3 times its usual quiet change"
@@ -1505,6 +1505,279 @@ def test_run_variant_takes_clauses_with_the_looprange_view():
     for view in ("range", "zscore"):
         with pytest.raises(SystemExit):
             rv.arguments(["x", "--view", view, "--clauses", "step"])
+
+
+# --- text clauses of the zsize and looprange views: the measurement against the plant model -------
+
+def _plant_row(loop="P1-FC", label="normal", kind="normal", version="21.03", scale=1.0):
+    """A row with a flat target, a flat command and a flat measurement, each 300 seconds at 0."""
+    return {"example_id": f"{version}/{loop}/{label}/{kind}", "version": version, "loop": loop,
+            "label": label, "window_kind": kind, "answer": "Answer: normal",
+            "series": [{"role": "target", "name": "target", "values": [0.0] * 300, "scale": scale},
+                       {"role": "measurement", "name": "measurement", "values": [0.0] * 300, "scale": scale},
+                       {"role": "command", "name": "command", "values": [0.0] * 300, "scale": scale}]}
+
+
+def _units_step(at, size, scale=1.0):
+    """300 seconds: 0, then `size` range units (RANGE_UNIT of `scale` each) from second `at` on."""
+    return [0.0] * at + [size * 0.02 * scale] * (300 - at)
+
+
+def test_plant_ratio_is_the_largest_residual_in_res95_units():
+    opentslm_without_init()
+    mod = load_script("HAIAttackQADataset")
+    assert mod.CLAUSES == ("size", "step", "law", "plant") and mod.PLANT_MIN_R2 == 0.5
+    assert mod.PLANT_LAGS == (0, 5, 10, 15, 20, 25, 30)
+    lag5 = (0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)          # the measurement is the command 5 seconds back
+    plants = {"P1-FC": (lag5, 2.0, 10, 0.9)}
+    row = _plant_row(scale=3.0)
+    row["series"][2]["values"] = _units_step(50, 3.0, scale=3.0)      # the command steps 3 units at second 50
+    row["series"][1]["values"] = _units_step(55, 3.0, scale=3.0)      # the measurement follows 5 seconds later
+    assert mod.plant_ratio(row, plants) == 0.0
+    assert mod.plant_clause(row, plants) == "it strays from what its command predicts by 0.0 times its usual amount"
+    row["series"][1]["values"][200] += 4.0 * 0.02 * 3.0               # 4 units off at second 200
+    assert mod.plant_ratio(row, plants) == 2.0
+    assert mod.plant_clause(row, plants) == "it strays from what its command predicts by 2.0 times its usual amount"
+    row["series"][1]["values"] = _units_step(50, 3.0, scale=3.0)      # 5 seconds too early: 3 units off
+    assert mod.plant_ratio(row, plants) == 1.5
+    row["series"][1]["values"] = _units_step(55, 3.0, scale=3.0)
+    row["series"][1]["values"][10] = 30 * 0.02 * 3.0                  # the head moves the baseline by 1 unit
+    assert mod.plant_ratio(row, plants) == pytest.approx(0.5)
+    row["series"][1]["values"] = _units_step(55, 1e6, scale=3.0)
+    assert mod.plant_ratio(row, plants) == mod.SIZE_CAP
+    assert mod.plant_clause(row, plants).endswith("by 99.9 times its usual amount")
+    row["series"][1]["values"] = _units_step(55, 3.0 + 0.04 * 2.0, scale=3.0)   # 0.08 units: shown 0.04 -> 0.0
+    assert mod.plant_clause(row, plants).endswith("by 0.0 times its usual amount")
+    row = _plant_row()                                                 # the measurement is twice the target, plus 7
+    row["series"][0]["values"] = _units_step(100, 5.0)
+    row["series"][1]["values"] = [7.0 + 2.0 * v for v in _units_step(100, 5.0)]
+    twice = (0.0,) * 7 + (2.0, 0.0)
+    assert mod.plant_ratio(row, {"P1-FC": (twice, 1.0, 10, 0.9)}) == 0.0             # the 7 goes with the head mean
+    assert mod.plant_ratio(row, {"P1-FC": (twice[:8] + (1.0,), 1.0, 10, 0.9)}) == 1.0   # a constant of 1 unit
+    row["series"][2]["scale"] = 0.0
+    with pytest.raises(RuntimeError, match="positive `scale`"):
+        mod.plant_ratio(row, plants)
+
+
+def _plant_quiet_rows(n, loop="P1-FC", seed=0, noise=0.1, follows=True):
+    """Quiet rows whose measurement is 0.6 * the command 5 seconds back + 0.3 * the command 15 seconds back,
+    in range units, plus noise; with follows=False the measurement is a random walk."""
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    rows = []
+    for k in range(n):
+        u = np.cumsum(rng.normal(size=300))
+        mm = np.zeros(300)
+        mm[15:] = 0.6 * u[10:295] + 0.3 * u[:285]
+        mm += rng.normal(size=300) * noise
+        if not follows:
+            mm = np.cumsum(rng.normal(size=300))
+        row = _plant_row(loop, version=["21.03", "22.04"][k % 2])
+        row["example_id"] += f"/{seed}/{k}"
+        row["series"][2]["values"] = (u * 0.02).tolist()
+        row["series"][1]["values"] = (mm * 0.02).tolist()
+        row["series"][0]["values"] = (rng.normal(size=300) * 0.02).tolist()
+        rows.append(row)
+    return rows
+
+
+def test_fit_plants_recovers_the_plant_from_quiet_rows_of_all_versions():
+    opentslm_without_init()
+    import numpy as np
+
+    mod = load_script("HAIAttackQADataset")
+    rows = _plant_quiet_rows(8)
+    other = _plant_quiet_rows(2, seed=5, follows=False)
+    rows += [{**r, "label": "attack", "window_kind": "attack"} for r in other]        # attack rows are ignored
+    rows += [{**r, "label": "normal", "window_kind": "attack"} for r in other]        # and so are neighbour rows
+    two_targets = _plant_quiet_rows(1, seed=7, follows=False)[0]
+    two_targets["series"].insert(1, {**two_targets["series"][0], "name": "target 2"})
+    rows.append(two_targets)                                                           # not eligible: ignored
+    plants = mod.fit_plants(rows)
+    assert set(plants) == {"P1-FC"}                                                    # one fit per loop, not per version
+    coef, res95, n, r2 = plants["P1-FC"]
+    assert n == 8 and isinstance(r2, float) and r2 > 0.99 and all(isinstance(v, float) for v in coef)
+    assert coef[1] == pytest.approx(0.6, abs=0.01) and coef[3] == pytest.approx(0.3, abs=0.01)
+    assert max(abs(c) for i, c in enumerate(coef[:7]) if i not in (1, 3)) < 0.02   # the other lags
+    # res95: the 95th percentile of the largest residual of each row, under the fit
+    want = []
+    for r in rows[:8]:
+        x, y = mod._plant_design(r)
+        want.append(np.abs(y - x @ np.asarray(coef)).max())
+    assert res95 == pytest.approx(np.percentile(want, 95)) and res95 > 0
+    assert mod.plant_for(plants, "P1-FC") == plants["P1-FC"]
+    assert mod.plant_ratio(rows[0], plants) == float(f"{min(want[0] / res95, mod.SIZE_CAP):.1f}")
+    attacked = _plant_quiet_rows(1, seed=9)[0]
+    attacked["series"][1]["values"][150:] = [v + 20 * 0.02 for v in attacked["series"][1]["values"][150:]]
+    assert mod.plant_ratio(attacked, plants) > 5
+    assert mod.fit_plants([r for r in rows if r["window_kind"] == "attack"]) == {}
+
+
+def test_plant_r2_gate_switches_the_clause_off():
+    opentslm_without_init()
+    mod = load_script("HAIAttackQADataset")
+    rows = _plant_quiet_rows(6) + _plant_quiet_rows(6, loop="P2-SC", seed=1, follows=False)
+    plants = mod.fit_plants(rows)
+    assert plants["P1-FC"][3] >= mod.PLANT_MIN_R2 > plants["P2-SC"][3]
+    assert mod.plant_for(plants, "P2-SC") is None and mod.plant_for(plants, "P3-LC") is None
+    assert mod.plant_ratio(rows[-1], plants) is None and mod.plant_clause(rows[-1], plants) is None
+    assert mod.plant_clause(rows[0], plants) is not None
+    fit = ((0.0,) * 9, 2.0, 10)
+    assert mod.plant_for({"P1-FC": fit + (0.49,)}, "P1-FC") is None
+    assert mod.plant_for({"P1-FC": fit + (0.5,)}, "P1-FC") == fit + (0.5,)
+    for res95 in (0.0, -1.0, float("nan"), float("inf")):                              # res95 must be positive, finite
+        assert mod.plant_for({"P1-FC": ((0.0,) * 9, res95, 10, 0.9)}, "P1-FC") is None
+    exact = _plant_quiet_rows(6)                                                        # the measurement is the command
+    for r in exact:
+        r["series"][1]["values"] = list(r["series"][2]["values"])
+    perfect = mod.fit_plants(exact)["P1-FC"]
+    assert perfect[3] == pytest.approx(1.0) and perfect[1] == pytest.approx(0.0, abs=1e-9)
+    assert mod.plant_for({"P1-FC": perfect[:1] + (0.0,) + perfect[2:]}, "P1-FC") is None   # a perfect fit: res95 0
+
+
+def test_plant_clause_needs_one_target_one_measurement_and_a_command():
+    opentslm_without_init()
+    mod = load_script("HAIAttackQADataset")
+    plants = {"P1-FC": ((0.0,) * 9, 1.0, 10, 0.9)}
+    row = _plant_row()
+    assert mod.plant_clause(row, plants) is not None
+    two = {**row, "series": [row["series"][0], {**row["series"][0], "name": "target 2"}] + row["series"][1:]}
+    assert mod._plant_design(two) is None and mod.plant_ratio(two, plants) is None and mod.plant_clause(two, plants) is None
+    assert mod.plant_clause({**row, "series": row["series"][1:]}, plants) is None                 # no target
+    assert mod.plant_clause({**row, "series": row["series"][:2]}, plants) is None                 # no command
+    assert mod.fit_plants([two]) == {}
+
+
+def _plantful(rows, loop="P1-PC"):
+    """The rows with the measurement of every row of `loop` following its command 5 and 15 seconds back, plus a
+    little noise; the other loops as they are."""
+    import numpy as np
+
+    out = []
+    for k, r in enumerate(rows):
+        if r["loop"] == loop:
+            series = [dict(s) for s in r["series"]]
+            u = np.asarray(series[2]["values"], dtype=np.float64)
+            m = np.zeros(300)
+            m[15:] = 0.6 * u[10:295] + 0.3 * u[:285]
+            m += np.random.default_rng(k).normal(size=300) * 0.05
+            series[1]["values"] = m.tolist()
+            r = {**r, "series": series}
+        out.append(r)
+    return out
+
+
+def test_dataset_plant_clause_on_the_measurement_line_only(hai_dataset):
+    import numpy as np
+
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(_plantful(rows))      # P1-PC follows a plant, the other loops do not
+    plain = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="step,law")
+    train = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="step,law,plant")
+    swapped = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="plant,law,step")
+    cls = type(train)
+    plants = cls.plant_models
+    assert plants == mod.fit_plants(scaled) == type(swapped).plant_models and type(plain).plant_models is None
+    assert mod.plant_for(plants, "P1-PC") is not None
+    assert all(mod.plant_for(plants, loop) is None for loop in plants if loop != "P1-PC")
+    with_plant = 0
+    for split in ("train", "validation", "test"):
+        ds, base = cls(split, EOS_TOKEN="<eos>"), type(plain)(split, EOS_TOKEN="<eos>")
+        for i, sample in enumerate(ds):
+            r = scaled[i]
+            want = mod.plant_clause(r, plants)
+            assert (want is not None) == (r["loop"] == "P1-PC")
+            assert sample["time_series_text"] == swapped[i]["time_series_text"]   # the three files hold the same rows
+            for text, before, s in zip(sample["time_series_text"], base[i]["time_series_text"], r["series"]):
+                if want is not None and s["role"] == "measurement":
+                    assert text == before[:-1] + "; " + want + ":"
+                    with_plant += 1
+                else:
+                    assert text == before and "strays" not in text
+            for a, b in zip(sample["time_series"], base[i]["time_series"]):
+                assert np.array_equal(np.asarray(a), np.asarray(b))
+            assert sample["pre_prompt"] == base[i]["pre_prompt"] and sample["answer"] == base[i]["answer"]
+    assert with_plant > 0
+    # the looprange view: last on the line, after size, step and law
+    loop = build("train", HAI_SERIES_VIEW="looprange", HAI_TEXT_CLAUSES="size,step,law,plant")
+    for i in range(len(loop)):
+        assert _texts(loop, i) == _texts(train, i)
+    row = next(r for r in scaled if r["loop"] == "P1-PC")
+    got = [p.get_text() for p in loop._get_text_time_series_prompt_list(row)]
+    assert got[1].index("its largest change") < got[1].index("one-second step") < got[1].index("strays from")
+    assert "strays" not in got[0] + got[2]
+    type(loop).plant_models = None
+    with pytest.raises(RuntimeError, match="plant models"):
+        loop._get_text_time_series_prompt_list(row)
+
+
+def test_dataset_plant_models_come_from_the_file_rows(hai_dataset, monkeypatch):
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(_plantful(rows))
+    want = mod.fit_plants(scaled)
+    for env in ({}, {"HAI_OVERFIT_ROWS": "5"}, {"HAI_ATTACK_SHARE": "0.5"},
+                {"HAI_OVERFIT_ROWS": "10", "HAI_ATTACK_SHARE": "0.5"}):
+        for k in ("HAI_OVERFIT_ROWS", "HAI_ATTACK_SHARE"):
+            monkeypatch.delenv(k, raising=False)
+        ds = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="plant", **env)
+        assert type(ds).plant_models == want and len(ds) > 0
+        assert type(ds).control_laws is None and type(ds).step_units is None
+    for clauses in ("", "step", "law", "size,step,law"):
+        monkeypatch.setenv("HAI_TEXT_CLAUSES", clauses)
+        assert type(build("train", HAI_SERIES_VIEW="zsize")).plant_models is None
+    monkeypatch.delenv("HAI_TEXT_CLAUSES")
+    assert type(build("train", HAI_SERIES_VIEW="looprange")).plant_models is None
+
+
+def test_dataset_texts_without_the_plant_clause_are_unchanged(hai_dataset, monkeypatch):
+    import numpy as np
+
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(_lawful(_plantful(rows)))
+    for view, clauses in (("zsize", ""), ("zsize", "step,law"), ("looprange", ""), ("looprange", "size,step,law")):
+        without = build("train", HAI_SERIES_VIEW=view, HAI_TEXT_CLAUSES=clauses)
+        assert type(without).plant_models is None
+        with_plant = build("train", HAI_SERIES_VIEW=view, HAI_TEXT_CLAUSES=",".join(filter(None, [clauses, "plant"])))
+        for i in range(len(without)):
+            plain = _texts(without, i)
+            for text, before, s in zip(_texts(with_plant, i), plain, scaled[i]["series"]):
+                assert "strays" not in before
+                if text != before:
+                    assert s["role"] == "measurement" and scaled[i]["loop"] == "P1-PC"
+                    assert text == before[:-1] + "; " + mod.plant_clause(scaled[i], type(with_plant).plant_models) + ":"
+            for a, b in zip(without[i]["time_series"], with_plant[i]["time_series"]):
+                assert np.array_equal(np.asarray(a), np.asarray(b))
+    monkeypatch.delenv("HAI_TEXT_CLAUSES")
+    zscore = build("train", HAI_SERIES_VIEW="zscore")
+    assert type(zscore).plant_models is None
+    assert all("strays" not in t for i in range(len(zscore)) for t in _texts(zscore, i))
+
+
+def test_plant_clause_names_are_checked(hai_dataset, monkeypatch):
+    rows, build, mod = hai_dataset
+    _write_scaled_rows(rows)
+    monkeypatch.setenv("HAI_SERIES_VIEW", "zsize")
+    for raw, want in (("plant", ("plant",)), ("step,law,plant", ("step", "law", "plant")), (" plant , size", ("plant", "size"))):
+        monkeypatch.setenv("HAI_TEXT_CLAUSES", raw)
+        assert mod.text_clauses() == want
+    for bad in ("plants", "plant,jump", "Plant"):
+        monkeypatch.setenv("HAI_TEXT_CLAUSES", bad)
+        with pytest.raises(RuntimeError, match="HAI_TEXT_CLAUSES takes names"):
+            mod.text_clauses()
+    monkeypatch.setenv("HAI_SERIES_VIEW", "range")
+    monkeypatch.setenv("HAI_TEXT_CLAUSES", "plant")
+    with pytest.raises(RuntimeError, match="needs HAI_SERIES_VIEW=zsize"):
+        mod.text_clauses()
+
+
+def test_run_variant_takes_the_plant_clause():
+    rv = _cloud_script("run_variant")
+    assert rv.arguments(["x", "--view", "zsize", "--clauses", "plant"]).clauses == "plant"
+    assert rv.arguments(["x", "--view", "zsize", "--clauses", "step,law,plant"]).clauses == "step,law,plant"
+    assert rv.arguments(["x", "--view", "looprange", "--clauses", "size,step,law,plant"]).clauses == "size,step,law,plant"
+    with pytest.raises(SystemExit):
+        rv.arguments(["x", "--view", "zscore", "--clauses", "plant"])
 
 
 # --- label-first answers --------------------------------------------------------
