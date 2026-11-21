@@ -2,7 +2,7 @@
 
     python3 training/cloud/run_variant.py NAME [--start sleep|run:OTHER] [--view range] [--order label_last]
         [--epochs 4] [--seed 0] [--rows 0] [--dtype bfloat16] [--batch-size 1] [--answers validation]
-        [--lr-encoder 5e-5] [--attack-share 0.35]
+        [--lr-encoder 5e-5] [--attack-share 0.35] [--choose-pass loss|last|validation]
     python3 training/cloud/run_variant.py NAME --answer-only test test_shuffled
 
 Run it from the repo root on the machine, after `bash training/setup.sh unsloth/Llama-3.2-1B`.
@@ -20,8 +20,15 @@ Everything of the run is under work/NAME:
 
 `--rows 50` is the rehearsal: train, validation and test are the same 50 training rows.
 `--start run:OTHER` starts from work/OTHER/kept/best_model.pt, the saved model of the finished run OTHER.
+
+`--choose-pass` picks the pass (epoch) whose model is kept. `loss` (default) keeps OpenTSLM's choice,
+the pass with the lowest validation loss. `last` and `validation` keep the model of every pass, then
+keep the last pass, or the pass that does best on the validation rows: attack rows called attack
+minus normal rows called attack (the later pass on a tie). The answers of every pass are in
+kept/passes/. The other files are answered with the kept model.
 """
 import argparse
+import importlib.util
 import json
 import os
 import shutil
@@ -35,6 +42,7 @@ STARTS = {name: f"OpenTSLM/llama-3.2-1b-{name}-sp" for name in ("tsqa", "m4", "h
 ANSWER_SETS = {"validation": ("validation", "validation_shuffled"),
                "all": ("validation", "validation_shuffled", "test", "test_shuffled")}
 FILES = ("validation", "validation_shuffled", "test", "test_shuffled")
+CHOICES = ("loss", "last", "validation")
 
 
 def short(file: str) -> str:
@@ -73,9 +81,108 @@ def arguments(argv=None) -> argparse.Namespace:
                     help="share of attack rows in the training rows, in (0, 1) (default: the rows as exported)")
     ap.add_argument("--answers", default="validation", choices=sorted(ANSWER_SETS),
                     help="files answered after training (default: %(default)s)")
+    ap.add_argument("--choose-pass", default="loss", choices=CHOICES,
+                    help="pass whose model is kept: loss (lowest validation loss, OpenTSLM's choice), last, or "
+                         "validation (best on the validation rows: attacks found minus normal rows alarmed) "
+                         "(default: %(default)s)")
     ap.add_argument("--answer-only", nargs="+", choices=FILES, metavar="FILE",
                     help="no training: answer these files with the saved model of the finished run NAME")
     return ap.parse_args(argv)
+
+
+def read_jsonl(path: Path) -> list[dict]:
+    with open(path, encoding="utf-8") as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def parser():
+    """parse() of training/score.py, which is a script, not a package module."""
+    spec = importlib.util.spec_from_file_location("training_score", ROOT / "training" / "score.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.parse
+
+
+def pass_files(checkpoints: Path) -> dict[int, Path]:
+    """Pass number -> its model file checkpoints/pass_<N>.pt, in pass order."""
+    found = {}
+    for path in checkpoints.glob("pass_*.pt"):
+        number = path.stem[len("pass_"):]
+        if number.isdigit():
+            found[int(number)] = path
+    return dict(sorted(found.items()))
+
+
+def loss_pass(results: Path) -> int | None:
+    """The pass of OpenTSLM's best-loss model, from results/metrics.json (None if it does not say)."""
+    metrics = results / "metrics.json"
+    epoch = json.loads(metrics.read_text()).get("epoch") if metrics.exists() else None
+    return int(epoch) if epoch is not None else None
+
+
+def pass_score(predictions: Path, truth: Path) -> dict:
+    """Attack rows called attack minus normal rows called attack. Truth rows without a prediction are left out."""
+    parse = parser()
+    said = {p["example_id"]: parse(p.get("generated"))[0] for p in read_jsonl(predictions)}
+    found = alarmed = 0
+    for row in read_jsonl(truth):
+        if said.get(row["example_id"]) != "attack":
+            continue
+        found += row["label"] == "attack"
+        alarmed += row["label"] == "normal"
+    return {"attack_rows_found": found, "normal_rows_alarmed": alarmed, "score": found - alarmed}
+
+
+def best_pass(scores: dict[int, dict]) -> int:
+    """The pass with the highest score; the later pass on a tie."""
+    return max(scores, key=lambda n: (scores[n]["score"], n))
+
+
+def choose(mode: str, stage: Path, kept: Path, first: str, best_loss: int | None, truth: Path, answer,
+           say=print) -> dict:
+    """Put the chosen pass's model in checkpoints/best_model.pt and its answers of `first` in kept/.
+
+    `answer()` answers `first` again with checkpoints/best_model.pt into results/test_predictions.jsonl
+    and returns its record. kept/test_predictions_<first>.jsonl holds the answers of the best-loss
+    model when this is called. Returns kept_pass, pass_scores and the records of the answers.
+    """
+    checkpoints, results = stage / "checkpoints", stage / "results"
+    best, predictions = checkpoints / "best_model.pt", kept / f"test_predictions_{short(first)}.jsonl"
+    out = {"kept_pass": best_loss, "pass_scores": None, "pass_answers": []}
+    if mode == "loss":
+        return out
+    passes = pass_files(checkpoints)
+    if not passes:
+        say(f"no pass_<N>.pt in {checkpoints}: the model of the lowest validation loss is kept")
+        return out
+    if mode == "last":
+        n = max(passes)
+        if n != best_loss:
+            shutil.copy(passes[n], best)
+            out["pass_answers"].append(answer())
+            shutil.copy(results / "test_predictions.jsonl", predictions)
+        say(f"kept the model of the last pass, {n} (lowest validation loss: pass {best_loss})")
+        return {**out, "kept_pass": n}
+    loss_model = checkpoints / "loss_model.pt"   # with its optimizer state, as OpenTSLM saved it
+    shutil.copy(best, loss_model)
+    folder = kept / "passes"
+    folder.mkdir(parents=True, exist_ok=True)
+    scores, files = {}, {}
+    for n, model in passes.items():
+        files[n] = folder / f"test_predictions_{short(first)}_pass_{n}.jsonl"
+        if n == best_loss:
+            shutil.copy(predictions, files[n])   # the trainer's own answers with this model
+        else:
+            shutil.copy(model, best)
+            out["pass_answers"].append(answer())
+            shutil.copy(results / "test_predictions.jsonl", files[n])
+        scores[n] = pass_score(files[n], truth)
+        say(f"pass {n}: {json.dumps(scores[n])}")
+    n = best_pass(scores)
+    shutil.copy(loss_model if n == best_loss else passes[n], best)
+    shutil.copy(files[n], predictions)
+    say(f"kept the model of pass {n}, the best on the validation rows (lowest validation loss: pass {best_loss})")
+    return {**out, "kept_pass": n, "pass_scores": scores}
 
 
 def score(k, kept: Path, jsonl: Path, rehearsal: bool, env: dict) -> None:
@@ -116,6 +223,8 @@ def main(argv=None) -> None:
         env["HAI_LR_ENCODER"] = str(args.lr_encoder)
     if args.attack_share is not None:
         env["HAI_ATTACK_SHARE"] = str(args.attack_share)
+    if args.choose_pass != "loss":
+        env["HAI_KEEP_PASSES"] = "1"
     paths = SimpleNamespace(root=ROOT, checkout=work, jsonl=ROOT / "data" / "processed" / "opentslm", cache=env)
     stage = work / k.STAGE
     started = time.time()
@@ -140,16 +249,24 @@ def main(argv=None) -> None:
               "start_file": source if from_run else None, "series_view": args.view, "answer_order": args.order,
               "epochs_planned": args.epochs, "seed": args.seed, "rehearsal_rows": args.rows, "dtype": args.dtype,
               "batch_size": args.batch_size, "answers": list(files), "lr_encoder": args.lr_encoder,
-              "attack_share": args.attack_share}
+              "attack_share": args.attack_share, "choose_pass": args.choose_pass}
     k.say(f"design: {json.dumps(design)}")
     k.run(f"uv run python {ROOT / 'training' / 'cloud' / 'seed.py'} {k.LLM_ID} {source}", cwd=work, **env)
 
     result = k.train(paths, rows=args.rows, batch_size=args.batch_size, dtype=args.dtype, attention="sdpa",
                      epochs=args.epochs, seed=args.seed, series_view=args.view, answer_order=args.order,
                      test_file=f"{files[0]}.jsonl")
+    best_loss = loss_pass(stage / "results")   # before answer_again moves metrics.json aside
     shutil.copy(stage / "results" / "test_predictions.jsonl", kept / f"test_predictions_{short(files[0])}.jsonl")
     shutil.copy(stage / "results" / "metrics.json", kept / "metrics.json")
-    for name in ("best_model.pt", "loss_history.txt"):
+    truth = paths.jsonl / ("train.jsonl" if args.rows > 0 else f"{files[0]}.jsonl")
+
+    def answer_first():
+        return k.answer_again(paths, f"{files[0]}.jsonl", dtype=args.dtype, attention="sdpa", rows=args.rows,
+                              series_view=args.view, answer_order=args.order)
+
+    chosen = choose(args.choose_pass, stage, kept, files[0], best_loss, truth, answer_first, say=k.say)
+    for name in ("best_model.pt", "loss_history.txt"):   # after the choice: best_model.pt is the chosen pass
         shutil.copy(stage / "checkpoints" / name, kept / name)
     extra = []
     for name in files[1:]:
@@ -159,7 +276,7 @@ def main(argv=None) -> None:
 
     score(k, kept, paths.jsonl, args.rows > 0, env)
     summary = {**design, "llm_id": k.LLM_ID, "total_seconds": round(time.time() - started), "run": result,
-               "extra_answers": extra}
+               "extra_answers": extra, "loss_pass": best_loss, **chosen}
     summary_file.write_text(json.dumps(summary, indent=2))
     k.say("\nSummary:")
     k.say(json.dumps(summary, indent=2))

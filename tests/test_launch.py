@@ -201,6 +201,66 @@ def test_a_starting_checkpoint_with_a_dead_encoder_is_refused(capsys):
     assert dead.saved == [3] and "DEAD" in capsys.readouterr().out
 
 
+# --- the model of every pass ----------------------------------------------------
+
+def _pass_trainer(torch, results_dir):
+    """A trainer with what keep_passes and watch_encoder use: a model, the three wrapped methods, results_dir."""
+    class Model:
+        def __init__(self):
+            torch.manual_seed(0)
+            self.encoder, self.projector = torch.nn.Linear(300, 4), torch.nn.Linear(4, 3)
+
+        def save_lora_state_to_checkpoint(self, checkpoint):
+            checkpoint["lora_state"] = {"a": torch.ones(2)}
+            checkpoint["lora_enabled"] = True
+
+    class Trainer:
+        def __init__(self):
+            self.results_dir, self.model, self.calls = str(results_dir), Model(), []
+
+        def _get_model(self):
+            return self.model
+
+        def _load_previous_stage_model(self, current_stage):
+            return {"stage": "before"}
+
+        def _save_loss_history(self, stage, epoch, train_loss, val_loss):
+            self.calls.append((stage, epoch, train_loss, val_loss))
+
+        def _evaluate_stage(self, name):
+            return {"evaluated": name}
+
+    return type("cl", (), {"CurriculumTrainer": Trainer})
+
+
+@pytest.mark.parametrize("watched", ["none", "before", "after"])
+def test_the_model_of_every_pass_of_stage6_hai_is_kept(tmp_path, capsys, watched):
+    torch = pytest.importorskip("torch")
+    cl = _pass_trainer(torch, tmp_path)
+    if watched == "before":
+        launch.watch_encoder(cl)
+    launch.keep_passes(cl)
+    if watched == "after":
+        launch.watch_encoder(cl)
+    trainer = cl.CurriculumTrainer()
+    trainer._save_loss_history("stage6_hai", 1, 0.9, 0.8)
+    trainer._save_loss_history("stage6_hai", 2, 0.7, 0.6)
+    trainer._save_loss_history("stage3_cot", 3, 0.5, 0.4)
+    assert trainer.calls == [("stage6_hai", 1, 0.9, 0.8), ("stage6_hai", 2, 0.7, 0.6), ("stage3_cot", 3, 0.5, 0.4)]
+    folder = tmp_path / "stage6_hai" / "checkpoints"
+    assert sorted(f.name for f in folder.iterdir()) == ["pass_1.pt", "pass_2.pt"]
+    assert not (tmp_path / "stage3_cot").exists()
+    for epoch, val_loss in ((1, 0.8), (2, 0.6)):
+        saved = torch.load(folder / f"pass_{epoch}.pt", weights_only=False)
+        assert set(saved) == {"encoder_state", "projector_state", "val_loss", "epoch", "lora_state", "lora_enabled"}
+        assert saved["epoch"] == epoch and saved["val_loss"] == val_loss
+        assert torch.equal(saved["encoder_state"]["weight"], trainer.model.encoder.weight)
+        assert set(saved["projector_state"]) == {"weight", "bias"}
+    out = capsys.readouterr().out
+    assert f"[launch] kept the model of pass 2: {folder / 'pass_2.pt'}" in out
+    assert ("after epoch 2" in out) == (watched != "none")
+
+
 def test_answer_cap_only_lowers_the_limit():
     class Toy:
         def generate(self, batch, max_new_tokens=50, **kwargs):

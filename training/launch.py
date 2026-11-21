@@ -20,6 +20,9 @@ Use it in place of curriculum_learning.py, with the same arguments, from the Ope
     HAI_EPOCHS=3              epochs of stage6_hai (default: the 10 of the stage)
     HAI_LR_ENCODER=5e-5       learning rate of the encoder in stage6_hai (default: the 2e-4 of the stage)
     HAI_SEED=0                seed for the weights that start at random and the row order
+    HAI_KEEP_PASSES=1         keep the model of every epoch of stage6_hai as checkpoints/pass_<epoch>.pt
+                              (encoder, projector and adapters, no optimizer state), not only the
+                              one with the lowest validation loss (default 0: off)
     OPENTSLM_DIR=<path>       where curriculum_learning.py is (default: the current folder)
 
 Four things it always does.
@@ -171,6 +174,29 @@ def watch_encoder(cl) -> None:
     cl.CurriculumTrainer._evaluate_stage = evaluated
 
 
+def keep_passes(cl) -> None:
+    """Save the model of every epoch of stage6_hai as <results_dir>/<stage>/checkpoints/pass_<epoch>.pt."""
+    import torch
+
+    original = cl.CurriculumTrainer._save_loss_history
+
+    def saved(self, stage, epoch, train_loss, val_loss):
+        result = original(self, stage, epoch, train_loss, val_loss)
+        if stage == "stage6_hai" and getattr(self, "rank", 0) == 0:
+            model = self._get_model()
+            checkpoint = {"encoder_state": model.encoder.state_dict(), "projector_state": model.projector.state_dict(),
+                          "val_loss": val_loss, "epoch": epoch}
+            model.save_lora_state_to_checkpoint(checkpoint)
+            folder = os.path.join(self.results_dir, stage, "checkpoints")
+            os.makedirs(folder, exist_ok=True)
+            path = os.path.join(folder, f"pass_{epoch}.pt")
+            torch.save(checkpoint, path)
+            print(f"[launch] kept the model of pass {epoch}: {path}")
+        return result
+
+    cl.CurriculumTrainer._save_loss_history = saved
+
+
 def _model_class():
     from opentslm.model.llm.OpenTSLMSP import OpenTSLMSP
 
@@ -311,6 +337,7 @@ def main() -> None:
     epochs = setting("HAI_EPOCHS", int, lambda v: v >= 1)
     lr_encoder = setting("HAI_LR_ENCODER", float, lambda v: v > 0)
     seed = setting("HAI_SEED", int, lambda v: v >= 0)
+    keep = setting("HAI_KEEP_PASSES", int, lambda v: v in (0, 1))
     if scale is None and dtype == "float16":
         scale = DEFAULT_LOSS_SCALE
 
@@ -341,6 +368,9 @@ def main() -> None:
     if lr_encoder:
         set_encoder_lr(cl, lr_encoder)
         print(f"[launch] stage6_hai encoder learning rate {lr_encoder:g}")
+    if keep:
+        keep_passes(cl)
+        print("[launch] the model of every pass is kept")
     if seed is not None:
         seed_everything(seed)
         print(f"[launch] seed {seed}")

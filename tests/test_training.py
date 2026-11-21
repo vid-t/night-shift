@@ -557,3 +557,142 @@ def test_run_variant_parser_takes_a_run_as_start():
     assert rv.arguments(["x"]).start == "sleep"
     assert rv.arguments(["x", "--start", "sleep"]).start == "sleep"
     assert rv.arguments(["x", "--start", "run:abc"]).start == "run:abc"
+
+
+# --- choosing the pass whose model is kept --------------------------------------
+
+def test_pass_files_are_found_in_pass_order(tmp_path):
+    rv = _cloud_script("run_variant")
+    for name in ("pass_1.pt", "pass_10.pt", "pass_2.pt", "best_model.pt", "pass_x.pt"):
+        (tmp_path / name).write_bytes(b"model")
+    got = rv.pass_files(tmp_path)
+    assert list(got) == [1, 2, 10] and got[10] == tmp_path / "pass_10.pt"
+    assert rv.pass_files(tmp_path / "missing") == {}
+
+
+def _lines(path, rows):
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return path
+
+
+def test_pass_score_counts_attacks_found_minus_normal_rows_alarmed(tmp_path):
+    rv = _cloud_script("run_variant")
+    truth = _lines(tmp_path / "truth.jsonl", [
+        {"example_id": "a1", "label": "attack"}, {"example_id": "a2", "label": "attack"},
+        {"example_id": "a3", "label": "attack"}, {"example_id": "n1", "label": "normal"},
+        {"example_id": "n2", "label": "normal"}, {"example_id": "n3", "label": "attack"}])   # n3: no prediction
+    predictions = _lines(tmp_path / "predictions.jsonl", [
+        {"example_id": "a1", "generated": "Change starts near second 12. Answer: attack"},
+        {"example_id": "a2", "generated": " attack. Change starts near second 40."},        # label first
+        {"example_id": "a3", "generated": "The command rises."},                            # does not parse
+        {"example_id": "n1", "generated": "attack"},
+        {"example_id": "n2", "generated": "The target stays flat. Answer: normal"}])
+    assert rv.pass_score(predictions, truth) == {"attack_rows_found": 2, "normal_rows_alarmed": 1, "score": 1}
+
+
+def test_best_pass_takes_the_highest_score_and_the_later_pass_on_a_tie():
+    rv = _cloud_script("run_variant")
+    assert rv.best_pass({1: {"score": 3}, 2: {"score": 7}, 3: {"score": -1}}) == 2
+    assert rv.best_pass({1: {"score": 5}, 2: {"score": 2}, 3: {"score": 5}}) == 3
+
+
+def test_run_variant_parser_takes_the_pass_choice():
+    rv = _cloud_script("run_variant")
+    assert rv.arguments(["x"]).choose_pass == "loss"
+    for mode in ("loss", "last", "validation"):
+        assert rv.arguments(["x", "--choose-pass", mode]).choose_pass == mode
+    with pytest.raises(SystemExit):
+        rv.arguments(["x", "--choose-pass", "best"])
+
+
+def _pass_stage(tmp_path, passes):
+    """A stage after training with HAI_KEEP_PASSES: pass files, the best-loss model and its answers in kept/."""
+    stage, kept = tmp_path / "stage", tmp_path / "kept"
+    (stage / "checkpoints").mkdir(parents=True)
+    (stage / "results").mkdir()
+    kept.mkdir()
+    for n in passes:
+        (stage / "checkpoints" / f"pass_{n}.pt").write_text(f"pass {n}")
+    (stage / "checkpoints" / "best_model.pt").write_text("pass 2 with optimizer")
+    truth = _lines(tmp_path / "validation.jsonl", [{"example_id": "a", "label": "attack"},
+                                                   {"example_id": "b", "label": "attack"},
+                                                   {"example_id": "n", "label": "normal"}])
+    return stage, kept, truth
+
+
+def _answers(stage, says):
+    """A stand-in for answer_again: the model in best_model.pt answers with the labels in `says`."""
+    answered = []
+
+    def answer():
+        model = (stage / "checkpoints" / "best_model.pt").read_text()
+        answered.append(model)
+        rows = [{"example_id": i, "generated": f"Answer: {label}"} for i, label in zip("abn", says[model])]
+        _lines(stage / "results" / "test_predictions.jsonl", rows)
+        return {"model": model}
+
+    return answer, answered
+
+
+def test_choose_validation_keeps_the_pass_best_on_the_validation_rows(tmp_path):
+    rv = _cloud_script("run_variant")
+    stage, kept, truth = _pass_stage(tmp_path, (1, 2, 3))
+    first = kept / "test_predictions_validation.jsonl"
+    _lines(first, [{"example_id": i, "generated": "Answer: normal"} for i in "abn"])   # pass 2: finds nothing
+    says = {"pass 1": ("attack", "normal", "attack"), "pass 3": ("attack", "attack", "normal")}
+    answer, answered = _answers(stage, says)
+    got = rv.choose("validation", stage, kept, "validation", 2, truth, answer, say=lambda text: None)
+    assert answered == ["pass 1", "pass 3"]                               # the best-loss pass is not answered again
+    assert got["kept_pass"] == 3 and [a["model"] for a in got["pass_answers"]] == answered
+    assert got["pass_scores"] == {1: {"attack_rows_found": 1, "normal_rows_alarmed": 1, "score": 0},
+                                  2: {"attack_rows_found": 0, "normal_rows_alarmed": 0, "score": 0},
+                                  3: {"attack_rows_found": 2, "normal_rows_alarmed": 0, "score": 2}}
+    assert (stage / "checkpoints" / "best_model.pt").read_text() == "pass 3"
+    assert first.read_text() == (kept / "passes" / "test_predictions_validation_pass_3.jsonl").read_text()
+    assert sorted(f.name for f in (kept / "passes").iterdir()) == [
+        f"test_predictions_validation_pass_{n}.jsonl" for n in (1, 2, 3)]
+
+
+def test_choose_validation_restores_the_best_loss_model_when_it_wins(tmp_path):
+    rv = _cloud_script("run_variant")
+    stage, kept, truth = _pass_stage(tmp_path, (1, 2))
+    _lines(kept / "test_predictions_validation.jsonl",
+           [{"example_id": i, "generated": f"Answer: {label}"} for i, label in zip("abn", ("attack", "attack", "normal"))])
+    answer, _ = _answers(stage, {"pass 1": ("normal", "normal", "attack")})
+    got = rv.choose("validation", stage, kept, "validation", 2, truth, answer, say=lambda text: None)
+    assert got["kept_pass"] == 2
+    assert (stage / "checkpoints" / "best_model.pt").read_text() == "pass 2 with optimizer"   # OpenTSLM's own file
+
+
+def test_choose_last_answers_again_only_when_the_last_pass_is_not_the_best_loss_one(tmp_path):
+    rv = _cloud_script("run_variant")
+    stage, kept, truth = _pass_stage(tmp_path, (1, 2, 3))
+    first = kept / "test_predictions_validation.jsonl"
+    first.write_text("best-loss answers\n")
+    answer, answered = _answers(stage, {"pass 3": ("attack", "attack", "attack")})
+    got = rv.choose("last", stage, kept, "validation", 2, truth, answer, say=lambda text: None)
+    assert got["kept_pass"] == 3 and answered == ["pass 3"] and got["pass_scores"] is None
+    assert (stage / "checkpoints" / "best_model.pt").read_text() == "pass 3"
+    assert first.read_text() == (stage / "results" / "test_predictions.jsonl").read_text()
+
+    stage, kept, truth = _pass_stage(tmp_path / "again", (1, 2))
+    answer, answered = _answers(stage, {})
+    got = rv.choose("last", stage, kept, "validation", 2, truth, answer, say=lambda text: None)
+    assert got["kept_pass"] == 2 and answered == []
+    assert (stage / "checkpoints" / "best_model.pt").read_text() == "pass 2 with optimizer"
+
+
+def test_choose_loss_changes_nothing(tmp_path):
+    rv = _cloud_script("run_variant")
+    stage, kept, truth = _pass_stage(tmp_path, ())
+    answer, answered = _answers(stage, {})
+    assert rv.choose("loss", stage, kept, "validation", 4, truth, answer) == {
+        "kept_pass": 4, "pass_scores": None, "pass_answers": []}
+    assert answered == [] and (stage / "checkpoints" / "best_model.pt").read_text() == "pass 2 with optimizer"
+
+
+def test_loss_pass_is_read_from_the_metrics(tmp_path):
+    rv = _cloud_script("run_variant")
+    assert rv.loss_pass(tmp_path) is None
+    (tmp_path / "metrics.json").write_text(json.dumps({"epoch": 3, "test_loss": 0.5}))
+    assert rv.loss_pass(tmp_path) == 3
