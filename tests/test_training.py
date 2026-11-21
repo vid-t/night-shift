@@ -1,5 +1,6 @@
 """Tests for training/: the stage patcher, the scorer and the dataset class. No GPU, no network."""
 import json
+import re
 
 import pytest
 
@@ -750,6 +751,156 @@ def test_run_variant_takes_the_looprange_view():
     rv = _cloud_script("run_variant")
     assert rv.arguments(["x", "--view", "looprange"]).view == "looprange"
     assert rv.arguments(["x"]).view == "range"
+
+
+# --- the zsize view: the zscore curve, its size against the usual quiet change in the text ---------
+
+ZSIZE_TEXT = re.compile(r"This is the (.+), (.+); its largest change is (\d+\.\d) times its usual quiet change:")
+
+
+def _zsize_want(mod, units, row, s):
+    unit = mod.unit_for(units, row["version"], row["loop"], s["name"])
+    return f"{min(mod.relative_size(s['values'], s['scale'], unit), mod.SIZE_CAP):.1f}"
+
+
+def test_relative_size_is_the_largest_change_in_quiet_units():
+    import numpy as np
+
+    mod = load_script("HAIAttackQADataset")
+    noisy = (np.random.default_rng(0).normal(size=300) * 0.3 + 4.0).tolist()
+    for values, scale, unit in ((noisy, 2.5, 3.0), ([10.0] * 150 + [10.5] * 150, 1.0, 0.25), ([5.0] * 300, 3.0, 7.0)):
+        assert mod.relative_size(values, scale, unit) == pytest.approx(mod.largest_change(values, scale) / unit)
+    assert mod.relative_size([0.0] * 150 + [0.02 * 7] * 150, 1.0, 7.0) == pytest.approx(1.0)    # one usual unit
+    assert mod.relative_size([0.0] * 150 + [-0.02 * 7] * 150, 1.0, 7.0) == pytest.approx(1.0)   # sign does not count
+    assert mod.relative_size([5.0] * 300, 3.0, 7.0) == 0.0
+    for unit in (0.0, -2.0, float("nan")):
+        with pytest.raises(RuntimeError):
+            mod.relative_size(noisy, 2.5, unit)
+    with pytest.raises(RuntimeError):
+        mod.relative_size(noisy, 0.0, 1.0)
+
+
+def test_dataset_zsize_view(hai_dataset):
+    import numpy as np
+
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    train = build("train", HAI_SERIES_VIEW="zsize")
+    cls = type(train)
+    units = cls.looprange_units
+    assert units == mod.quiet_units(scaled) and units
+    sentence = ("Each series is shown scaled to its own mean and spread. Its text says how large its change is "
+                "against what is usual for it in this loop. ")
+    for split in ("train", "validation", "test"):
+        ds = cls(split, EOS_TOKEN="<eos>")
+        assert len(ds) == len(scaled)
+        for i, sample in enumerate(ds):
+            r = scaled[i]
+            assert sentence in sample["pre_prompt"] and sample["pre_prompt"].count("Each series is shown") == 1
+            assert sample["post_prompt"] == "Answer:" and sample["answer"] == r["answer"] + "<eos>"
+            for text, s, got in zip(sample["time_series_text"], r["series"], sample["time_series"]):
+                m = ZSIZE_TEXT.fullmatch(text)
+                assert m and m.group(1) == s["name"] and m.group(2) == mod.ROLE_WORDS[s["role"]]
+                assert len(re.findall(r"\d+(?:\.\d+)?", text)) == 1 and "mean" not in text
+                assert m.group(3) == _zsize_want(mod, units, r, s)
+                assert np.allclose(np.asarray(got, dtype=float), mod.scale(s["values"])[2], atol=1e-5)
+    flat_text, flat = train[0]["time_series_text"][1], np.asarray(train[0]["time_series"][1])
+    assert ZSIZE_TEXT.fullmatch(flat_text).group(3) == "0.0" and (flat == 0).all()
+
+
+def test_dataset_zsize_values_are_those_of_the_zscore_view(hai_dataset):
+    import numpy as np
+
+    rows, build, _ = hai_dataset
+    _write_scaled_rows(rows)
+    zs, zsize = build("train", HAI_SERIES_VIEW="zscore"), build("train", HAI_SERIES_VIEW="zsize")
+    for i in (0, 1, 7):
+        for a, b in zip(zs[i]["time_series"], zsize[i]["time_series"]):
+            assert np.array_equal(np.asarray(a), np.asarray(b))
+
+
+def test_dataset_zsize_caps_a_huge_change(hai_dataset):
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    folder = __import__("pathlib").Path(__import__("os").environ["HAI_JSONL_DIR"])
+    huge = [{**r, "series": [{**s, "values": s["values"][:150] + [v + 1e6 for v in s["values"][150:]]}
+                             for s in r["series"]]} for r in scaled]
+    (folder / "validation.jsonl").write_text("".join(json.dumps(r) + "\n" for r in huge))
+    ds = type(build("train", HAI_SERIES_VIEW="zsize"))("validation", EOS_TOKEN="<eos>")
+    unit = mod.unit_for(ds.looprange_units, huge[0]["version"], huge[0]["loop"], huge[0]["series"][0]["name"])
+    assert mod.relative_size(huge[0]["series"][0]["values"], 2.0, unit) > mod.SIZE_CAP
+    for text in ds[0]["time_series_text"]:
+        assert ZSIZE_TEXT.fullmatch(text).group(3) == "99.9"
+
+
+def test_dataset_zsize_units_are_the_looprange_units(hai_dataset, monkeypatch):
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    want = type(build("train", HAI_SERIES_VIEW="looprange")).looprange_units
+    assert want == mod.quiet_units(scaled)
+    for env in ({}, {"HAI_OVERFIT_ROWS": "5"}, {"HAI_ATTACK_SHARE": "0.5"}, {"HAI_MIRROR_SHARE": "0.5"},
+                {"HAI_OVERFIT_ROWS": "10", "HAI_ATTACK_SHARE": "0.5", "HAI_MIRROR_SHARE": "1"}):
+        for k in ("HAI_OVERFIT_ROWS", "HAI_ATTACK_SHARE", "HAI_MIRROR_SHARE"):
+            monkeypatch.delenv(k, raising=False)
+        assert type(build("train", HAI_SERIES_VIEW="zsize", **env)).looprange_units == want
+
+
+def test_dataset_zsize_needs_scale_and_units(hai_dataset):
+    rows, build, mod = hai_dataset
+    with pytest.raises(RuntimeError, match="needs `scale`"):    # the fixture rows have no `scale`
+        build("train", HAI_SERIES_VIEW="zsize")
+    scaled = _write_scaled_rows(rows)
+    ds = build("train", HAI_SERIES_VIEW="zsize")
+    with pytest.raises(RuntimeError, match="zsize view needs `scale`"):
+        ds._get_text_time_series_prompt_list(rows[1])
+    type(ds).looprange_units = None
+    with pytest.raises(RuntimeError, match="zsize view needs the units"):
+        ds._get_text_time_series_prompt_list(scaled[1])
+
+
+def test_mirrored_row_has_the_same_sizes_and_the_negative_zsize_curve(hai_dataset):
+    import numpy as np
+
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    ds = build("train", HAI_SERIES_VIEW="zsize")
+    for r in (scaled[1], scaled[7]):
+        plain, mirrored = ds._get_text_time_series_prompt_list(r), ds._get_text_time_series_prompt_list(mod.mirror_row(r))
+        for a, b in zip(plain, mirrored):
+            assert a.get_text() == b.get_text()
+            assert np.allclose(np.asarray(b.get_time_series()), -np.asarray(a.get_time_series()), atol=1e-9)
+
+
+def test_zscore_range_and_looprange_views_are_unchanged_by_zsize(hai_dataset):
+    import numpy as np
+
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    for view in ("zscore", "range", "looprange"):
+        ds = build("train", HAI_SERIES_VIEW=view)
+        units = type(ds).looprange_units
+        sample, r = ds[1], scaled[1]
+        assert "its usual quiet change" not in " ".join(sample["time_series_text"])
+        assert "scaled to its own mean and spread" not in sample["pre_prompt"]
+        for text, s, got in zip(sample["time_series_text"], r["series"], sample["time_series"]):
+            head = f"This is the {s['name']}, {mod.ROLE_WORDS[s['role']]}"
+            if view == "zscore":
+                mean, std, want = mod.scale(s["values"])
+                assert text == f"{head}; it has mean {mean:.4f} and std {std:.4f}:"
+            elif view == "range":
+                want = mod.range_view(s["values"], 2.0)
+                assert text == f"{head}:"
+            else:
+                want = mod.looprange_view(s["values"], 2.0, mod.unit_for(units, r["version"], r["loop"], s["name"]))
+                assert text == f"{head}:"
+            assert np.allclose(np.asarray(got, dtype=float), want, atol=1e-5)
+
+
+def test_run_variant_takes_the_zsize_view():
+    rv = _cloud_script("run_variant")
+    assert rv.arguments(["x", "--view", "zsize"]).view == "zsize"
+    with pytest.raises(SystemExit):
+        rv.arguments(["x", "--view", "wavelets"])
 
 
 # --- label-first answers --------------------------------------------------------

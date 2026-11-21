@@ -1,6 +1,6 @@
 """One design of stage6_hai on a rented GPU machine, in its own folder, so several can run at once.
 
-    python3 training/cloud/run_variant.py NAME [--start sleep|run:OTHER] [--view range|zscore|looprange] [--order label_last]
+    python3 training/cloud/run_variant.py NAME [--start sleep|run:OTHER] [--view range|zscore|looprange|zsize] [--order label_last]
         [--epochs 4] [--seed 0] [--rows 0] [--dtype bfloat16] [--batch-size 1] [--answers validation]
         [--lr-encoder 5e-5] [--attack-share 0.35] [--mirror-share 0.5] [--choose-pass loss|last|validation]
     python3 training/cloud/run_variant.py NAME --answer-only test test_shuffled
@@ -67,7 +67,7 @@ def arguments(argv=None) -> argparse.Namespace:
     ap.add_argument("--start", default="sleep",
                     help="starting checkpoint: tsqa, m4, har, sleep, a Hugging Face repo, or run:OTHER for the "
                          "saved model of the finished run OTHER on this machine (default: %(default)s)")
-    ap.add_argument("--view", default="range", choices=("range", "zscore", "looprange"))
+    ap.add_argument("--view", default="range", choices=("range", "zscore", "looprange", "zsize"))
     ap.add_argument("--order", default="label_last", choices=("label_last", "label_first", "label_only"))
     ap.add_argument("--epochs", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)

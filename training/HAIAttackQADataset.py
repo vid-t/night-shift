@@ -48,15 +48,16 @@ def _join(parts: list[str]) -> str:
     return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
 
 
-VIEWS = ("zscore", "range", "looprange")
+VIEWS = ("zscore", "range", "looprange", "zsize")
 RANGE_UNIT = 0.02   # one unit in the range view is this share of the series' normal range
 RANGE_HEAD_S = 30   # the range view shows the change from the mean of these first seconds
 LOOPRANGE_FLOOR = 0.25   # the smallest quiet-window unit of the looprange view, in range units
 LOOPRANGE_MIN_ROWS = 5   # a (version, loop, series) key with fewer quiet rows uses the unit of all versions
+SIZE_CAP = 99.9   # the zsize view prints at most this size
 
 
 def series_view() -> str:
-    """How a series is shown to the model: HAI_SERIES_VIEW, `zscore` (default) or `range`.
+    """How a series is shown to the model: HAI_SERIES_VIEW, one of VIEWS (default `zscore`).
 
     zscore  each window is scaled to mean 0 and spread 1, and the text states its mean and spread.
             What OpenTSLM's own datasets do. Here it hides how large a change is: noise and a real
@@ -70,6 +71,10 @@ def series_view() -> str:
             largest change in range units (see `quiet_units`). A pump command that switches in every
             quiet window gets a large unit, a series that barely moves a small one (at least
             LOOPRANGE_FLOOR). The text states no numbers.
+    zsize   the zscore curve, but the text states no mean and spread. It states one number: the series'
+            largest change from its first RANGE_HEAD_S seconds, in units of its usual quiet change in this
+            loop (the looprange unit, see `relative_size`), at most SIZE_CAP. The curve gives the shape,
+            the number the size.
     """
     view = (os.environ.get("HAI_SERIES_VIEW") or "zscore").strip()
     if view not in VIEWS:
@@ -122,6 +127,13 @@ def unit_for(units: dict, version, loop, name) -> float:
         return own[0]
     pooled = units.get((None, loop, name))
     return pooled[0] if pooled is not None else 1.0
+
+
+def relative_size(values, normal_range: float, unit: float) -> float:
+    """`largest_change` divided by `unit`, how much the series normally moves in a quiet window (see `quiet_units`)."""
+    if not np.isfinite(unit) or unit <= 0:
+        raise RuntimeError(f"the zsize view needs a positive unit, got {unit!r}")
+    return largest_change(values, normal_range) / float(unit)
 
 
 def looprange_view(values, normal_range: float, unit: float) -> list[float]:
@@ -281,7 +293,7 @@ def scale(values) -> tuple[float, float, list[float]]:
 
 
 class HAIAttackQADataset(QADataset):
-    looprange_units = None   # set by _load_splits for the looprange view: quiet_units of the file's training rows
+    looprange_units = None   # set by _load_splits for the looprange and zsize views: quiet_units of the file's training rows
 
     def __init__(self, split: Literal["train", "test", "validation"], EOS_TOKEN: str,
                  format_sample_str: bool = False, time_series_format_function=None):
@@ -293,7 +305,7 @@ class HAIAttackQADataset(QADataset):
             raise RuntimeError("Set HAI_JSONL_DIR to the folder with the files from `uv run hai-export`")
         folder = Path(folder)
         train = _read_jsonl(folder / "train.jsonl")
-        self.__class__.looprange_units = self._units(train) if series_view() == "looprange" else None
+        self.__class__.looprange_units = self._units(train) if series_view() in ("looprange", "zsize") else None
         share = attack_share()
         mirror = mirror_share()
         overfit = int(os.environ.get("HAI_OVERFIT_ROWS", "0") or 0)
@@ -356,7 +368,9 @@ class HAIAttackQADataset(QADataset):
         shown = {"range": "Each series is shown as its change from its first 30 seconds, "
                           "measured against its normal range. ",
                  "looprange": "Each series is shown as its change from its first 30 seconds, "
-                              "measured against how much it normally moves in this loop. "}.get(series_view(), "")
+                              "measured against how much it normally moves in this loop. ",
+                 "zsize": "Each series is shown scaled to its own mean and spread. Its text says how large its "
+                          "change is against what is usual for it in this loop. "}.get(series_view(), "")
         return (
             f"You are given {n} seconds of the {row['loop_name']} control loop of a power plant testbed, "
             f"one reading per second. The series are {_join(names)}. {shown}"
@@ -391,6 +405,17 @@ class HAIAttackQADataset(QADataset):
                 unit = unit_for(self.looprange_units, row["version"], row["loop"], s["name"])
                 prompts.append(TextTimeSeriesPrompt(f"This is the {s['name']}, {ROLE_WORDS[s['role']]}:",
                                                     looprange_view(s["values"], s["scale"], unit)))
+                continue
+            if view == "zsize":
+                if "scale" not in s:
+                    raise RuntimeError("the zsize view needs `scale` on every series: rerun `uv run hai-build` and `uv run hai-export`")
+                if self.looprange_units is None:
+                    raise RuntimeError("the zsize view needs the units of the training rows: _load_splits sets them")
+                unit = unit_for(self.looprange_units, row["version"], row["loop"], s["name"])
+                size = min(relative_size(s["values"], s["scale"], unit), SIZE_CAP)
+                text = (f"This is the {s['name']}, {ROLE_WORDS[s['role']]}; "
+                        f"its largest change is {size:.1f} times its usual quiet change:")
+                prompts.append(TextTimeSeriesPrompt(text, scale(s["values"])[2]))
                 continue
             mean, std, scaled = scale(s["values"])
             text = (f"This is the {s['name']}, {ROLE_WORDS[s['role']]}; "
