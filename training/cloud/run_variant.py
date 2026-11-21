@@ -2,7 +2,7 @@
 
     python3 training/cloud/run_variant.py NAME [--start sleep] [--view range] [--order label_last]
         [--epochs 4] [--seed 0] [--rows 0] [--dtype bfloat16] [--batch-size 1] [--answers validation]
-        [--lr-encoder 5e-5]
+        [--lr-encoder 5e-5] [--attack-share 0.35]
     python3 training/cloud/run_variant.py NAME --answer-only test test_shuffled
 
 Run it from the repo root on the machine, after `bash training/setup.sh unsloth/Llama-3.2-1B`.
@@ -56,6 +56,8 @@ def arguments(argv=None) -> argparse.Namespace:
     ap.add_argument("--threads", type=int, default=4, help="CPU threads of this run")
     ap.add_argument("--lr-encoder", type=float, default=None,
                     help="learning rate of the encoder in stage6_hai (default: the 2e-4 of the stage)")
+    ap.add_argument("--attack-share", type=float, default=None,
+                    help="share of attack rows in the training rows, in (0, 1) (default: the rows as exported)")
     ap.add_argument("--answers", default="validation", choices=sorted(ANSWER_SETS),
                     help="files answered after training (default: %(default)s)")
     ap.add_argument("--answer-only", nargs="+", choices=FILES, metavar="FILE",
@@ -95,6 +97,8 @@ def main(argv=None) -> None:
            "OMP_NUM_THREADS": str(args.threads), "MKL_NUM_THREADS": str(args.threads)}
     if args.lr_encoder is not None:
         env["HAI_LR_ENCODER"] = str(args.lr_encoder)
+    if args.attack_share is not None:
+        env["HAI_ATTACK_SHARE"] = str(args.attack_share)
     paths = SimpleNamespace(root=ROOT, checkout=work, jsonl=ROOT / "data" / "processed" / "opentslm", cache=env)
     stage = work / k.STAGE
     started = time.time()
@@ -117,7 +121,8 @@ def main(argv=None) -> None:
     files = ANSWER_SETS[args.answers]
     design = {"name": args.name, "start_checkpoint": repo, "series_view": args.view, "answer_order": args.order,
               "epochs_planned": args.epochs, "seed": args.seed, "rehearsal_rows": args.rows, "dtype": args.dtype,
-              "batch_size": args.batch_size, "answers": list(files), "lr_encoder": args.lr_encoder}
+              "batch_size": args.batch_size, "answers": list(files), "lr_encoder": args.lr_encoder,
+              "attack_share": args.attack_share}
     k.say(f"design: {json.dumps(design)}")
     k.run(f"uv run python {ROOT / 'training' / 'cloud' / 'seed.py'} {k.LLM_ID} {repo}", cwd=work, **env)
 

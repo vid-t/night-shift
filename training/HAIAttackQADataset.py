@@ -9,12 +9,15 @@ Reads the JSONL files that `uv run hai-export` writes. Environment variables:
                      test_shuffled.jsonl or test_full.jsonl for the other runs)
   HAI_OVERFIT_ROWS   N > 0: train, validation and test are the same N training rows,
                      drawn with a fixed seed (the overfit check)
+  HAI_ATTACK_SHARE   a share in (0, 1): the training rows are redrawn so this share of them has label
+                     attack, same number of rows (see `with_attack_share`). Unset: the rows as in the file.
+                     Validation and test are never touched.
 """
 import json
 import os
 import re
 from pathlib import Path
-from typing import List, Literal, Tuple
+from typing import List, Literal, Optional, Tuple
 
 import numpy as np
 
@@ -27,6 +30,7 @@ ROLE_WORDS = {
     "command": "what the controller sends to the actuator",
 }
 OVERFIT_SEED = 0
+ATTACK_SHARE_SEED = 0
 MIN_SPREAD = 1e-6  # below this (relative to the level) a series counts as flat
 
 
@@ -114,6 +118,59 @@ def label_only(answer: str) -> str:
     return label
 
 
+def attack_share() -> Optional[float]:
+    """Share of attack rows in the training rows: HAI_ATTACK_SHARE, a float in (0, 1). Unset or empty: None."""
+    raw = (os.environ.get("HAI_ATTACK_SHARE") or "").strip()
+    if not raw:
+        return None
+    try:
+        share = float(raw)
+    except ValueError:
+        share = None
+    if share is None or not 0 < share < 1:
+        raise RuntimeError(f"HAI_ATTACK_SHARE must be a number strictly between 0 and 1, got {raw!r}")
+    return share
+
+
+def _draw(group: list[int], n: int, rng) -> list[int]:
+    """n positions from group: each one n // len(group) times, plus n % len(group) more drawn without replacement."""
+    if n == 0:
+        return []
+    times, rest = divmod(n, len(group))
+    extra = rng.choice(len(group), size=rest, replace=False).tolist() if rest else []
+    counts = [times] * len(group)
+    for i in extra:
+        counts[i] += 1
+    return [p for p, c in zip(group, counts) for _ in range(c)]
+
+
+def with_attack_share(rows: list[dict], share: float) -> list[dict]:
+    """The rows redrawn so that round(share * len(rows)) of them have label attack; same length, fixed seed.
+
+    Attack rows and the two groups of normal rows (by `window_kind`) are each drawn with `_draw`; the
+    two normal groups keep their proportion. The output is in input order, repeats of a row side by side.
+    Repeated rows are the same dict.
+    """
+    n = len(rows)
+    attack = [i for i, r in enumerate(rows) if r["label"] == "attack"]
+    near = [i for i, r in enumerate(rows) if r["label"] != "attack" and r["window_kind"] == "attack"]
+    quiet = [i for i, r in enumerate(rows) if r["label"] != "attack" and r["window_kind"] != "attack"]
+    if not attack or not (near or quiet):
+        raise RuntimeError(f"HAI_ATTACK_SHARE needs both attack and normal rows, got {len(attack)} attack "
+                           f"and {len(near) + len(quiet)} normal")
+    rng = np.random.default_rng(ATTACK_SHARE_SEED)
+    want_attack = round(share * n)
+    want_normal = n - want_attack
+    if not near:
+        want_near = 0
+    elif not quiet:
+        want_near = want_normal
+    else:
+        want_near = round(want_normal * len(near) / (len(near) + len(quiet)))
+    pick = _draw(attack, want_attack, rng) + _draw(near, want_near, rng) + _draw(quiet, want_normal - want_near, rng)
+    return [rows[i] for i in sorted(pick)]
+
+
 def scale(values) -> tuple[float, float, list[float]]:
     """(mean, spread, scaled values). A flat series has zero spread: its scaled values are all zero."""
     x = np.asarray(values, dtype=np.float64)
@@ -134,17 +191,30 @@ class HAIAttackQADataset(QADataset):
             raise RuntimeError("Set HAI_JSONL_DIR to the folder with the files from `uv run hai-export`")
         folder = Path(folder)
         train = _read_jsonl(folder / "train.jsonl")
+        share = attack_share()
         overfit = int(os.environ.get("HAI_OVERFIT_ROWS", "0") or 0)
         if overfit > 0:
             rng = np.random.default_rng(OVERFIT_SEED)
             pick = sorted(rng.choice(len(train), size=min(overfit, len(train)), replace=False).tolist())
             rows = [train[i] for i in pick]
             print(f"HAI overfit check: train, validation and test are the same {len(rows)} training rows")
-            return rows, list(rows), list(rows)
+            return (rows if share is None else self._with_share(rows, share)), list(rows), list(rows)
         val = _read_jsonl(folder / "validation.jsonl")
         test = _read_jsonl(folder / os.environ.get("HAI_TEST_FILE", "test.jsonl"))
+        if share is not None:
+            train = self._with_share(train, share)
         print(f"HAI rows: train {len(train)}, validation {len(val)}, test {len(test)}")
         return train, val, test
+
+    @staticmethod
+    def _with_share(rows: list[dict], share: float) -> list[dict]:
+        """with_attack_share, and one line that says what it did."""
+        out = with_attack_share(rows, share)
+        before = sum(r["label"] == "attack" for r in rows)
+        after = sum(r["label"] == "attack" for r in out)
+        print(f"HAI attack share {share}: train rows {len(out)} (attack {after}, normal {len(out) - after}; "
+              f"before: attack {before}, normal {len(rows) - before})")
+        return out
 
     def _get_answer(self, row) -> str:
         order = answer_order()

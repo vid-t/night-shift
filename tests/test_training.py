@@ -262,6 +262,117 @@ def test_dataset_needs_the_folder(hai_dataset, monkeypatch):
         build("train")
 
 
+# --- the share of attack rows in training ----------------------------------------
+
+def _share_rows():
+    """10 attack, 20 neighbour-normal and 20 quiet-normal rows."""
+    rows = [{"example_id": f"a{i}", "label": "attack", "window_kind": "attack"} for i in range(10)]
+    rows += [{"example_id": f"n{i}", "label": "normal", "window_kind": "attack"} for i in range(20)]
+    rows += [{"example_id": f"q{i}", "label": "normal", "window_kind": "normal"} for i in range(20)]
+    return [rows[i] for i in __import__("numpy").random.default_rng(1).permutation(len(rows))]  # mixed order
+
+
+def _ids(rows):
+    return [r["example_id"] for r in rows]
+
+
+def test_dataset_train_rows_are_the_file_rows_by_default(hai_dataset, monkeypatch):
+    rows, build, _ = hai_dataset
+    monkeypatch.delenv("HAI_ATTACK_SHARE", raising=False)
+    assert [s["example_id"] for s in build("train")] == _ids(rows)
+    monkeypatch.setenv("HAI_ATTACK_SHARE", "")
+    assert [s["example_id"] for s in build("train")] == _ids(rows)
+
+
+def test_with_attack_share_redraws_the_rows():
+    from collections import Counter
+
+    mod = load_script("HAIAttackQADataset")
+    rows = _share_rows()
+    for share in (0.35, 0.5):
+        out = mod.with_attack_share(rows, share)
+        assert len(out) == len(rows)
+        attack = [r for r in out if r["label"] == "attack"]
+        assert len(attack) == round(share * len(rows))
+        assert {r["example_id"] for r in attack} == {r["example_id"] for r in rows if r["label"] == "attack"}
+        near = sum(r["label"] == "normal" and r["window_kind"] == "attack" for r in out)
+        quiet = sum(r["label"] == "normal" and r["window_kind"] == "normal" for r in out)
+        assert abs(near - quiet) <= 1                                  # 20 : 20 in the input
+        assert set(_ids(out)) <= set(_ids(rows))
+        assert _ids(mod.with_attack_share(rows, share)) == _ids(out)
+        order = {r["example_id"]: i for i, r in enumerate(rows)}
+        assert [order[i] for i in _ids(out)] == sorted(order[i] for i in _ids(out))
+        assert all(any(o is r for r in rows) for o in out)             # the same dicts, no copies
+        counts = Counter(r["example_id"] for r in attack)
+        assert max(counts.values()) - min(counts.values()) <= 1        # every attack row about equally often
+
+
+def test_with_attack_share_below_the_current_share_draws_without_replacement():
+    from collections import Counter
+
+    mod = load_script("HAIAttackQADataset")
+    rows = _share_rows()
+    out = mod.with_attack_share(rows, 0.1)
+    attack = Counter(r["example_id"] for r in out if r["label"] == "attack")
+    assert sum(attack.values()) == 5 and max(attack.values()) == 1
+    assert len(out) == len(rows)
+
+
+def test_with_attack_share_needs_both_labels():
+    mod = load_script("HAIAttackQADataset")
+    rows = _share_rows()
+    with pytest.raises(RuntimeError):
+        mod.with_attack_share([r for r in rows if r["label"] == "attack"], 0.5)
+    with pytest.raises(RuntimeError):
+        mod.with_attack_share([r for r in rows if r["label"] == "normal"], 0.5)
+    only_near = mod.with_attack_share([r for r in rows if r["window_kind"] == "attack"], 0.5)
+    assert len(only_near) == 30 and sum(r["label"] == "attack" for r in only_near) == 15
+
+
+def test_dataset_attack_share_changes_only_the_training_rows(hai_dataset):
+    rows, build, _ = hai_dataset
+    train = build("train", HAI_ATTACK_SHARE="0.5")
+    cls = type(train)
+    assert len(train) == len(rows) == 20
+    assert sum(s["label"] == "attack" for s in train) == 10
+    for split in ("validation", "test"):
+        assert [s["example_id"] for s in cls(split, EOS_TOKEN="<eos>")] == _ids(rows)
+
+
+def test_dataset_attack_share_in_the_overfit_check(hai_dataset):
+    _, build, _ = hai_dataset
+    plain = build("train", HAI_OVERFIT_ROWS="10")
+    picked = [s["example_id"] for s in type(plain)("test", EOS_TOKEN="<eos>")]
+    assert [s["example_id"] for s in plain] == picked
+    train = build("train", HAI_OVERFIT_ROWS="10", HAI_ATTACK_SHARE="0.5")
+    cls = type(train)
+    assert [s["example_id"] for s in cls("test", EOS_TOKEN="<eos>")] == picked
+    assert [s["example_id"] for s in cls("validation", EOS_TOKEN="<eos>")] == picked
+    assert len(train) == 10 and sum(s["label"] == "attack" for s in train) == 5
+    assert {s["example_id"] for s in train} <= set(picked)
+
+
+@pytest.mark.parametrize("bad", ["0", "1", "1.5", "abc", "-0.2", "nan"])
+def test_attack_share_setting_is_checked(hai_dataset, monkeypatch, bad):
+    _, build, mod = hai_dataset
+    monkeypatch.setenv("HAI_ATTACK_SHARE", bad)
+    with pytest.raises(RuntimeError, match="HAI_ATTACK_SHARE"):
+        mod.attack_share()
+    with pytest.raises(RuntimeError, match="HAI_ATTACK_SHARE"):
+        build("train")
+
+
+def test_run_variant_reads_the_attack_share():
+    import importlib.util  # main() needs a rented machine: check the parser only
+
+    from tests.training_helpers import ROOT
+    spec = importlib.util.spec_from_file_location("run_variant", ROOT / "training" / "cloud" / "run_variant.py")
+    rv = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rv)
+    assert rv.arguments(["x"]).attack_share is None
+    assert rv.arguments(["x", "--attack-share", "0.35"]).attack_share == 0.35
+
+
 # --- the range view of a series ------------------------------------------------
 
 def test_range_view_keeps_the_size_of_a_change():
