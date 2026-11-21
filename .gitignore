@@ -27,3 +27,6 @@ external/
 *.safetensors
 results/
 runs/
+
+# written during a copy to a rented machine (training/cloud/remote.sh sync)
+training/VERSION

@@ -9,7 +9,8 @@ once add_stage.py has patched the file. Without `example_id`, predictions are jo
 file by order, and every `gold` must match that row's answer.
 
 An answer is valid when it holds `Answer: attack` or `Answer: normal`. The first one counts.
-An empty or unparseable answer is wrong: it never counts as normal nor as attack.
+An empty or unparseable answer is wrong: it never counts as normal nor as attack. An answer may
+end with `Answer: attack` / `Answer: normal` or open with `attack` / `normal` (label first).
 
 Per version and overall, on the scored window of each attack (one per attack):
   attacks           attacks with at least one attacked loop among the six
@@ -39,6 +40,7 @@ import sys
 from collections import defaultdict
 
 ANSWER = re.compile(r"Answer:\s*(attack|normal)\b", re.IGNORECASE)
+LEAD = re.compile(r"\s*(?:Answer:\s*)?(attack|normal)\b", re.IGNORECASE)  # a label-first answer opens with its label
 START = re.compile(r"Change starts near second\s+(\d+)", re.IGNORECASE)
 UNDER_WAY = re.compile(r"already under way", re.IGNORECASE)
 TIME_TOLERANCE_S = 30
@@ -48,11 +50,14 @@ def parse(text) -> tuple[str | None, int | None]:
     """(label or None, start second or None) from a generated answer."""
     if not isinstance(text, str):
         return None, None
-    m = ANSWER.search(text)
-    if not m:
-        return None, None
-    label = m.group(1).lower()
-    head = text[: m.end()]
+    m = LEAD.match(text)
+    if m:  # label first: the start second follows the label
+        label, head = m.group(1).lower(), text
+    else:
+        m = ANSWER.search(text)
+        if not m:
+            return None, None
+        label, head = m.group(1).lower(), text[: m.end()]
     s = START.search(head)
     if s:
         return label, int(s.group(1))

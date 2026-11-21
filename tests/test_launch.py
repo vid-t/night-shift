@@ -71,7 +71,120 @@ def test_left_padding_would_hand_opentslm_padding_for_the_series_labels():
     assert kept("left") == ""   # all padding: the label is gone
 
 
+# --- greedy answers, adapters before the previous stage -----------------------
+
+def test_answers_are_decoded_greedily_unless_asked_otherwise():
+    class Toy:
+        def generate(self, batch, max_new_tokens=50, **kwargs):
+            return kwargs
+
+    launch.decode_greedy(Toy)
+    assert Toy().generate([]) == {"do_sample": False}
+    assert Toy().generate([], do_sample=True) == {"do_sample": True}
+    launch.cap_answers(64, Toy)                       # both wrappers together
+    assert Toy().generate([], max_new_tokens=2000) == {"do_sample": False}
+
+
+def test_adapters_are_switched_on_before_the_previous_stage_loads():
+    calls = []
+
+    class Trainer:
+        def _enable_lora_if_needed(self, stage):
+            calls.append(("adapters on", stage))
+
+        def _load_previous_stage_model(self, current_stage):
+            calls.append(("load previous", current_stage))
+            return {"ok": True}
+
+    module = type("cl", (), {"CurriculumTrainer": Trainer})
+    launch.keep_previous_adapters(module)
+    assert Trainer()._load_previous_stage_model("stage6_hai") == {"ok": True}
+    assert calls == [("adapters on", "stage6_hai"), ("load previous", "stage6_hai")]
+    calls.clear()
+    Trainer()._load_previous_stage_model("stage3_cot")   # OpenTSLM's own stages are left alone
+    assert calls == [("load previous", "stage3_cot")]
+
+
 # --- answer cap -------------------------------------------------------------
+
+# --- encoder check -----------------------------------------------------------
+
+def _toy_reader(torch, alive: bool):
+    """An encoder and a projector with the shapes launch.encoder_response expects. `alive=False` ignores the curve."""
+    class Encoder(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.scale = torch.nn.Parameter(torch.ones(1))
+
+        def forward(self, x):  # [curves, seconds] -> [curves, patches, 2]
+            patches = x.reshape(x.size(0), -1, 4).mean(dim=-1, keepdim=True)
+            signal = patches if alive else torch.zeros_like(patches)
+            return torch.cat([signal * self.scale, torch.ones_like(patches)], dim=-1)
+
+    class Reader(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.encoder, self.projector = Encoder(), torch.nn.Linear(2, 3)
+
+    torch.manual_seed(0)
+    return Reader()
+
+
+def test_encoder_response_tells_a_working_encoder_from_a_collapsed_one():
+    torch = pytest.importorskip("torch")
+    assert launch.encoder_response(_toy_reader(torch, alive=True)) > 0.05
+    assert launch.encoder_response(_toy_reader(torch, alive=False)) < launch.ENCODER_DEAD_BELOW
+
+
+def test_encoder_response_leaves_the_training_mode_as_it_was():
+    torch = pytest.importorskip("torch")
+    reader = _toy_reader(torch, alive=True)
+    reader.train()
+    launch.encoder_response(reader)
+    assert reader.encoder.training and reader.projector.training
+    reader.eval()
+    launch.encoder_response(reader)
+    assert not reader.encoder.training and not reader.projector.training
+
+
+def test_a_starting_checkpoint_with_a_dead_encoder_is_refused(capsys):
+    """The published end-of-curriculum checkpoint is one: two full runs started from it and never read a curve."""
+    torch = pytest.importorskip("torch")
+
+    class Trainer:
+        def __init__(self, alive):
+            self.model, self.saved = _toy_reader(torch, alive), []
+
+        def _get_model(self):
+            return self.model
+
+        def _load_previous_stage_model(self, current_stage):
+            return {"stage": "before"}
+
+        def _save_loss_history(self, stage, epoch, train_loss, val_loss):
+            self.saved.append(epoch)
+
+        def _evaluate_stage(self, name):
+            return {"evaluated": name}
+
+    class cl:
+        CurriculumTrainer = Trainer
+
+    launch.watch_encoder(cl)
+    good = Trainer(alive=True)
+    assert good._load_previous_stage_model("stage6_hai") == {"stage": "before"}
+    good._save_loss_history("stage6_hai", 2, 0.1, 0.2)
+    assert good.saved == [2] and good._evaluate_stage("stage6_hai") == {"evaluated": "stage6_hai"}
+    out = capsys.readouterr().out
+    assert "at the start" in out and "after epoch 2" in out and "that answers" in out and "DEAD" not in out
+
+    dead = Trainer(alive=False)
+    assert dead._load_previous_stage_model("stage3_cot") == {"stage": "before"}  # only stage6_hai is checked
+    with pytest.raises(RuntimeError, match="same output for every curve"):
+        dead._load_previous_stage_model("stage6_hai")
+    dead._save_loss_history("stage6_hai", 3, 0.1, 0.2)  # a collapse while training is reported, not raised
+    assert dead.saved == [3] and "DEAD" in capsys.readouterr().out
+
 
 def test_answer_cap_only_lowers_the_limit():
     class Toy:

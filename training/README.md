@@ -51,10 +51,10 @@ bash training/setup.sh                    # LLM id, default meta-llama/Llama-3.2
 It ends with:
 
 ```
-seeded results/Llama_3_2_1B/OpenTSLMSP/stage5_ecg_cot/checkpoints/best_model.pt (28.6 MB) and results/Llama_3_2_1B/OpenTSLMSP/stage5_ecg_cot/results/metrics.json
+seeded results/Llama_3_2_1B/OpenTSLMSP/stage5_ecg_cot/checkpoints/best_model.pt (164.1 MB) and results/Llama_3_2_1B/OpenTSLMSP/stage5_ecg_cot/results/metrics.json
 ```
 
-A stage loads the stage before it, so the pretrained checkpoint goes where `stage5_ecg_cot` would be. The folder name comes from the code (`Llama_3_2_1B`), not from OpenTSLM's README (`Llama3_2_1B`). If you pass another LLM id, pass the same id to every command below.
+A stage loads the stage before it, so the pretrained checkpoint goes where `stage5_ecg_cot` would be. The default is OpenTSLM's stage 4 checkpoint (`OpenTSLM/llama-3.2-1b-sleep-sp`); `HAI_START_CHECKPOINT` names another one. Do not use the stage 5 checkpoint: see "The starting checkpoint" below. The folder name comes from the code (`Llama_3_2_1B`), not from OpenTSLM's README (`Llama3_2_1B`). If you pass another LLM id, pass the same id to every command below.
 
 All later commands run inside `external/OpenTSLM` with these variables:
 
@@ -162,6 +162,24 @@ The probe times whole seconds on short epochs, so read the speeds as rough. The 
 ### The tokenizer of the open copy pads on the left
 
 `unsloth/Llama-3.2-1B` has the weights of Meta's copy and a different tokenizer setting: it pads on the left with `<|finetune_right_pad_id|>`. OpenTSLM's `pad_and_apply_batch` keeps the first n tokens of each padded text piece. With left padding those are all padding: the model got the opening instruction and the curves, but no series label ("This is the target ...") and no closing "Answer:". `launch.py` and `smoke_cpu.py` now make every tokenizer pad on the right with the end-of-text token. `tests/test_launch.py` checks it against the real tokenizer.
+
+### The starting checkpoint: not the end of the curriculum
+
+The encoder turns each curve into soft tokens for the language model. In the published stage 5 checkpoint, `OpenTSLM/llama-3.2-1b-ecg-sp`, it gives the same soft tokens for every curve: the signal dies in the last two of its six layers. A model that starts there never sees a curve, and four epochs on the HAI rows did not revive it. Two full runs on 2026-11-21 started from it: both gave the same answers on 1,536 of 1,536 test rows after the seconds were shuffled.
+
+Encoder response: six fixed curves (flat, ramp, step up, wave, step down, late ramp) go through the encoder and the projector; the number is how far their soft tokens lie apart, relative to their size (`encoder_response` in `launch.py`).
+
+| Published checkpoint | Encoder response |
+|---|---|
+| stage 1, `llama-3.2-1b-tsqa-sp` | 0.28 |
+| stage 2, `llama-3.2-1b-m4-sp` | 0.25 |
+| stage 3, `llama-3.2-1b-har-sp` | 0.37 |
+| stage 4, `llama-3.2-1b-sleep-sp` | 0.38 |
+| stage 5, `llama-3.2-1b-ecg-sp` | 0.00001 |
+
+An encoder can also die while it trains: it did in the first full run (z-score view, labels before the repair), which then read only the mean and the spread printed in the text. So `launch.py` checks the response three times: at the start, where it refuses a checkpoint under 0.01; after every epoch; and before the answers. Look for the `[launch] encoder response` lines in the log.
+
+`launch.py` also makes the answers greedy (Llama's own settings sample at temperature 0.6, so the same model gave different answers to 7 of 50 rows) and switches the adapters on before the previous stage loads (OpenTSLM switches them on afterwards and so drops the adapter weights of the starting checkpoint).
 
 ### First run, 2026-11-20: the overfit check on 50 training rows
 

@@ -68,8 +68,9 @@ def test_parse():
     assert score.parse("The measurement rises. Change starts near second 87. Answer: attack") == ("attack", 87)
     assert score.parse("The change is already under way when the window opens. Answer: attack") == ("attack", 0)
     assert score.parse("Stays flat. Answer: normal and then Answer: attack") == ("normal", None)
-    for bad in ("", None, "attack", "Answer:", "Answer: maybe"):
+    for bad in ("", None, "maybe attack", "Answer:", "Answer: maybe", "The loop is under attack."):
         assert score.parse(bad) == (None, None)
+    assert score.parse("attack") == ("attack", None)   # a label-first answer opens with its label
 
 
 def test_perfect_answers_find_every_attack():
@@ -259,3 +260,140 @@ def test_dataset_needs_the_folder(hai_dataset, monkeypatch):
     monkeypatch.delenv("HAI_JSONL_DIR")
     with pytest.raises(RuntimeError, match="HAI_JSONL_DIR"):
         build("train")
+
+
+# --- the range view of a series ------------------------------------------------
+
+def test_range_view_keeps_the_size_of_a_change():
+    import numpy as np
+
+    mod = load_script("HAIAttackQADataset")
+    quiet = [10.0 + 0.001 * (i % 2) for i in range(300)]          # ripple of 0.1% of the normal range
+    step = [10.0] * 150 + [10.5] * 150                             # a step of half the normal range
+    q, s = np.array(mod.range_view(quiet, 1.0)), np.array(mod.range_view(step, 1.0))
+    assert np.abs(q).max() < 0.05                                  # quiet stays near zero
+    assert abs(s[:150]).max() == 0 and s[-1] == pytest.approx(np.log1p(0.5 / 0.02))   # 25 units, squashed
+    visible = np.array(mod.range_view([0.0] * 150 + [0.02] * 150, 1.0))
+    assert visible[-1] == pytest.approx(np.log1p(1.0))            # 2% of the range is one unit
+    assert mod.range_view([5.0] * 300, 3.0) == [0.0] * 300
+    down = np.array(mod.range_view([0.0] * 150 + [-0.5] * 150, 1.0))
+    assert down[-1] == pytest.approx(-s[-1])                       # the sign survives
+    with pytest.raises(RuntimeError):
+        mod.range_view(step, 0.0)
+
+
+def test_range_view_prompts_state_no_numbers(hai_dataset):
+    import re
+
+    import numpy as np
+
+    rows, build, mod = hai_dataset
+    with pytest.raises(RuntimeError):                              # rows without `scale` cannot be shown this way
+        build("train", HAI_SERIES_VIEW="range")[0]
+    folder = __import__("pathlib").Path(__import__("os").environ["HAI_JSONL_DIR"])
+    scaled = [{**r, "series": [{**s, "scale": 2.0} for s in r["series"]]} for r in rows]
+    for name in ("train", "validation", "test"):
+        (folder / f"{name}.jsonl").write_text("".join(json.dumps(r) + "\n" for r in scaled))
+    ds = build("train", HAI_SERIES_VIEW="range")
+    sample = ds[1]
+    assert "measured against its normal range" in sample["pre_prompt"]
+    for text in sample["time_series_text"]:
+        assert not re.search(r"\d", text) and "mean" not in text and text.endswith(":")
+    got = np.asarray(sample["time_series"][1], dtype=float)
+    want = np.asarray(mod.range_view(scaled[1]["series"][1]["values"], 2.0))
+    assert np.allclose(got, want, atol=1e-5)
+    assert sample["answer"].startswith(scaled[1]["answer"])
+
+
+def test_series_view_setting_is_checked(hai_dataset, monkeypatch):
+    _, _, mod = hai_dataset
+    monkeypatch.delenv("HAI_SERIES_VIEW", raising=False)
+    assert mod.series_view() == "zscore"
+    monkeypatch.setenv("HAI_SERIES_VIEW", "wavelets")
+    with pytest.raises(RuntimeError):
+        mod.series_view()
+
+
+# --- label-first answers --------------------------------------------------------
+
+TEMPLATES = [
+    ("The command falls from second 127 while the target stays flat. The measurement falls after it. "
+     "Change starts near second 116. Answer: attack",
+     "attack. Change starts near second 116. The command falls from second 127 while the target stays flat. "
+     "The measurement falls after it."),
+    ("No series shows a clear step. Change starts near second 104. Answer: attack",
+     "attack. Change starts near second 104. No series shows a clear step."),
+    ("Change starts near second 7. Answer: attack", "attack. Change starts near second 7."),
+    ("The change is already under way when the window opens. Answer: attack",
+     "attack. The change is already under way when the window opens."),
+    ("The target and the measurement stay flat. The command stays flat. Answer: normal",
+     "normal. The target and the measurement stay flat. The command stays flat."),
+]
+
+
+def test_label_first_moves_the_label_and_the_start_to_the_front():
+    mod = load_script("HAIAttackQADataset")
+    for exported, want in TEMPLATES:
+        assert mod.label_first(exported) == want
+        assert score.parse(want) == score.parse(exported)          # same label and start second either way
+    with pytest.raises(ValueError):
+        mod.label_first("The command rises.")
+
+
+def test_label_first_keeps_label_and_start_of_every_exported_answer():
+    from tests.training_helpers import ROOT
+
+    path = ROOT / "data" / "processed" / "opentslm" / "validation.jsonl"
+    if not path.exists():
+        pytest.skip("no exported files: run `uv run hai-build` and `uv run hai-export`")
+    mod = load_script("HAIAttackQADataset")
+    rows = [json.loads(line) for line in open(path, encoding="utf-8")]
+    assert len(rows) > 1000
+    for r in rows:
+        first = mod.label_first(r["answer"])
+        assert first.startswith(r["label"] + ".")
+        assert score.parse(first) == score.parse(r["answer"]) and score.parse(first)[0] == r["label"]
+
+
+def test_scorer_reads_what_a_label_first_model_writes():
+    assert score.parse(" attack. Change starts near second 116. The command falls from second 127.") == ("attack", 116)
+    assert score.parse("normal. The target and the measurement stay flat.") == ("normal", None)
+    assert score.parse(" attack. The change is already under way when the window opens.") == ("attack", 0)
+    assert score.parse("The command rises.") == (None, None)
+    assert score.parse("Answer: normal") == ("normal", None)
+    assert score.parse("Change starts near second 12. Answer: attack") == ("attack", 12)
+
+
+def test_dataset_can_put_the_label_first(hai_dataset):
+    rows, build, mod = hai_dataset
+    ds = build("train", HAI_ANSWER_ORDER="label_first")
+    for i in range(len(ds)):
+        s = ds[i]
+        assert s["answer"] == mod.label_first(rows[i]["answer"]) + "<eos>"
+        assert s["answer"].startswith(rows[i]["label"] + ".")
+        assert "Say first whether" in s["pre_prompt"] and "End with" not in s["pre_prompt"]
+        assert s["post_prompt"] == "Answer:"
+
+
+def test_label_only_keeps_just_the_label():
+    mod = load_script("HAIAttackQADataset")
+    assert mod.label_only("The command rises from second 37. Change starts near second 33. Answer: attack") == "attack"
+    assert mod.label_only("The target and the measurement stay flat. Answer: normal") == "normal"
+    with pytest.raises(ValueError):
+        mod.label_only("The command rises.")
+
+
+def test_dataset_can_ask_for_the_label_only(hai_dataset):
+    rows, build, mod = hai_dataset
+    ds = build("train", HAI_ANSWER_ORDER="label_only")
+    for i in range(len(ds)):
+        s = ds[i]
+        assert s["answer"] == rows[i]["label"] + "<eos>"
+        assert "one word" in s["pre_prompt"] and "Answer: attack" not in s["pre_prompt"]
+
+
+def test_scorer_reads_what_a_label_only_model_writes():
+    score = load_script("score")
+    assert score.parse("attack") == ("attack", None)
+    assert score.parse(" normal") == ("normal", None)
+

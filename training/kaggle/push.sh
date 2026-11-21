@@ -10,6 +10,7 @@
 #
 # KAGGLE_TIME_LIMIT    seconds after which Kaggle stops the run (default 5400)
 # KAGGLE_SKIP_UPLOAD=1 start the script on the run files already on Kaggle
+# KAGGLE_UPLOAD_ONLY=1 upload the run files and start nothing
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -37,7 +38,7 @@ if [ "${KAGGLE_SKIP_UPLOAD:-0}" = "1" ]; then
   echo "upload skipped (KAGGLE_SKIP_UPLOAD=1)"
 else
   cp "$ROOT"/training/{HAIAttackQADataset.py,add_stage.py,setup.sh,score.py,launch.py} "$HERE"/{gpu_check.py,kaggle_common.py} "$BUILD/files/"
-  cp "$JSONL"/{train,validation,test,test_shuffled}.jsonl "$BUILD/files/"
+  cp "$JSONL"/{train,validation,test,test_shuffled,validation_shuffled}.jsonl "$BUILD/files/"
   VERSION="$(git -C "$ROOT" rev-parse --short HEAD)"
   test -z "$(git -C "$ROOT" status --porcelain)" || VERSION="$VERSION plus uncommitted changes"
   echo "hai-attack-reader $VERSION, uploaded $(date -u +%Y-%m-%dT%H:%MZ)" > "$BUILD/files/VERSION"
@@ -57,6 +58,11 @@ EOF
   done
   echo "dataset status: $STATUS"
   case "$STATUS" in *ready*) ;; *) echo "the dataset is not ready; try again in a minute" >&2; exit 1 ;; esac
+fi
+
+if [ "${KAGGLE_UPLOAD_ONLY:-0}" = "1" ]; then
+  echo "upload only (KAGGLE_UPLOAD_ONLY=1): no run started"
+  exit 0
 fi
 
 echo "== 2. $NAME.py -> $KERNEL on a T4, private, at most $TIME_LIMIT s"

@@ -214,6 +214,9 @@ def main(argv=None) -> None:
     level_only = np.array([r.label == "attack" and answer(r, {t: scales[(r.version, t)] for t in r.tags})[1]
                            for r in ex.itertuples()], bool)  # the rule without the swing test, for the report
     ex["reacting"] = reacting(ex, scales, eligible)
+    # the normal-file scale (p99 - p1) of each series, in the order of `tags`: lets a reader show a series
+    # in units of its normal range
+    ex["scales"] = [[float(scales[(r.version, t)]) for t in r.tags] for r in ex.itertuples()]
     ex["train_use"] = training_sample(ex)
 
     wins.to_parquet(PROCESSED / "windows.parquet", index=False)
