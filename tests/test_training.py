@@ -508,3 +508,52 @@ def test_scorer_reads_what_a_label_only_model_writes():
     assert score.parse("attack") == ("attack", None)
     assert score.parse(" normal") == ("normal", None)
 
+
+# --- starting from another run -------------------------------------------------
+
+def _cloud_script(name: str):
+    import importlib.util
+
+    from tests.training_helpers import ROOT
+    spec = importlib.util.spec_from_file_location(f"cloud_{name}", ROOT / "training" / "cloud" / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_start_source_names_a_repo_or_the_model_of_a_finished_run(tmp_path):
+    rv = _cloud_script("run_variant")
+    assert rv.start_source("sleep", tmp_path) == "OpenTSLM/llama-3.2-1b-sleep-sp"
+    assert rv.start_source("some-org/some-repo", tmp_path) == "some-org/some-repo"
+    kept = tmp_path / "work" / "abc" / "kept"
+    kept.mkdir(parents=True)
+    (kept / "best_model.pt").write_bytes(b"model")
+    (kept / "run_summary.json").write_text("{}")
+    assert rv.start_source("run:abc", tmp_path) == str((kept / "best_model.pt").resolve())
+    with pytest.raises(SystemExit):
+        rv.start_source("run:missing", tmp_path)
+    unfinished = tmp_path / "work" / "half" / "kept"
+    unfinished.mkdir(parents=True)
+    (unfinished / "best_model.pt").write_bytes(b"model")
+    with pytest.raises(SystemExit):
+        rv.start_source("run:half", tmp_path)
+
+
+def test_seed_copies_a_local_checkpoint(tmp_path, monkeypatch):
+    seed = _cloud_script("seed")
+    local = tmp_path / "other" / "best_model.pt"
+    local.parent.mkdir()
+    local.write_bytes(b"\x00\x01dummy checkpoint")
+    monkeypatch.chdir(tmp_path)
+    dst = seed.seed("unsloth/Llama-3.2-1B", str(local))
+    stage = tmp_path / "results" / "Llama_3_2_1B" / "OpenTSLMSP" / "stage5_ecg_cot"
+    assert (tmp_path / dst).resolve() == (stage / "checkpoints" / "best_model.pt").resolve()
+    assert (stage / "checkpoints" / "best_model.pt").read_bytes() == local.read_bytes()
+    assert json.loads((stage / "results" / "metrics.json").read_text())["seeded_from"] == str(local.resolve())
+
+
+def test_run_variant_parser_takes_a_run_as_start():
+    rv = _cloud_script("run_variant")
+    assert rv.arguments(["x"]).start == "sleep"
+    assert rv.arguments(["x", "--start", "sleep"]).start == "sleep"
+    assert rv.arguments(["x", "--start", "run:abc"]).start == "run:abc"

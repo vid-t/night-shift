@@ -1,6 +1,6 @@
 """One design of stage6_hai on a rented GPU machine, in its own folder, so several can run at once.
 
-    python3 training/cloud/run_variant.py NAME [--start sleep] [--view range] [--order label_last]
+    python3 training/cloud/run_variant.py NAME [--start sleep|run:OTHER] [--view range] [--order label_last]
         [--epochs 4] [--seed 0] [--rows 0] [--dtype bfloat16] [--batch-size 1] [--answers validation]
         [--lr-encoder 5e-5] [--attack-share 0.35]
     python3 training/cloud/run_variant.py NAME --answer-only test test_shuffled
@@ -19,6 +19,7 @@ Everything of the run is under work/NAME:
                           loss_history.txt and best_model.pt
 
 `--rows 50` is the rehearsal: train, validation and test are the same 50 training rows.
+`--start run:OTHER` starts from work/OTHER/kept/best_model.pt, the saved model of the finished run OTHER.
 """
 import argparse
 import json
@@ -41,11 +42,23 @@ def short(file: str) -> str:
     return {"test": "plain", "test_shuffled": "shuffled"}.get(file, file)
 
 
+def start_source(start: str, root: Path = ROOT) -> str:
+    """What seed.py gets for --start: a Hugging Face repo, or the path of the saved model of a finished run."""
+    if not start.startswith("run:"):
+        return STARTS.get(start, start)
+    kept = root / "work" / start[len("run:"):] / "kept"
+    for need in ("run_summary.json", "best_model.pt"):
+        if not (kept / need).is_file():
+            sys.exit(f"no {kept / need}: --start {start} needs a finished run with a saved model")
+    return str((kept / "best_model.pt").resolve())
+
+
 def arguments(argv=None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("name", help="folder name of the run under work/")
     ap.add_argument("--start", default="sleep",
-                    help="starting checkpoint: tsqa, m4, har, sleep, or a Hugging Face repo (default: %(default)s)")
+                    help="starting checkpoint: tsqa, m4, har, sleep, a Hugging Face repo, or run:OTHER for the "
+                         "saved model of the finished run OTHER on this machine (default: %(default)s)")
     ap.add_argument("--view", default="range", choices=("range", "zscore"))
     ap.add_argument("--order", default="label_last", choices=("label_last", "label_first", "label_only"))
     ap.add_argument("--epochs", type=int, default=4)
@@ -83,6 +96,10 @@ def main(argv=None) -> None:
         sys.exit(f"no {summary_file}: --answer-only needs a finished run")
     if not args.answer_only and summary_file.exists():
         sys.exit(f"{summary_file} exists: this run is done. Pick another name, or use --answer-only.")
+    if not args.answer_only:
+        if args.start == f"run:{args.name}":
+            sys.exit(f"--start {args.start}: a run cannot start from itself")
+        source = start_source(args.start)  # exits before anything is made if the other run is not done
     kept.mkdir(parents=True, exist_ok=True)
     os.environ["HAI_KEEP_DIR"] = str(kept)  # before the import: kaggle_common reads it once
     sys.path.insert(0, str(ROOT / "training" / "kaggle"))
@@ -117,14 +134,15 @@ def main(argv=None) -> None:
         return
 
     k.LOG.write_text("")
-    repo = STARTS.get(args.start, args.start)
+    from_run = args.start.startswith("run:")
     files = ANSWER_SETS[args.answers]
-    design = {"name": args.name, "start_checkpoint": repo, "series_view": args.view, "answer_order": args.order,
+    design = {"name": args.name, "start_checkpoint": args.start if from_run else source,
+              "start_file": source if from_run else None, "series_view": args.view, "answer_order": args.order,
               "epochs_planned": args.epochs, "seed": args.seed, "rehearsal_rows": args.rows, "dtype": args.dtype,
               "batch_size": args.batch_size, "answers": list(files), "lr_encoder": args.lr_encoder,
               "attack_share": args.attack_share}
     k.say(f"design: {json.dumps(design)}")
-    k.run(f"uv run python {ROOT / 'training' / 'cloud' / 'seed.py'} {k.LLM_ID} {repo}", cwd=work, **env)
+    k.run(f"uv run python {ROOT / 'training' / 'cloud' / 'seed.py'} {k.LLM_ID} {source}", cwd=work, **env)
 
     result = k.train(paths, rows=args.rows, batch_size=args.batch_size, dtype=args.dtype, attention="sdpa",
                      epochs=args.epochs, seed=args.seed, series_view=args.view, answer_order=args.order,
