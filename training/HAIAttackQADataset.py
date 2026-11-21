@@ -12,6 +12,10 @@ Reads the JSONL files that `uv run hai-export` writes. Environment variables:
   HAI_ATTACK_SHARE   a share in (0, 1): the training rows are redrawn so this share of them has label
                      attack, same number of rows (see `with_attack_share`). Unset: the rows as in the file.
                      Validation and test are never touched.
+  HAI_MIRROR_SHARE   a share in (0, 1]: mirrored copies of this share of the training rows are added after
+                     them (see `with_mirrors`), after HAI_ATTACK_SHARE if both are set. A mirrored copy shows
+                     every series flipped around the mean of its first RANGE_HEAD_S seconds, with rises and
+                     falls swapped in its answer. Unset: no copies. Validation and test are never touched.
 """
 import json
 import os
@@ -31,6 +35,7 @@ ROLE_WORDS = {
 }
 OVERFIT_SEED = 0
 ATTACK_SHARE_SEED = 0
+MIRROR_SEED = 0
 MIN_SPREAD = 1e-6  # below this (relative to the level) a series counts as flat
 
 
@@ -171,6 +176,45 @@ def with_attack_share(rows: list[dict], share: float) -> list[dict]:
     return [rows[i] for i in sorted(pick)]
 
 
+def mirror_share() -> Optional[float]:
+    """Share of the training rows that get a mirrored copy: HAI_MIRROR_SHARE, a float in (0, 1]. Unset or empty: None."""
+    raw = (os.environ.get("HAI_MIRROR_SHARE") or "").strip()
+    if not raw:
+        return None
+    try:
+        share = float(raw)
+    except ValueError:
+        share = None
+    if share is None or not 0 < share <= 1:
+        raise RuntimeError(f"HAI_MIRROR_SHARE must be a number greater than 0 and at most 1, got {raw!r}")
+    return share
+
+
+MIRROR_WORDS = {"rises": "falls", "falls": "rises"}   # every direction word src/hai/answers.py writes
+MIRROR_PATTERN = re.compile(r"\b(" + "|".join(MIRROR_WORDS) + r")\b")
+
+
+def mirror_answer(answer: str) -> str:
+    """The answer of the series flipped upside down: rises and falls swapped in one pass, the rest as it is."""
+    return MIRROR_PATTERN.sub(lambda m: MIRROR_WORDS[m.group()], answer)
+
+
+def mirror_row(row: dict) -> dict:
+    """A new row: every series flipped around the mean of its first RANGE_HEAD_S values, the answer mirrored."""
+    series = []
+    for s in row["series"]:
+        x = np.asarray(s["values"], dtype=np.float64)
+        series.append({**s, "values": (2 * x[:RANGE_HEAD_S].mean() - x).tolist()})
+    return {**row, "series": series, "answer": mirror_answer(row["answer"]), "mirrored": True}
+
+
+def with_mirrors(rows: list[dict], share: float) -> list[dict]:
+    """The rows, then mirrored copies of round(share * len(rows)) of them (fixed seed, in the order of their originals)."""
+    rng = np.random.default_rng(MIRROR_SEED)
+    pick = sorted(rng.choice(len(rows), size=round(share * len(rows)), replace=False).tolist())
+    return list(rows) + [mirror_row(rows[i]) for i in pick]
+
+
 def scale(values) -> tuple[float, float, list[float]]:
     """(mean, spread, scaled values). A flat series has zero spread: its scaled values are all zero."""
     x = np.asarray(values, dtype=np.float64)
@@ -192,17 +236,23 @@ class HAIAttackQADataset(QADataset):
         folder = Path(folder)
         train = _read_jsonl(folder / "train.jsonl")
         share = attack_share()
+        mirror = mirror_share()
         overfit = int(os.environ.get("HAI_OVERFIT_ROWS", "0") or 0)
         if overfit > 0:
             rng = np.random.default_rng(OVERFIT_SEED)
             pick = sorted(rng.choice(len(train), size=min(overfit, len(train)), replace=False).tolist())
             rows = [train[i] for i in pick]
             print(f"HAI overfit check: train, validation and test are the same {len(rows)} training rows")
-            return (rows if share is None else self._with_share(rows, share)), list(rows), list(rows)
+            train = rows if share is None else self._with_share(rows, share)
+            if mirror is not None:
+                train = self._with_mirrors(train, mirror)
+            return train, list(rows), list(rows)
         val = _read_jsonl(folder / "validation.jsonl")
         test = _read_jsonl(folder / os.environ.get("HAI_TEST_FILE", "test.jsonl"))
         if share is not None:
             train = self._with_share(train, share)
+        if mirror is not None:
+            train = self._with_mirrors(train, mirror)
         print(f"HAI rows: train {len(train)}, validation {len(val)}, test {len(test)}")
         return train, val, test
 
@@ -214,6 +264,13 @@ class HAIAttackQADataset(QADataset):
         after = sum(r["label"] == "attack" for r in out)
         print(f"HAI attack share {share}: train rows {len(out)} (attack {after}, normal {len(out) - after}; "
               f"before: attack {before}, normal {len(rows) - before})")
+        return out
+
+    @staticmethod
+    def _with_mirrors(rows: list[dict], share: float) -> list[dict]:
+        """with_mirrors, and one line that says what it did."""
+        out = with_mirrors(rows, share)
+        print(f"HAI mirror share {share}: train rows {len(out)} ({len(out) - len(rows)} mirrored copies added to {len(rows)})")
         return out
 
     def _get_answer(self, row) -> str:

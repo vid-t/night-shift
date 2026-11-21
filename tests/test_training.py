@@ -373,6 +373,189 @@ def test_run_variant_reads_the_attack_share():
     assert rv.arguments(["x", "--attack-share", "0.35"]).attack_share == 0.35
 
 
+# --- mirrored copies of training rows -------------------------------------------
+
+MIRRORS = [
+    ("The command falls from second 127 while the target stays flat. The measurement falls after it. "
+     "Change starts near second 116. Answer: attack",
+     "The command rises from second 127 while the target stays flat. The measurement rises after it. "
+     "Change starts near second 116. Answer: attack"),
+    ("The measurement rises from second 40 while the target and the command stay flat. The command falls with it. "
+     "Change starts near second 38. Answer: attack",
+     "The measurement falls from second 40 while the target and the command stay flat. The command rises with it. "
+     "Change starts near second 38. Answer: attack"),
+    ("The command starts swinging from second 90. The measurement rises after it. Change starts near second 88. "
+     "Answer: attack",
+     "The command starts swinging from second 90. The measurement falls after it. Change starts near second 88. "
+     "Answer: attack"),
+    ("The measurement follows the target as it rises. The command falls. Answer: normal",
+     "The measurement follows the target as it falls. The command rises. Answer: normal"),
+    ("The target falls and the measurement rises. The commands move. Answer: normal",
+     "The target rises and the measurement falls. The commands move. Answer: normal"),
+    ("The target stays flat while the measurement falls. The command stops swinging. Answer: normal",
+     "The target stays flat while the measurement rises. The command stops swinging. Answer: normal"),
+    ("The measurement moves. The command rises. Answer: normal",
+     "The measurement moves. The command falls. Answer: normal"),
+]
+
+
+def test_mirror_answer_swaps_rises_and_falls():
+    mod = load_script("HAIAttackQADataset")
+    for answer, want in MIRRORS:
+        assert mod.mirror_answer(answer) == want
+        assert mod.mirror_answer(want) == answer
+        assert mod.mirror_answer(mod.mirror_answer(answer)) == answer
+        assert score.parse(mod.mirror_answer(answer)) == score.parse(answer)   # same label and start second
+    for plain in ("The target and the measurement stay flat. The command stays flat. Answer: normal",
+                  "No series shows a clear step. Change starts near second 104. Answer: attack",
+                  "The change is already under way when the window opens. Answer: attack",
+                  "Change starts near second 7. Answer: attack"):
+        assert mod.mirror_answer(plain) == plain
+    assert mod.mirror_answer("risesx falls1 rises.") == "risesx falls1 falls."      # whole words only
+
+
+def _mirror_source():
+    head = [1.0, 3.0] * 15                                         # first 30 values: mean 2
+    return {"example_id": "w/P1-LC", "label": "attack", "attack_start_s": 40, "window_kind": "attack",
+            "answer": "The measurement rises from second 41. Change starts near second 40. Answer: attack",
+            "series": [{"role": "target", "name": "target", "values": [5.0] * 60, "scale": 2.0},
+                       {"role": "measurement", "name": "measurement", "values": head + [2.0] * 10 + [10.0] * 20,
+                        "scale": 4.0}]}
+
+
+def test_mirror_row_flips_every_series_around_its_first_seconds():
+    import copy
+
+    mod = load_script("HAIAttackQADataset")
+    row = _mirror_source()
+    before = copy.deepcopy(row)
+    out = mod.mirror_row(row)
+    assert row == before                                           # the input row and its series are untouched
+    assert out is not row and all(a is not b for a, b in zip(out["series"], row["series"]))
+    assert out["series"][0]["values"] == [5.0] * 60
+    assert out["series"][1]["values"] == [3.0, 1.0] * 15 + [2.0] * 10 + [-6.0] * 20   # 2 * 2 - v
+    assert out["answer"] == "The measurement falls from second 41. Change starts near second 40. Answer: attack"
+    assert out["mirrored"] is True and "mirrored" not in row
+    for key in ("example_id", "label", "attack_start_s", "window_kind"):
+        assert out[key] == row[key]
+    assert [s["scale"] for s in out["series"]] == [2.0, 4.0]
+    assert [(s["role"], s["name"]) for s in out["series"]] == [(s["role"], s["name"]) for s in row["series"]]
+    twice = mod.mirror_row(out)
+    assert [s["values"] for s in twice["series"]] == [s["values"] for s in row["series"]]
+    assert twice["answer"] == row["answer"]
+
+
+def test_mirrored_row_has_the_negative_range_view():
+    import numpy as np
+
+    mod = load_script("HAIAttackQADataset")
+    row = _mirror_source()
+    out = mod.mirror_row(row)
+    for s, m in zip(row["series"], out["series"]):
+        assert np.allclose(mod.range_view(m["values"], m["scale"]), -np.asarray(mod.range_view(s["values"], s["scale"])))
+
+
+def _mirror_rows(n=10):
+    return [{"example_id": f"r{i}", "label": "attack" if i % 3 == 0 else "normal", "window_kind": "attack",
+             "answer": f"The command rises from second {40 + i}. Answer: attack",
+             "series": [{"role": "command", "name": "command", "values": [float(i)] * 30 + [i + 1.0] * 30}]}
+            for i in range(n)]
+
+
+def test_with_mirrors_adds_mirrored_copies_after_the_rows():
+    mod = load_script("HAIAttackQADataset")
+    rows = _mirror_rows(10)
+    for share, added in ((0.5, 5), (0.25, 2), (1.0, 10)):
+        out = mod.with_mirrors(rows, share)
+        assert len(out) == len(rows) + added == len(rows) + round(share * len(rows))
+        assert all(a is b for a, b in zip(out, rows))              # the input rows themselves, in order
+        copies = out[len(rows):]
+        order = {r["example_id"]: i for i, r in enumerate(rows)}
+        positions = [order[c["example_id"]] for c in copies]
+        assert positions == sorted(set(positions))                 # distinct originals, in their order
+        for c, p in zip(copies, positions):
+            assert c == mod.mirror_row(rows[p])
+        assert mod.with_mirrors(rows, share) == out
+    assert [c["example_id"] for c in mod.with_mirrors(rows, 1.0)[10:]] == _ids(rows)
+    assert all("mirrored" not in r for r in rows)
+
+
+def test_dataset_train_rows_have_no_mirrors_by_default(hai_dataset, monkeypatch):
+    rows, build, _ = hai_dataset
+    monkeypatch.delenv("HAI_MIRROR_SHARE", raising=False)
+    assert [s["example_id"] for s in build("train")] == _ids(rows)
+    monkeypatch.setenv("HAI_MIRROR_SHARE", "")
+    ds = build("train")
+    assert [s["example_id"] for s in ds] == _ids(rows)
+    assert [s["answer"] for s in ds] == [r["answer"] + "<eos>" for r in rows]
+
+
+def test_dataset_mirror_share_adds_copies_to_the_training_rows_only(hai_dataset):
+    rows, build, mod = hai_dataset
+    train = build("train", HAI_MIRROR_SHARE="0.5")
+    cls = type(train)
+    assert len(train) == len(rows) + round(0.5 * len(rows)) == 30
+    assert [train[i]["example_id"] for i in range(20)] == _ids(rows)
+    want = mod.with_mirrors(rows, 0.5)[20:]
+    for i, w in enumerate(want):
+        assert train[20 + i]["answer"] == w["answer"] + "<eos>" and train[20 + i]["example_id"] == w["example_id"]
+    for split in ("validation", "test"):
+        ds = cls(split, EOS_TOKEN="<eos>")
+        assert [s["example_id"] for s in ds] == _ids(rows)
+        assert [s["answer"] for s in ds] == [r["answer"] + "<eos>" for r in rows]
+
+
+def test_dataset_attack_share_then_mirrors(hai_dataset):
+    rows, build, mod = hai_dataset
+    train = build("train", HAI_ATTACK_SHARE="0.5", HAI_MIRROR_SHARE="0.5")
+    shared = mod.with_attack_share(rows, 0.5)
+    want = mod.with_mirrors(shared, 0.5)
+    assert len(train) == len(want) == 30
+    assert [s["example_id"] for s in train] == _ids(want)
+    assert [s["answer"] for s in train] == [r["answer"] + "<eos>" for r in want]
+    assert sum(s["label"] == "attack" for s in [train[i] for i in range(20)]) == 10
+    for split in ("validation", "test"):
+        assert [s["example_id"] for s in type(train)(split, EOS_TOKEN="<eos>")] == _ids(rows)
+
+
+def test_dataset_mirror_share_in_the_overfit_check(hai_dataset):
+    _, build, _ = hai_dataset
+    plain = build("train", HAI_OVERFIT_ROWS="10")
+    picked = [s["example_id"] for s in type(plain)("test", EOS_TOKEN="<eos>")]
+    train = build("train", HAI_OVERFIT_ROWS="10", HAI_MIRROR_SHARE="0.5")
+    cls = type(train)
+    assert len(train) == 15 and [train[i]["example_id"] for i in range(10)] == picked
+    for split in ("validation", "test"):
+        assert [s["example_id"] for s in cls(split, EOS_TOKEN="<eos>")] == picked
+    both = build("train", HAI_OVERFIT_ROWS="10", HAI_ATTACK_SHARE="0.5", HAI_MIRROR_SHARE="0.5")
+    assert len(both) == 15 and sum(both[i]["label"] == "attack" for i in range(10)) == 5
+    assert [s["example_id"] for s in type(both)("test", EOS_TOKEN="<eos>")] == picked
+
+
+@pytest.mark.parametrize("bad", ["0", "1.5", "abc", "-0.5", "nan"])
+def test_mirror_share_setting_is_checked(hai_dataset, monkeypatch, bad):
+    _, build, mod = hai_dataset
+    monkeypatch.setenv("HAI_MIRROR_SHARE", bad)
+    with pytest.raises(RuntimeError, match="HAI_MIRROR_SHARE"):
+        mod.mirror_share()
+    with pytest.raises(RuntimeError, match="HAI_MIRROR_SHARE"):
+        build("train")
+
+
+def test_mirror_share_setting_accepts_one(hai_dataset, monkeypatch):
+    _, _, mod = hai_dataset
+    monkeypatch.setenv("HAI_MIRROR_SHARE", "1")
+    assert mod.mirror_share() == 1.0
+    monkeypatch.delenv("HAI_MIRROR_SHARE")
+    assert mod.mirror_share() is None
+
+
+def test_run_variant_reads_the_mirror_share():
+    rv = _cloud_script("run_variant")
+    assert rv.arguments(["x"]).mirror_share is None
+    assert rv.arguments(["x", "--mirror-share", "0.5"]).mirror_share == 0.5
+
+
 # --- the range view of a series ------------------------------------------------
 
 def test_range_view_keeps_the_size_of_a_change():
