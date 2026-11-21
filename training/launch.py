@@ -18,6 +18,7 @@ Use it in place of curriculum_learning.py, with the same arguments, from the Ope
     HAI_MAX_NEW_TOKENS=128    cap the length of an answer in evaluation. OpenTSLM allows 2000
                               tokens per answer; the longest HAI answer has about 60.
     HAI_EPOCHS=3              epochs of stage6_hai (default: the 10 of the stage)
+    HAI_LR_ENCODER=5e-5       learning rate of the encoder in stage6_hai (default: the 2e-4 of the stage)
     HAI_SEED=0                seed for the weights that start at random and the row order
     OPENTSLM_DIR=<path>       where curriculum_learning.py is (default: the current folder)
 
@@ -260,6 +261,18 @@ def set_epochs(cl, epochs: int) -> None:
     cl.CurriculumTrainer._train_stage = train_stage
 
 
+def set_encoder_lr(cl, lr: float) -> None:
+    """Give the encoder of stage6_hai this learning rate in place of the stage's own."""
+    original = cl.CurriculumTrainer._train_stage
+
+    def train_stage(self, *args, **kwargs):
+        if kwargs.get("stage_name") == "stage6_hai" and "lr_encoder" in kwargs:
+            kwargs["lr_encoder"] = lr
+        return original(self, *args, **kwargs)
+
+    cl.CurriculumTrainer._train_stage = train_stage
+
+
 def seed_everything(seed: int) -> None:
     import random
 
@@ -296,6 +309,7 @@ def main() -> None:
     scale = setting("HAI_LOSS_SCALE", float, lambda v: v >= 1)
     limit = setting("HAI_MAX_NEW_TOKENS", int, lambda v: v >= 1)
     epochs = setting("HAI_EPOCHS", int, lambda v: v >= 1)
+    lr_encoder = setting("HAI_LR_ENCODER", float, lambda v: v > 0)
     seed = setting("HAI_SEED", int, lambda v: v >= 0)
     if scale is None and dtype == "float16":
         scale = DEFAULT_LOSS_SCALE
@@ -324,6 +338,9 @@ def main() -> None:
     if epochs:
         set_epochs(cl, epochs)
         print(f"[launch] stage6_hai runs {epochs} epoch(s)")
+    if lr_encoder:
+        set_encoder_lr(cl, lr_encoder)
+        print(f"[launch] stage6_hai encoder learning rate {lr_encoder:g}")
     if seed is not None:
         seed_everything(seed)
         print(f"[launch] seed {seed}")

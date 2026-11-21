@@ -105,6 +105,21 @@ def test_adapters_are_switched_on_before_the_previous_stage_loads():
     assert calls == [("load previous", "stage3_cot")]
 
 
+def test_the_encoder_learning_rate_of_stage6_hai_is_set():
+    class Trainer:
+        def _train_stage(self, **kwargs):
+            return kwargs
+
+    module = type("cl", (), {"CurriculumTrainer": Trainer})
+    launch.set_encoder_lr(module, 5e-5)
+    assert Trainer()._train_stage(stage_name="stage6_hai", lr_encoder=2e-4)["lr_encoder"] == 5e-5
+    assert Trainer()._train_stage(stage_name="stage3_cot", lr_encoder=2e-4)["lr_encoder"] == 2e-4
+    assert Trainer()._train_stage(stage_name="stage6_hai") == {"stage_name": "stage6_hai"}
+    launch.set_epochs(module, 3)                       # both wrappers together
+    got = Trainer()._train_stage(stage_name="stage6_hai", lr_encoder=2e-4, num_epochs=10, lr_projector=1e-4)
+    assert got == {"stage_name": "stage6_hai", "lr_encoder": 5e-5, "num_epochs": 3, "lr_projector": 1e-4}
+
+
 # --- answer cap -------------------------------------------------------------
 
 # --- encoder check -----------------------------------------------------------
