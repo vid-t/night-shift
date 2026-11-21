@@ -1130,13 +1130,61 @@ def test_fit_laws_recovers_the_controller_law_from_quiet_rows():
     for key, n in ((("21.03", "P1-PC"), 6), (("22.04", "P1-PC"), 2), ((None, "P1-PC"), 8)):
         assert laws[key][1] == n and laws[key][0] == pytest.approx(LAW, abs=1e-8)
         assert all(isinstance(v, float) for v in laws[key][0])
-    pooled = {("22.04", "P1-PC"): ((9.0, 9.0, 9.0), 4), (None, "P1-PC"): ((1.0, 2.0, 3.0), 10),
-              ("21.03", "P1-PC"): ((4.0, 5.0, 6.0), 5)}
+        assert isinstance(laws[key][2], float) and laws[key][2] == pytest.approx(1.0, abs=1e-9)
+    pooled = {("22.04", "P1-PC"): ((9.0, 9.0, 9.0), 4, 0.9), (None, "P1-PC"): ((1.0, 2.0, 3.0), 10, 0.5),
+              ("21.03", "P1-PC"): ((4.0, 5.0, 6.0), 5, 0.4)}
     assert mod.law_for(pooled, "21.03", "P1-PC") == (4.0, 5.0, 6.0)                 # 5 rows: its own
     assert mod.law_for(pooled, "22.04", "P1-PC") == (1.0, 2.0, 3.0)                 # under 5 rows: all versions
     assert mod.law_for(pooled, "23.01", "P1-PC") == (1.0, 2.0, 3.0)                 # no rows of its own
     assert mod.law_for(pooled, "21.03", "P3-LC") is None                            # unknown loop
     assert mod.fit_laws([r for r in rows if r["window_kind"] == "attack"]) == {}
+
+
+def _noise_row(version, loop, seed):
+    """A quiet row whose first command is a random walk, unrelated to the gap between target and measurement."""
+    import numpy as np
+
+    row = _law_row(version, loop, "normal", "normal", seed=seed)
+    row["series"][2]["values"] = np.cumsum(np.random.default_rng(1000 + seed).normal(size=300)).tolist()
+    return row
+
+
+def test_fit_laws_r2_tells_a_law_from_noise():
+    mod = load_script("HAIAttackQADataset")
+    rows = [_law_row("21.03", "P1-PC", "normal", "normal", seed=i) for i in range(6)]
+    rows += [_noise_row("21.03", "P1-LC", seed=i) for i in range(6)]
+    laws = mod.fit_laws(rows)
+    assert laws[("21.03", "P1-PC")][2] == pytest.approx(1.0, abs=1e-9)
+    assert laws[("21.03", "P1-LC")][2] < mod.LAW_MIN_R2 and laws[(None, "P1-LC")][2] < mod.LAW_MIN_R2
+    assert mod.law_for(laws, "21.03", "P1-PC") == pytest.approx(LAW, abs=1e-8)
+    assert mod.law_for(laws, "21.03", "P1-LC") is None
+    assert mod.law_clause(_law_row("21.03", "P1-PC", "attack", "attack", seed=50), laws) is not None
+    assert mod.law_clause(_noise_row("21.03", "P1-LC", seed=50), laws) is None
+    flat = _law_row("21.03", "P2-SC", "normal", "normal", seed=60)
+    flat["series"][2]["values"] = [4.0] * 300                                       # du never varies
+    assert mod.fit_laws([flat])[("21.03", "P2-SC")][2] == 0.0
+    assert mod.LAW_MIN_R2 == 0.4
+
+
+def test_law_for_falls_back_to_the_pooled_law_only_under_5_rows_and_only_if_it_explains_the_command():
+    mod = load_script("HAIAttackQADataset")
+    own, pooled = (4.0, 5.0, 6.0), (1.0, 2.0, 3.0)
+
+    def laws(n, r2, pooled_r2):
+        return {("21.03", "P1-PC"): (own, n, r2), (None, "P1-PC"): (pooled, 20, pooled_r2)}
+
+    assert mod.law_for(laws(5, 0.39, 0.9), "21.03", "P1-PC") is None                # enough rows, poor fit: no fallback
+    assert mod.law_for(laws(5, 0.4, 0.1), "21.03", "P1-PC") == own                  # enough rows, good fit
+    assert mod.law_for(laws(4, 0.9, 0.9), "21.03", "P1-PC") == pooled               # under 5 rows: the pooled law
+    assert mod.law_for(laws(4, 0.9, 0.39), "21.03", "P1-PC") is None                # whose fit must pass too
+    assert mod.law_for(laws(4, 0.9, 0.39), "23.01", "P1-PC") is None                # no rows of its own, poor pool
+    assert mod.law_for(laws(4, 0.9, 0.4), "23.01", "P1-PC") == pooled
+    # from fitted rows: 2 quiet rows of a noisy version, pooled with 6 lawful ones of another
+    rows = [_law_row("21.03", "P1-PC", "normal", "normal", seed=i) for i in range(6)]
+    rows += [_noise_row("22.04", "P1-PC", seed=i) for i in range(2)]
+    fitted = mod.fit_laws(rows)
+    assert fitted[("22.04", "P1-PC")][2] < mod.LAW_MIN_R2 <= fitted[(None, "P1-PC")][2]
+    assert mod.law_for(fitted, "22.04", "P1-PC") == fitted[(None, "P1-PC")][0]
 
 
 def test_wrong_way_seconds_counts_the_seconds_against_the_law():
@@ -1160,7 +1208,7 @@ def test_wrong_way_seconds_counts_the_seconds_against_the_law():
 def test_law_clause_phrasings():
     mod = load_script("HAIAttackQADataset")
     row = _law_row("21.03", "P1-PC", "normal", "normal", scale=1.0)
-    laws = {("21.03", "P1-PC"): ((0.0, 0.0, 1.0), 10)}       # the law's command rises one a second
+    laws = {("21.03", "P1-PC"): ((0.0, 0.0, 1.0), 10, 1.0)}       # the law's command rises one a second
     cmd = row["series"][2]
     cmd["values"] = [0.0] * 300
     assert mod.law_clause(row, laws) == "it moves the way the controller would"
@@ -1173,8 +1221,9 @@ def test_law_clause_phrasings():
     assert mod.law_clause(row, laws).startswith("for 150 seconds")
     row["series"].insert(2, second)
     assert mod.law_clause(row, laws) == "it moves the way the controller would"
-    assert mod.law_clause(row, {("22.04", "P1-PC"): ((0.0, 0.0, 1.0), 10)}) is None      # no law for this loop
-    assert mod.law_clause(row, {(None, "P1-PC"): ((0.0, 0.0, 1.0), 2)}) is not None       # the pooled law
+    assert mod.law_clause(row, {("22.04", "P1-PC"): ((0.0, 0.0, 1.0), 10, 1.0)}) is None      # no law for this loop
+    assert mod.law_clause(row, {(None, "P1-PC"): ((0.0, 0.0, 1.0), 2, 1.0)}) is not None       # the pooled law
+    assert mod.law_clause(row, {("21.03", "P1-PC"): ((0.0, 0.0, 1.0), 10, 0.39)}) is None     # a law that explains too little
     row["series"].insert(0, {**row["series"][0], "name": "target 2"})
     assert mod.law_clause(row, laws) is None                                             # not eligible
 
@@ -1183,16 +1232,36 @@ def _texts(ds, i):
     return list(ds[i]["time_series_text"])
 
 
+def _lawful(rows, loop="P1-PC"):
+    """The rows with the first command of every row of `loop` following LAW exactly; the other loops as they are."""
+    import numpy as np
+
+    out = []
+    for r in rows:
+        if r["loop"] == loop:
+            series = [dict(s) for s in r["series"]]
+            t, m = (np.asarray(s["values"], dtype=np.float64) for s in series[:2])
+            g = t - m
+            a, b, c = LAW
+            series[2]["values"] = np.cumsum(np.concatenate([[2.0], a * g[1:] + b * np.diff(g) + c])).tolist()
+            r = {**r, "series": series}
+        out.append(r)
+    return out
+
+
 def test_dataset_zsize_law_clause(hai_dataset):
     import numpy as np
 
     rows, build, mod = hai_dataset
-    scaled = _write_scaled_rows(rows)
+    scaled = _write_scaled_rows(_lawful(rows))      # P1-PC follows a law, the other loops do not
     plain = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="")
     train = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="law")
     cls = type(train)
     laws = cls.control_laws
     assert laws == mod.fit_laws(scaled) and laws and cls.step_units is None
+    assert laws[(None, "P1-PC")][2] >= mod.LAW_MIN_R2
+    assert all(r2 < mod.LAW_MIN_R2 for (_, loop), (_, _, r2) in laws.items() if loop != "P1-PC")
+    assert {r["loop"] for r in scaled} > {"P1-PC"}
     plain_cls = type(plain)
     for split in ("train", "validation", "test"):
         ds, base = cls(split, EOS_TOKEN="<eos>"), plain_cls(split, EOS_TOKEN="<eos>")
@@ -1200,9 +1269,9 @@ def test_dataset_zsize_law_clause(hai_dataset):
         for i, sample in enumerate(ds):
             r = scaled[i]
             want = mod.law_clause(r, laws)
-            assert want is not None
+            assert (want is not None) == (r["loop"] == "P1-PC")
             for j, (text, before) in enumerate(zip(sample["time_series_text"], base[i]["time_series_text"])):
-                if r["series"][j]["role"] == "command":
+                if want is not None and r["series"][j]["role"] == "command":
                     assert text == before[:-1] + "; " + want + ":"
                 else:
                     assert text == before
@@ -1210,13 +1279,14 @@ def test_dataset_zsize_law_clause(hai_dataset):
                 assert np.array_equal(np.asarray(a), np.asarray(b))
             assert sample["pre_prompt"] == base[i]["pre_prompt"] and sample["answer"] == base[i]["answer"]
     # a row with two commands: only the first one's line carries the clause
-    two = {**scaled[1], "series": scaled[1]["series"] + [{**scaled[1]["series"][2], "name": "second command"}]}
+    assert scaled[6]["loop"] == "P1-PC"
+    two = {**scaled[6], "series": scaled[6]["series"] + [{**scaled[6]["series"][2], "name": "second command"}]}
     got = [p.get_text() for p in train._get_text_time_series_prompt_list(two)]
     assert got[2].endswith("; " + mod.law_clause(two, laws) + ":")
     assert "controller would" not in got[3] and "controller would" not in " ".join(got[:2])
     # a loop without a law: no clause
     type(train).control_laws = {}
-    assert all("controller would" not in p.get_text() for p in train._get_text_time_series_prompt_list(scaled[1]))
+    assert all("controller would" not in p.get_text() for p in train._get_text_time_series_prompt_list(scaled[6]))
     type(train).control_laws = None
     with pytest.raises(RuntimeError, match="control laws"):
         train._get_text_time_series_prompt_list(scaled[1])
@@ -1226,7 +1296,7 @@ def test_dataset_zsize_step_and_law_clauses_in_a_fixed_order(hai_dataset):
     import numpy as np
 
     rows, build, mod = hai_dataset
-    scaled = _write_scaled_rows(rows)
+    scaled = _write_scaled_rows(_lawful(rows))
     step = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="step")
     both = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="step,law")
     swapped = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="law,step")
@@ -1236,8 +1306,9 @@ def test_dataset_zsize_step_and_law_clauses_in_a_fixed_order(hai_dataset):
     for i in range(len(both)):
         r = scaled[i]
         assert _texts(both, i) == _texts(swapped, i)
+        assert (mod.law_clause(r, laws) is not None) == (r["loop"] == "P1-PC")
         for j, (text, before) in enumerate(zip(_texts(both, i), _texts(step, i))):
-            if j == 2:
+            if j == 2 and r["loop"] == "P1-PC":
                 assert STEP_TEXT.fullmatch(before)
                 assert text == before[:-1] + "; " + mod.law_clause(r, laws) + ":"
                 assert text.index("its largest change") < text.index("one-second step") < text.index("controller would")

@@ -56,6 +56,7 @@ RANGE_HEAD_S = 30   # the range view shows the change from the mean of these fir
 LOOPRANGE_FLOOR = 0.25   # the smallest quiet-window unit of the looprange view, in range units
 LOOPRANGE_MIN_ROWS = 5   # a (version, loop, series) key with fewer quiet rows uses the unit of all versions
 SIZE_CAP = 99.9   # the zsize view prints at most this size
+LAW_MIN_R2 = 0.4   # the law clause is written only for a loop whose fitted law explains this share of du on its quiet rows
 
 
 def series_view() -> str:
@@ -95,6 +96,7 @@ def text_clauses() -> tuple[str, ...]:
     law     on the line of the loop's first command only: for how many seconds that command moves the opposite
             way to what the controller would do, given the gap between target and measurement. The controller's
             law is fitted on the quiet training rows of the loop (see `fit_laws`, `wrong_way_seconds`, `law_clause`).
+            A loop whose law explains less than LAW_MIN_R2 of the command's changes there gets no law clause.
 
     Only the zsize view takes clauses. On a line the order is fixed, whatever the order of the names: the size,
     then step, then law.
@@ -186,11 +188,12 @@ def _law_series(row: dict):
 
 
 def fit_laws(rows: list[dict]) -> dict:
-    """{(version, loop): ((a, b, c), quiet rows)}: the controller's law du = a*g + b*dg + c, fitted by least squares.
+    """{(version, loop): ((a, b, c), quiet rows, r2)}: the controller's law du = a*g + b*dg + c, fitted by least squares.
 
     g = target - measurement and u is the first command, raw values; du and dg are one-second changes. Fitted over
     all eligible quiet rows of the key (label normal, window_kind normal; see `_law_series`). Keys (None, loop) hold
-    the same over all versions together, for `law_for`.
+    the same over all versions together, for `law_for`. r2 is 1 - SS_res / SS_tot of the fit on those rows, 0.0 if du
+    never varies.
     """
     xs: dict = {}
     ys: dict = {}
@@ -210,18 +213,22 @@ def fit_laws(rows: list[dict]) -> dict:
             counts[key] = counts.get(key, 0) + 1
     laws = {}
     for key in xs:
-        coef = np.linalg.lstsq(np.vstack(xs[key]), np.concatenate(ys[key]), rcond=None)[0]
-        laws[key] = (tuple(float(v) for v in coef), counts[key])
+        x, y = np.vstack(xs[key]), np.concatenate(ys[key])
+        coef = np.linalg.lstsq(x, y, rcond=None)[0]
+        ss_tot = float(np.sum((y - y.mean()) ** 2))
+        r2 = 1.0 - float(np.sum((y - x @ coef) ** 2)) / ss_tot if ss_tot > 0 else 0.0
+        laws[key] = (tuple(float(v) for v in coef), counts[key], r2)
     return laws
 
 
 def law_for(laws: dict, version, loop):
-    """The (a, b, c) of the key if it has at least LOOPRANGE_MIN_ROWS quiet rows, else that of all versions, else None."""
+    """The (a, b, c) of the key if it has at least LOOPRANGE_MIN_ROWS quiet rows, else that of all versions, else None;
+    a law with r2 under LAW_MIN_R2 counts as None, and a key with enough rows but a poor fit does not fall back."""
     own = laws.get((version, loop))
     if own is not None and own[1] >= LOOPRANGE_MIN_ROWS:
-        return own[0]
+        return own[0] if own[2] >= LAW_MIN_R2 else None
     pooled = laws.get((None, loop))
-    return pooled[0] if pooled is not None else None
+    return pooled[0] if pooled is not None and pooled[2] >= LAW_MIN_R2 else None
 
 
 def wrong_way_seconds(t, m, u, scale_u: float, law) -> int:
@@ -487,8 +494,10 @@ class HAIAttackQADataset(QADataset):
         """fit_laws, and one line that says what it found."""
         laws = fit_laws(rows)
         own = sum(version is not None for version, _ in laws)
-        quiet = sum(n for (version, _), (_, n) in laws.items() if version is None)
-        print(f"HAI control laws: {own} (version, loop) keys from {quiet} eligible quiet training rows")
+        good = sum(r2 >= LAW_MIN_R2 for (version, _), (_, _, r2) in laws.items() if version is not None)
+        quiet = sum(n for (version, _), (_, n, _) in laws.items() if version is None)
+        print(f"HAI control laws: {good} of {own} (version, loop) keys explain the command (R2 at least {LAW_MIN_R2}), "
+              f"from {quiet} eligible quiet training rows")
         return laws
 
     @staticmethod
