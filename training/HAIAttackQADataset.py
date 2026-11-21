@@ -16,6 +16,8 @@ Reads the JSONL files that `uv run hai-export` writes. Environment variables:
                      them (see `with_mirrors`), after HAI_ATTACK_SHARE if both are set. A mirrored copy shows
                      every series flipped around the mean of its first RANGE_HEAD_S seconds, with rises and
                      falls swapped in its answer. Unset: no copies. Validation and test are never touched.
+  HAI_TEXT_CLAUSES   comma-separated names from CLAUSES (see `text_clauses`): further clauses in the text line
+                     of each series, view zsize only. Unset or empty: no clauses, the text as before.
 """
 import json
 import os
@@ -82,6 +84,27 @@ def series_view() -> str:
     return view
 
 
+CLAUSES = ("step",)
+
+
+def text_clauses() -> tuple[str, ...]:
+    """Further clauses in the text line of each series: HAI_TEXT_CLAUSES, names from CLAUSES. Unset or empty: none.
+
+    step    the series' largest one-second step, in units of its usual one in a quiet window of this loop
+            (see `quiet_step_units`), and the second where it lands (see `step_clause`).
+
+    Only the zsize view takes clauses.
+    """
+    raw = (os.environ.get("HAI_TEXT_CLAUSES") or "").strip()
+    names = tuple(n.strip() for n in raw.split(",") if n.strip())
+    for n in names:
+        if n not in CLAUSES:
+            raise RuntimeError(f"HAI_TEXT_CLAUSES takes names from {CLAUSES}, got {n!r}")
+    if names and series_view() != "zsize":
+        raise RuntimeError(f"HAI_TEXT_CLAUSES needs HAI_SERIES_VIEW=zsize, the view is {series_view()!r}")
+    return names
+
+
 def range_view(values, normal_range: float) -> list[float]:
     """The series as its change from its first seconds, in units of 2% of its normal range, signed-log squashed."""
     x = np.asarray(values, dtype=np.float64)
@@ -101,11 +124,22 @@ def largest_change(values, normal_range: float) -> float:
     return float(np.abs(x - x[:RANGE_HEAD_S].mean()).max() / unit)
 
 
-def quiet_units(rows: list[dict]) -> dict:
+def largest_step(values, normal_range: float) -> tuple[float, int]:
+    """(size, second) of the largest one-second step, in range units; the second it lands on, the first on a tie."""
+    x = np.asarray(values, dtype=np.float64)
+    unit = RANGE_UNIT * float(normal_range)
+    if not np.isfinite(unit) or unit <= 0:
+        raise RuntimeError("the looprange view needs a positive `scale` on every series: rerun `uv run hai-build` and `uv run hai-export`")
+    d = np.abs(np.diff(x / unit))
+    i = int(np.argmax(d))
+    return float(d[i]), i + 1
+
+
+def quiet_units(rows: list[dict], measure=largest_change) -> dict:
     """{(version, loop, series name): (unit, quiet rows)} from the quiet rows (label normal, window_kind normal).
 
-    The unit is the 95th percentile of `largest_change` over the key's quiet rows, at least LOOPRANGE_FLOOR.
-    Keys (None, loop, series name) hold the same over all versions together, for `unit_for`.
+    The unit is the 95th percentile of `measure` (default `largest_change`) over the key's quiet rows, at least
+    LOOPRANGE_FLOOR. Keys (None, loop, series name) hold the same over all versions together, for `unit_for`.
     """
     changes: dict = {}
     for r in rows:
@@ -114,10 +148,25 @@ def quiet_units(rows: list[dict]) -> dict:
         for s in r["series"]:
             if "scale" not in s:
                 raise RuntimeError("the looprange view needs `scale` on every series: rerun `uv run hai-build` and `uv run hai-export`")
-            c = largest_change(s["values"], s["scale"])
+            c = measure(s["values"], s["scale"])
             for key in ((r["version"], r["loop"], s["name"]), (None, r["loop"], s["name"])):
                 changes.setdefault(key, []).append(c)
     return {k: (max(LOOPRANGE_FLOOR, float(np.percentile(v, 95))), len(v)) for k, v in changes.items()}
+
+
+def quiet_step_units(rows: list[dict]) -> dict:
+    """quiet_units with the size of `largest_step` in place of `largest_change`. `unit_for` reads it the same way."""
+    return quiet_units(rows, measure=lambda values, normal_range: largest_step(values, normal_range)[0])
+
+
+def step_clause(values, normal_range: float, unit: float) -> str:
+    """The step clause of the text: the largest one-second step in `unit`s, at most SIZE_CAP, and its second."""
+    if not np.isfinite(unit) or unit <= 0:
+        raise RuntimeError(f"the step clause needs a positive unit, got {unit!r}")
+    size, second = largest_step(values, normal_range)
+    if size == 0:
+        return "it never changes from one second to the next"
+    return f"its largest one-second step is {min(size / float(unit), SIZE_CAP):.1f} times its usual one, at second {second}"
 
 
 def unit_for(units: dict, version, loop, name) -> float:
@@ -294,6 +343,7 @@ def scale(values) -> tuple[float, float, list[float]]:
 
 class HAIAttackQADataset(QADataset):
     looprange_units = None   # set by _load_splits for the looprange and zsize views: quiet_units of the file's training rows
+    step_units = None        # set by _load_splits for the clause `step`: quiet_step_units of the file's training rows
 
     def __init__(self, split: Literal["train", "test", "validation"], EOS_TOKEN: str,
                  format_sample_str: bool = False, time_series_format_function=None):
@@ -306,6 +356,7 @@ class HAIAttackQADataset(QADataset):
         folder = Path(folder)
         train = _read_jsonl(folder / "train.jsonl")
         self.__class__.looprange_units = self._units(train) if series_view() in ("looprange", "zsize") else None
+        self.__class__.step_units = self._step_units(train) if "step" in text_clauses() else None
         share = attack_share()
         mirror = mirror_share()
         overfit = int(os.environ.get("HAI_OVERFIT_ROWS", "0") or 0)
@@ -335,6 +386,16 @@ class HAIAttackQADataset(QADataset):
         quiet = sum(r["label"] == "normal" and r["window_kind"] == "normal" for r in rows)
         span = f"unit {min(own):.2f} to {max(own):.1f}" if own else "no units"
         print(f"HAI looprange units: {len(own)} series keys from {quiet} quiet training rows, {span}")
+        return units
+
+    @staticmethod
+    def _step_units(rows: list[dict]) -> dict:
+        """quiet_step_units, and one line that says what it found."""
+        units = quiet_step_units(rows)
+        own = [u for (version, _, _), (u, _) in units.items() if version is not None]
+        quiet = sum(r["label"] == "normal" and r["window_kind"] == "normal" for r in rows)
+        span = f"unit {min(own):.2f} to {max(own):.1f}" if own else "no units"
+        print(f"HAI step units: {len(own)} series keys from {quiet} quiet training rows, {span}")
         return units
 
     @staticmethod
@@ -390,6 +451,7 @@ class HAIAttackQADataset(QADataset):
     def _get_text_time_series_prompt_list(self, row) -> List[TextTimeSeriesPrompt]:
         prompts = []
         view = series_view()
+        clauses = text_clauses()
         for s in row["series"]:
             if view == "range":
                 if "scale" not in s:
@@ -414,7 +476,13 @@ class HAIAttackQADataset(QADataset):
                 unit = unit_for(self.looprange_units, row["version"], row["loop"], s["name"])
                 size = min(relative_size(s["values"], s["scale"], unit), SIZE_CAP)
                 text = (f"This is the {s['name']}, {ROLE_WORDS[s['role']]}; "
-                        f"its largest change is {size:.1f} times its usual quiet change:")
+                        f"its largest change is {size:.1f} times its usual quiet change")
+                if "step" in clauses:
+                    if self.step_units is None:
+                        raise RuntimeError("the step clause needs the step units of the training rows: _load_splits sets them")
+                    step_unit = unit_for(self.step_units, row["version"], row["loop"], s["name"])
+                    text += "; " + step_clause(s["values"], s["scale"], step_unit)
+                text += ":"
                 prompts.append(TextTimeSeriesPrompt(text, scale(s["values"])[2]))
                 continue
             mean, std, scaled = scale(s["values"])

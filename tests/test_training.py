@@ -903,6 +903,192 @@ def test_run_variant_takes_the_zsize_view():
         rv.arguments(["x", "--view", "wavelets"])
 
 
+# --- text clauses of the zsize view: the largest one-second step ------------------------------
+
+STEP_TEXT = re.compile(r"This is the (.+), (.+); its largest change is (\d+\.\d) times its usual quiet change; "
+                       r"(?:its largest one-second step is (\d+\.\d) times its usual one, at second (\d+)"
+                       r"|it never changes from one second to the next):")
+
+
+def _step_want(mod, units, row, s):
+    unit = mod.unit_for(units, row["version"], row["loop"], s["name"])
+    return mod.step_clause(s["values"], s["scale"], unit)
+
+
+def test_largest_step_is_the_largest_one_second_step_in_range_units():
+    mod = load_script("HAIAttackQADataset")
+    jump = [1.0] * 100 + [1.0 + 0.02 * 2.0 * 7] * 200            # one step of 7 range units at scale 2
+    size, second = mod.largest_step(jump, 2.0)
+    assert size == pytest.approx(7.0) and second == 100
+    assert mod.largest_step([-v for v in jump], 2.0) == (pytest.approx(7.0), 100)   # the sign does not count
+    small = [0.0] * 300
+    small[50], small[200] = 0.02, 0.06                             # up 1 at 50, down 1 at 51, up 3 at 200
+    assert mod.largest_step(small, 1.0) == (pytest.approx(3.0), 200)
+    tie = [0.0] * 10 + [0.04] * 10 + [0.0] * 280                   # up 2 at 10, down 2 at 20: the first one
+    assert mod.largest_step(tie, 1.0) == (pytest.approx(2.0), 10)
+    assert mod.largest_step([5.0] * 300, 3.0) == (0.0, 1)
+    assert mod.largest_step([0.0] * 299 + [0.02], 1.0)[1] == 299
+    for scale in (0.0, -1.0, float("nan")):
+        with pytest.raises(RuntimeError, match="positive `scale`"):
+            mod.largest_step(jump, scale)
+
+
+def test_quiet_step_units_take_the_largest_step_of_the_quiet_rows():
+    import numpy as np
+
+    mod = load_script("HAIAttackQADataset")
+    calm = [0.05, 0.1, 0.1, 0.2, 0.1, 0.15]                        # tiny steps: below the floor
+    pump = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0]
+    rows = [_quiet_row("21.03", "P1-LC", "normal", "normal", m) for m in calm]
+    rows += [_quiet_row("21.03", "P2-SC", "normal", "normal", m, scale=3.0) for m in pump]
+    rows += [_quiet_row("21.03", "P2-SC", "attack", "attack", 500.0),      # attack rows are ignored
+             _quiet_row("21.03", "P2-SC", "normal", "attack", 400.0)]      # and so are neighbour rows
+    rows += [_quiet_row("22.04", "P2-SC", "normal", "normal", m) for m in (1.0, 2.0)]   # too few rows of its own
+    units = mod.quiet_step_units(rows)
+    assert units[("21.03", "P1-LC", "cmd")] == (mod.LOOPRANGE_FLOOR, 6)
+    assert units[("21.03", "P2-SC", "cmd")] == (pytest.approx(np.percentile(pump, 95)), 6)
+    assert units[(None, "P2-SC", "cmd")] == (pytest.approx(np.percentile(pump + [1.0, 2.0], 95)), 8)
+    assert mod.unit_for(units, "22.04", "P2-SC", "cmd") == pytest.approx(np.percentile(pump + [1.0, 2.0], 95))
+    assert mod.unit_for(units, "22.04", "P1-LC", "cmd") == mod.LOOPRANGE_FLOOR
+    assert mod.unit_for(units, "21.03", "P3-LC", "cmd") == 1.0
+    # a slow ramp: a large change, but small steps
+    ramp = _quiet_row("21.03", "P1-LC", "normal", "normal", 0.0)
+    ramp["series"][0]["values"] = [0.02 * 0.5 * i for i in range(300)]    # 0.5 range units a second
+    assert mod.quiet_units([ramp])[("21.03", "P1-LC", "cmd")][0] == pytest.approx(149.5 - 7.25)   # from the head mean
+    assert mod.quiet_step_units([ramp])[("21.03", "P1-LC", "cmd")] == (pytest.approx(0.5), 1)
+    assert mod.quiet_step_units([r for r in rows if r["window_kind"] == "attack"]) == {}
+    del ramp["series"][0]["scale"]
+    with pytest.raises(RuntimeError):
+        mod.quiet_step_units([ramp])
+
+
+def test_step_clause_states_the_step_in_usual_steps_and_its_second():
+    mod = load_script("HAIAttackQADataset")
+    jump = [0.0] * 120 + [0.02 * 6] * 180                          # a step of 6 range units at second 120
+    assert mod.step_clause(jump, 1.0, 2.0) == "its largest one-second step is 3.0 times its usual one, at second 120"
+    assert mod.step_clause(jump, 1.0, 0.7) == "its largest one-second step is 8.6 times its usual one, at second 120"
+    assert mod.step_clause([0.0] * 120 + [1e4] * 180, 1.0, 0.25) == (
+        "its largest one-second step is 99.9 times its usual one, at second 120")
+    assert mod.step_clause([4.0] * 300, 1.0, 0.25) == "it never changes from one second to the next"
+    for unit in (0.0, -1.0, float("nan")):
+        with pytest.raises(RuntimeError):
+            mod.step_clause(jump, 1.0, unit)
+
+
+def test_dataset_zsize_step_clause(hai_dataset):
+    import numpy as np
+
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    train = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="step")
+    cls = type(train)
+    units, steps = cls.looprange_units, cls.step_units
+    assert units == mod.quiet_units(scaled) and steps == mod.quiet_step_units(scaled) and steps
+    for split in ("train", "validation", "test"):
+        ds = cls(split, EOS_TOKEN="<eos>")
+        assert len(ds) == len(scaled)
+        for i, sample in enumerate(ds):
+            r = scaled[i]
+            for text, s, got in zip(sample["time_series_text"], r["series"], sample["time_series"]):
+                m = STEP_TEXT.fullmatch(text)
+                assert m and m.group(1) == s["name"] and m.group(2) == mod.ROLE_WORDS[s["role"]]
+                assert m.group(3) == _zsize_want(mod, units, r, s)
+                assert text == (f"This is the {s['name']}, {mod.ROLE_WORDS[s['role']]}; its largest change is "
+                                f"{m.group(3)} times its usual quiet change; {_step_want(mod, steps, r, s)}:")
+                assert np.allclose(np.asarray(got, dtype=float), mod.scale(s["values"])[2], atol=1e-5)
+    moving = STEP_TEXT.fullmatch(train[0]["time_series_text"][2])
+    assert moving.group(4) is not None and 1 <= int(moving.group(5)) <= 299
+    assert train[0]["time_series_text"][1].endswith("; it never changes from one second to the next:")   # flat
+
+
+def test_dataset_zsize_step_clause_keeps_the_curve(hai_dataset):
+    import numpy as np
+
+    rows, build, _ = hai_dataset
+    _write_scaled_rows(rows)
+    plain = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="")
+    step = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="step")
+    for i in range(len(plain)):
+        assert plain[i]["pre_prompt"] == step[i]["pre_prompt"] and plain[i]["answer"] == step[i]["answer"]
+        for a, b in zip(plain[i]["time_series"], step[i]["time_series"]):
+            assert np.array_equal(np.asarray(a), np.asarray(b))
+        for a, b in zip(plain[i]["time_series_text"], step[i]["time_series_text"]):
+            assert b.startswith(a[:-1] + "; ") and a.endswith(":")
+
+
+def test_dataset_step_units_come_from_the_file_rows(hai_dataset, monkeypatch):
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    want = mod.quiet_step_units(scaled)
+    for env in ({}, {"HAI_OVERFIT_ROWS": "5"}, {"HAI_ATTACK_SHARE": "0.5"}, {"HAI_MIRROR_SHARE": "0.5"},
+                {"HAI_OVERFIT_ROWS": "10", "HAI_ATTACK_SHARE": "0.5", "HAI_MIRROR_SHARE": "1"}):
+        for k in ("HAI_OVERFIT_ROWS", "HAI_ATTACK_SHARE", "HAI_MIRROR_SHARE"):
+            monkeypatch.delenv(k, raising=False)
+        ds = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="step", **env)
+        assert type(ds).step_units == want
+        assert all(STEP_TEXT.fullmatch(t) for sample in ds for t in sample["time_series_text"])
+    monkeypatch.delenv("HAI_TEXT_CLAUSES")
+    assert type(build("train", HAI_SERIES_VIEW="zsize")).step_units is None
+
+
+def test_mirrored_row_has_the_same_step_clause(hai_dataset):
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    ds = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES="step")
+    for r in (scaled[1], scaled[7]):
+        plain, mirrored = ds._get_text_time_series_prompt_list(r), ds._get_text_time_series_prompt_list(mod.mirror_row(r))
+        assert [a.get_text() for a in plain] == [b.get_text() for b in mirrored]
+        assert any("one-second step is" in a.get_text() for a in plain)
+
+
+def test_dataset_zsize_without_clauses_is_unchanged(hai_dataset, monkeypatch):
+    rows, build, mod = hai_dataset
+    scaled = _write_scaled_rows(rows)
+    for value in (None, "", " , "):
+        if value is None:
+            monkeypatch.delenv("HAI_TEXT_CLAUSES", raising=False)
+            ds = build("train", HAI_SERIES_VIEW="zsize")
+        else:
+            ds = build("train", HAI_SERIES_VIEW="zsize", HAI_TEXT_CLAUSES=value)
+        assert mod.text_clauses() == () and type(ds).step_units is None
+        units = type(ds).looprange_units
+        for i in (0, 1, 7):
+            for text, s in zip(ds[i]["time_series_text"], scaled[i]["series"]):
+                assert text == (f"This is the {s['name']}, {mod.ROLE_WORDS[s['role']]}; "
+                                f"its largest change is {_zsize_want(mod, units, scaled[i], s)} times its usual quiet change:")
+
+
+def test_text_clauses_setting_is_checked(hai_dataset, monkeypatch):
+    rows, build, mod = hai_dataset
+    _write_scaled_rows(rows)
+    monkeypatch.setenv("HAI_SERIES_VIEW", "zsize")
+    monkeypatch.setenv("HAI_TEXT_CLAUSES", " step ,step")
+    assert mod.text_clauses() == ("step", "step")
+    monkeypatch.setenv("HAI_TEXT_CLAUSES", "step,jump")
+    with pytest.raises(RuntimeError, match="'jump'"):
+        mod.text_clauses()
+    with pytest.raises(RuntimeError, match="HAI_TEXT_CLAUSES"):
+        build("train")
+    for view in ("zscore", "range", "looprange"):
+        monkeypatch.setenv("HAI_SERIES_VIEW", view)
+        monkeypatch.setenv("HAI_TEXT_CLAUSES", "step")
+        with pytest.raises(RuntimeError, match="needs HAI_SERIES_VIEW=zsize"):
+            mod.text_clauses()
+        with pytest.raises(RuntimeError, match="needs HAI_SERIES_VIEW=zsize"):
+            build("train")
+        monkeypatch.setenv("HAI_TEXT_CLAUSES", "")
+        assert len(build("train")) == len(rows)
+
+
+def test_run_variant_takes_the_clauses():
+    rv = _cloud_script("run_variant")
+    assert rv.arguments(["x"]).clauses is None
+    assert rv.arguments(["x", "--view", "zsize", "--clauses", "step"]).clauses == "step"
+    with pytest.raises(SystemExit):
+        rv.arguments(["x", "--view", "range", "--clauses", "step"])
+    assert rv.arguments(["x", "--answer-only", "test", "--clauses", "step"]).clauses == "step"
+
+
 # --- label-first answers --------------------------------------------------------
 
 TEMPLATES = [
