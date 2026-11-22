@@ -1,5 +1,5 @@
 [project]
-name = "hai-attack-reader"
+name = "night-shift"
 version = "0.1.0"
 description = "Labelled control-loop windows from the four versions of the HAI dataset"
 requires-python = ">=3.12,<3.13"

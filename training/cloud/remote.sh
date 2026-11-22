@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Drive a rented GPU machine from this computer. Run from anywhere inside hai-attack-reader.
+# Drive a rented GPU machine from this computer. Run from anywhere inside the repository.
 #
 #   export HAI_REMOTE=hai@203.0.113.7          # user@address of the machine (required)
 #   export HAI_REMOTE_KEY=~/.ssh/id_ed25519    # private SSH key (this is the default)
@@ -37,7 +37,7 @@ case "${1:-}" in
     done
     VERSION="$(git -C "$ROOT" rev-parse --short HEAD)"
     test -z "$(git -C "$ROOT" status --porcelain)" || VERSION="$VERSION plus uncommitted changes"
-    echo "hai-attack-reader $VERSION, copied $(date -u +%Y-%m-%dT%H:%MZ)" > "$ROOT/training/VERSION"
+    echo "night-shift $VERSION, copied $(date -u +%Y-%m-%dT%H:%MZ)" > "$ROOT/training/VERSION"
     ( cd "$ROOT" && COPYFILE_DISABLE=1 tar czf - --no-xattrs --no-mac-metadata --exclude '__pycache__' training \
         $(printf 'data/processed/opentslm/%s.jsonl ' "${FILES[@]}") ) | remote "tar xzf -"
     rm -f "$ROOT/training/VERSION"

@@ -33,7 +33,7 @@ METHOD = '''    def stage6_hai(
         - Epochs: 10 (early stopping has a patience of EARLY_STOP_PAT)
         - OpenTSLMSP: encoder_lr=2e-4, projector_lr=1e-4, LoRA on
         - Metric: test loss only. The built-in accuracy counts an empty answer as
-          correct; score test_predictions.jsonl with hai-attack-reader/training/score.py.
+          correct; score test_predictions.jsonl with training/score.py in the repository.
         """
         return self._train_stage(
             stage_name="stage6_hai",

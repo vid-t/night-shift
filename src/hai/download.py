@@ -27,7 +27,7 @@ def targets() -> list[tuple[str, Path]]:
 def fetch(url: str, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
-    req = urllib.request.Request(url, headers={"User-Agent": "hai-attack-reader/0.1"})
+    req = urllib.request.Request(url, headers={"User-Agent": "night-shift/0.1"})
     with urllib.request.urlopen(req, timeout=120) as r, open(tmp, "wb") as f:
         while chunk := r.read(1 << 20):
             f.write(chunk)

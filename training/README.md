@@ -6,9 +6,9 @@ Seven steps on a Linux machine with one NVIDIA GPU. Run them in order from the r
 
 **The final models were not trained with the seven steps below.** They were trained with `training/cloud/run_variant.py` on a rented card, several runs side by side, after `bash training/setup.sh unsloth/Llama-3.2-1B`. The seven steps and the Kaggle section remain the single-card path and the record of how the setup was found; the starting checkpoint, the padding fix, greedy answers and the encoder check described there are all used by the final runs.
 
-- **The training search:** 64 full runs in 8 rounds, judged on the check set (validation) only. Text hints computed by code made the difference. The two final designs: hybrid view + law hint (`--view zsize --clauses law`) and loop-relative view + step and law hints (`--view looprange --clauses step,law`), both `--start sleep --order label_last --epochs 4 --choose-pass last`. Record: `runs/nebius/NIGHT-SUMMARY.md`. What was fixed before the test run: `runs/final/DECLARED.md`.
+- **The training search:** 64 full runs in 8 rounds, judged on the check set (validation) only. Features computed by code made the difference. The two final designs: hybrid view + law feature (`--view zsize --clauses law`) and loop-relative view + step and law features (`--view looprange --clauses step,law`), both `--start sleep --order label_last --epochs 4 --choose-pass last`. Record: `runs/nebius/NIGHT-SUMMARY.md`. What was fixed before the test run: `runs/final/DECLARED.md`.
 - **The test run, once:** `python3 training/cloud/run_variant.py NAME --answer-only test test_shuffled` per model, then `training/vote.py` for the votes, then `runs/final/final_score.py`.
-- **Result on the test set** (score = attack windows called attack minus normal windows called attack; perfect is 82): gradient boosting 54, our hybrid + law design with three models voting 51, our loop-relative + step and law design with seven models voting 50. One model of ours averages 45 to 47. Kimi K3.1 Pro, asked directly on 811 of the test windows, calls about half of the normal windows attack cold (362 of 729) and about a third with our hints and examples (259) (score -181 with our hints and examples, -284 cold, against 63 for gradient boosting on the same windows).
+- **Result on the test set** (score = attack windows called attack minus normal windows called attack; perfect is 82): gradient boosting 54, our hybrid + law design with three models voting 51, our loop-relative + step and law design with seven models voting 50. One model of ours averages 45 to 47. Kimi K3.1 Pro, asked directly on 811 of the test windows, calls about half of the normal windows attack cold (362 of 729) and about a third with our computed features and examples (259) (score -181 with our computed features and examples, -284 cold, against 63 for gradient boosting on the same windows).
 - **What our model adds:** a start second and a sentence. The three-model vote times 30 of the 56 test attacks within 30 seconds (median error 22 seconds); always answering second 108 times 26.
 - **Where the numbers are:** `runs/final/FACTS.md` (the sheet of final facts), `runs/final/FINAL-RESULTS.md`, `runs/final/results_table_test.md`, `runs/final/final_results.json`. These are in git; the answer files and the saved models are in the release (see the main README, "No graphics card?" and "Use a trained model", and `MODELS.md`).
 
@@ -34,7 +34,7 @@ Needs: `git`, [uv](https://docs.astral.sh/uv/) 0.9 or newer, Python 3.12, CUDA, 
 ## 1. Get the data
 
 ```bash
-git clone https://github.com/vid-t/hai-attack-reader.git && cd hai-attack-reader
+git clone https://github.com/vid-t/night-shift.git && cd night-shift
 uv sync
 uv run hai-build && uv run hai-export
 ```
@@ -147,7 +147,7 @@ bash training/kaggle/push.sh training/kaggle/gpu_probe.py   # run 0: settings fo
 bash training/kaggle/push.sh                                # run 1: first_run.py, the overfit check of step 3
 ```
 
-`push.sh` uploads the training scripts and the JSONL files as the private dataset `<you>/hai-attack-reader-run-files`, then starts the script as a private Kaggle script on a T4 with internet on. It prints the page of the run and the two commands that give its status and download its results. `KAGGLE_SKIP_UPLOAD=1` starts a script on the files already there. `KAGGLE_TIME_LIMIT` sets the seconds after which Kaggle stops the run (default 5400).
+`push.sh` uploads the training scripts and the JSONL files as the private dataset `<you>/night-shift-run-files`, then starts the script as a private Kaggle script on a T4 with internet on. It prints the page of the run and the two commands that give its status and download its results. `KAGGLE_SKIP_UPLOAD=1` starts a script on the files already there. `KAGGLE_TIME_LIMIT` sets the seconds after which Kaggle stops the run (default 5400).
 
 On Kaggle the script copies the run files into the layout of this repo under `/tmp/hai`, runs `training/setup.sh unsloth/Llama-3.2-1B`, names the GPU, trains through `training/launch.py`, and keeps only `/kaggle/working/results`. It uses the open copy `unsloth/Llama-3.2-1B`, so it needs no Hugging Face token: its `model.safetensors` has the same SHA-256 as the one of `meta-llama/Llama-3.2-1B` (`68a2e4be...6809a`, 2,471,645,608 bytes).
 
