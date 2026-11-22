@@ -1,6 +1,6 @@
 # What was fixed before the test run
 
-Copied from the working log of the night of 21 November 2026. The first part was written at 22:32, before any test answer existed. The second was approved at 23:03 and written before 23:15, before any test result was read. The working log itself is not published. The two entries are given as they were written, except that one operational line is left out and two headings no longer name who approved.
+Copied from the working log of the night of 21 November 2026. The first part was written at 22:32, before any test answer existed. The second was approved at 23:03 and written before 23:15, before any test result was read. The working log itself is not published. The two entries are given as they were written, except that one operational line is left out, and one heading and one line no longer name who decided or approved.
 
 ## The test run (declared 22:32 on 21 November, before any test answer exists)
 
