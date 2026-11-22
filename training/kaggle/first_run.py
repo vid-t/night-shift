@@ -23,12 +23,15 @@ BATCH_SIZE = 2
 # float32. sdpa attention gives the same losses with a quarter less memory.
 DTYPE = "float16"
 ATTENTION = "sdpa"
+SERIES_VIEW = "zscore"  # or "range": the change from the first seconds in units of the normal range, no numbers in the text
+ANSWER_ORDER = "label_last"  # or "label_first": the model writes attack or normal as its first word
 
 
 def main() -> None:
     started = time.time()
     paths = k.prepare()
-    result = k.train(paths, rows=ROWS, batch_size=BATCH_SIZE, dtype=DTYPE, attention=ATTENTION, epochs=EPOCHS)
+    result = k.train(paths, rows=ROWS, batch_size=BATCH_SIZE, dtype=DTYPE, attention=ATTENTION, epochs=EPOCHS,
+                     series_view=SERIES_VIEW, answer_order=ANSWER_ORDER)
 
     stage = paths.checkout / k.STAGE
     for name in ("results/test_predictions.jsonl", "results/metrics.json", "checkpoints/loss_history.txt"):

@@ -9,6 +9,8 @@ Reads data/processed/examples.parquet and writes
                                                test windows per version
   data/processed/opentslm/test_full.jsonl      every test row
   data/processed/opentslm/test_shuffled.jsonl  test.jsonl with the seconds permuted inside the window
+  data/processed/opentslm/validation_shuffled.jsonl
+                                               validation.jsonl, permuted the same way
   data/processed/timenet/examples_table.csv.gz one row per example, no series values
 
 Every draw uses a fixed seed, so two runs write the same bytes.
@@ -26,7 +28,7 @@ from hai.dataset import LOOP_NAMES, SEED
 from hai.loaders import tag_map
 
 NORMAL_TEST_WINDOWS = 50  # normal test windows per version in test.jsonl
-SPLIT_FILES = ("train", "validation", "test", "test_full", "test_shuffled")
+SPLIT_FILES = ("train", "validation", "test", "test_full", "test_shuffled", "validation_shuffled")
 
 TABLE_COLUMNS = ["example_id", "window_id", "version", "file", "split", "window_kind", "anchor", "scored", "start",
                  "loop", "label", "attack_ids", "loop_uncertain", "attack_start_s", "attack_end_s",
@@ -61,6 +63,8 @@ def record(r) -> dict:
     counts = {ro: roles.count(ro) for ro in roles}
     series = [{"role": ro, "name": label_of(t, ro, counts[ro]), "values": [_number(v) for v in np.asarray(x, "float32")]}
               for t, ro, x in zip(r.tags, roles, r.values)]
+    for s, scale in zip(series, getattr(r, "scales", None) if getattr(r, "scales", None) is not None else []):
+        s["scale"] = float(scale)  # the series' normal-file range (p99 - p1); absent in tables built before it existed
     return {"example_id": r.example_id, "version": r.version, "loop": r.loop, "loop_name": LOOP_NAMES[r.loop],
             "split": r.split, "label": r.label, "attack_start_s": int(r.attack_start_s), "scored": bool(r.scored),
             "no_visible_change": bool(r.no_visible_change), "reacting": bool(r.reacting), "window_kind": r.window_kind, "answer": r.answer,
@@ -111,16 +115,17 @@ def export(ex: pd.DataFrame, out: Path = PROCESSED) -> dict[str, int]:
         "test_full": (ex.split == "test").to_numpy(),
     }
     counts = {}
-    test_recs = None
+    kept = {}
     for name, mask in parts.items():
         recs = [record(r) for r in ex[mask].itertuples()]
         write_jsonl(recs, out / "opentslm" / f"{name}.jsonl")
         counts[f"opentslm/{name}.jsonl"] = len(recs)
-        if name == "test":
-            test_recs = recs
-    shuffled = shuffle_seconds(test_recs)
-    write_jsonl(shuffled, out / "opentslm" / "test_shuffled.jsonl")
-    counts["opentslm/test_shuffled.jsonl"] = len(shuffled)
+        if name in ("test", "validation"):
+            kept[name] = recs
+    for name in ("test", "validation"):
+        shuffled = shuffle_seconds(kept[name])
+        write_jsonl(shuffled, out / "opentslm" / f"{name}_shuffled.jsonl")
+        counts[f"opentslm/{name}_shuffled.jsonl"] = len(shuffled)
     write_table(ex, out / "timenet" / "examples_table.csv.gz")
     counts["timenet/examples_table.csv.gz"] = len(ex)
     return counts

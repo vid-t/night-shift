@@ -18,10 +18,27 @@ Use it in place of curriculum_learning.py, with the same arguments, from the Ope
     HAI_MAX_NEW_TOKENS=128    cap the length of an answer in evaluation. OpenTSLM allows 2000
                               tokens per answer; the longest HAI answer has about 60.
     HAI_EPOCHS=3              epochs of stage6_hai (default: the 10 of the stage)
+    HAI_LR_ENCODER=5e-5       learning rate of the encoder in stage6_hai (default: the 2e-4 of the stage)
     HAI_SEED=0                seed for the weights that start at random and the row order
+    HAI_KEEP_PASSES=1         keep the model of every epoch of stage6_hai as checkpoints/pass_<epoch>.pt
+                              (encoder, projector and adapters, no optimizer state), not only the
+                              one with the lowest validation loss (default 0: off)
     OPENTSLM_DIR=<path>       where curriculum_learning.py is (default: the current folder)
 
-One thing it always does: it makes the tokenizer pad on the right with the end-of-text token.
+Four things it always does.
+
+0. It checks that the encoder still responds to the curve: at the start (a starting checkpoint
+   whose encoder gives the same output for every curve is refused), after every epoch and before
+   the answers. The published end-of-curriculum checkpoint OpenTSLM/llama-3.2-1b-ecg-sp is such a
+   checkpoint: its encoder's last two layers give a constant output (measured 2026-11-21), and
+   two full runs that started from it never read a curve.
+1. Answers are the model's most likely words, not a random draw. Llama's own settings sample
+   (temperature 0.6), and OpenTSLM's generate does not override them: the same model then gives
+   different answers to the same rows (7 of 50 in a check on 2026-11-21).
+2. The adapter (LoRA) weights are switched on before stage6_hai loads the stage before it.
+   OpenTSLM switches them on afterwards, so a fresh process drops the adapter weights of the
+   pretrained checkpoint and keeps only its encoder and projector.
+3. The tokenizer pads on the right with the end-of-text token.
 OpenTSLM keeps the first n tokens of each padded text piece, so a tokenizer that pads on the
 left (the open copy unsloth/Llama-3.2-1B does) hands it padding in place of every series label
 and of the closing "Answer:". With meta-llama/Llama-3.2-1B this changes nothing.
@@ -34,6 +51,7 @@ import sys
 DTYPES = ("bfloat16", "float32", "float16")
 ATTENTIONS = ("eager", "sdpa")
 DEFAULT_LOSS_SCALE = 4096.0
+ENCODER_DEAD_BELOW = 0.01  # encoder_response under this: the soft tokens are the same for every curve
 # loss scaling: the scale for the next step, the one in use, and what went wrong so far
 SCALE = {"value": 1.0, "in_use": 1.0, "steps": 0, "bad_steps": 0, "bad_tensors": 0, "pending": 0}
 
@@ -72,6 +90,111 @@ def pad_like_opentslm_expects(tokenizer_class=None) -> None:
         return tokenizer
 
     tokenizer_class.from_pretrained = classmethod(loaded)
+
+
+def decode_greedy(model_class=None) -> None:
+    """Make generate take the most likely word each time, whatever the language model's own settings say."""
+    model_class = model_class or _model_class()
+    original = model_class.generate
+
+    def greedy(self, batch, *args, **kwargs):
+        kwargs.setdefault("do_sample", False)
+        return original(self, batch, *args, **kwargs)
+
+    model_class.generate = greedy
+
+
+def keep_previous_adapters(cl) -> None:
+    """Switch the adapter weights on before stage6_hai loads the stage before it, so that stage's adapters load too."""
+    original = cl.CurriculumTrainer._load_previous_stage_model
+
+    def load(self, current_stage, *args, **kwargs):
+        if current_stage == "stage6_hai":
+            self._enable_lora_if_needed(current_stage)
+        return original(self, current_stage, *args, **kwargs)
+
+    cl.CurriculumTrainer._load_previous_stage_model = load
+
+
+def encoder_response(model) -> float:
+    """How far the soft tokens of different curves lie apart, relative to their size. 0: the curve is ignored.
+
+    Six fixed curves (flat, ramp, step up, wave, step down, late ramp) go through the encoder and
+    the projector. A working encoder gives 0.2 to 0.8; a collapsed one gives about 0.00003.
+    """
+    import torch
+
+    t = torch.linspace(0, 1, 300)
+    curves = torch.stack([torch.zeros(300), 2 * t - 1, (t > 0.5).float() * 3, torch.sin(20 * t),
+                          -(t > 0.3).float() * 2, torch.cat([torch.zeros(100), torch.linspace(0, 4, 200)])])
+    weight = next(model.encoder.parameters())
+    modes = model.encoder.training, model.projector.training
+    model.encoder.eval()
+    model.projector.eval()
+    try:
+        with torch.no_grad():
+            soft = model.projector(model.encoder(curves.to(weight.device, weight.dtype))).float()
+    finally:
+        model.encoder.train(modes[0])
+        model.projector.train(modes[1])
+    return float((soft - soft.mean(dim=0, keepdim=True)).norm() / soft.norm())
+
+
+def watch_encoder(cl) -> None:
+    """Refuse a starting checkpoint whose encoder ignores the curve, and report the response while training."""
+    load = cl.CurriculumTrainer._load_previous_stage_model
+    save = cl.CurriculumTrainer._save_loss_history
+    evaluate = cl.CurriculumTrainer._evaluate_stage
+
+    def loaded(self, current_stage, *args, **kwargs):
+        result = load(self, current_stage, *args, **kwargs)
+        if current_stage == "stage6_hai":
+            response = encoder_response(self._get_model())
+            print(f"[launch] encoder response to different curves at the start: {response:.4f}")
+            if response < ENCODER_DEAD_BELOW:
+                raise RuntimeError(
+                    f"the starting checkpoint's encoder gives the same output for every curve (response {response:.5f}, "
+                    f"dead below {ENCODER_DEAD_BELOW}): the model could not read a series. "
+                    "Start from another checkpoint (HAI_START_CHECKPOINT in training/setup.sh).")
+        return result
+
+    def saved(self, stage, epoch, *args, **kwargs):
+        result = save(self, stage, epoch, *args, **kwargs)
+        response = encoder_response(self._get_model())
+        print(f"[launch] encoder response after epoch {epoch}: {response:.4f}"
+              + ("  <-- DEAD: the model no longer reads the curve" if response < ENCODER_DEAD_BELOW else ""))
+        return result
+
+    def evaluated(self, *args, **kwargs):
+        print(f"[launch] encoder response of the model that answers: {encoder_response(self._get_model()):.4f}")
+        return evaluate(self, *args, **kwargs)
+
+    cl.CurriculumTrainer._load_previous_stage_model = loaded
+    cl.CurriculumTrainer._save_loss_history = saved
+    cl.CurriculumTrainer._evaluate_stage = evaluated
+
+
+def keep_passes(cl) -> None:
+    """Save the model of every epoch of stage6_hai as <results_dir>/<stage>/checkpoints/pass_<epoch>.pt."""
+    import torch
+
+    original = cl.CurriculumTrainer._save_loss_history
+
+    def saved(self, stage, epoch, train_loss, val_loss):
+        result = original(self, stage, epoch, train_loss, val_loss)
+        if stage == "stage6_hai" and getattr(self, "rank", 0) == 0:
+            model = self._get_model()
+            checkpoint = {"encoder_state": model.encoder.state_dict(), "projector_state": model.projector.state_dict(),
+                          "val_loss": val_loss, "epoch": epoch}
+            model.save_lora_state_to_checkpoint(checkpoint)
+            folder = os.path.join(self.results_dir, stage, "checkpoints")
+            os.makedirs(folder, exist_ok=True)
+            path = os.path.join(folder, f"pass_{epoch}.pt")
+            torch.save(checkpoint, path)
+            print(f"[launch] kept the model of pass {epoch}: {path}")
+        return result
+
+    cl.CurriculumTrainer._save_loss_history = saved
 
 
 def _model_class():
@@ -164,6 +287,18 @@ def set_epochs(cl, epochs: int) -> None:
     cl.CurriculumTrainer._train_stage = train_stage
 
 
+def set_encoder_lr(cl, lr: float) -> None:
+    """Give the encoder of stage6_hai this learning rate in place of the stage's own."""
+    original = cl.CurriculumTrainer._train_stage
+
+    def train_stage(self, *args, **kwargs):
+        if kwargs.get("stage_name") == "stage6_hai" and "lr_encoder" in kwargs:
+            kwargs["lr_encoder"] = lr
+        return original(self, *args, **kwargs)
+
+    cl.CurriculumTrainer._train_stage = train_stage
+
+
 def seed_everything(seed: int) -> None:
     import random
 
@@ -200,7 +335,9 @@ def main() -> None:
     scale = setting("HAI_LOSS_SCALE", float, lambda v: v >= 1)
     limit = setting("HAI_MAX_NEW_TOKENS", int, lambda v: v >= 1)
     epochs = setting("HAI_EPOCHS", int, lambda v: v >= 1)
+    lr_encoder = setting("HAI_LR_ENCODER", float, lambda v: v > 0)
     seed = setting("HAI_SEED", int, lambda v: v >= 0)
+    keep = setting("HAI_KEEP_PASSES", int, lambda v: v in (0, 1))
     if scale is None and dtype == "float16":
         scale = DEFAULT_LOSS_SCALE
 
@@ -211,6 +348,11 @@ def main() -> None:
     import curriculum_learning as cl
 
     pad_like_opentslm_expects()
+    decode_greedy()
+    keep_previous_adapters(cl)
+    watch_encoder(cl)
+    print("[launch] answers are decoded greedily; adapters are on before the previous stage loads; "
+          "the encoder's response to the curve is checked")
     if dtype or attention:
         force_load(dtype, attention)
         print(f"[launch] language model loads in {dtype or 'bfloat16'} with {attention or 'eager'} attention")
@@ -223,6 +365,12 @@ def main() -> None:
     if epochs:
         set_epochs(cl, epochs)
         print(f"[launch] stage6_hai runs {epochs} epoch(s)")
+    if lr_encoder:
+        set_encoder_lr(cl, lr_encoder)
+        print(f"[launch] stage6_hai encoder learning rate {lr_encoder:g}")
+    if keep:
+        keep_passes(cl)
+        print("[launch] the model of every pass is kept")
     if seed is not None:
         seed_everything(seed)
         print(f"[launch] seed {seed}")

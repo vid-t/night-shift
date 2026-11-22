@@ -1,0 +1,4078 @@
+{
+ "runs": {
+  "r1-base-s1": {
+   "attack": 75,
+   "normal": 42,
+   "score": 33,
+   "loops": {
+    "P1-FC": [
+     17,
+     12
+    ],
+    "P1-LC": [
+     34,
+     10
+    ],
+    "P1-PC": [
+     7,
+     20
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     5,
+     0
+    ]
+   },
+   "run": "r1-base-s1",
+   "round": 1,
+   "seed": 1,
+   "design": "Range view, pass chosen by loss",
+   "kept_pass": null,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r1-base-s2": {
+   "attack": 49,
+   "normal": 32,
+   "score": 17,
+   "loops": {
+    "P1-FC": [
+     10,
+     7
+    ],
+    "P1-LC": [
+     31,
+     9
+    ],
+    "P1-PC": [
+     8,
+     16
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     0,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   },
+   "run": "r1-base-s2",
+   "round": 1,
+   "seed": 2,
+   "design": "Range view, pass chosen by loss",
+   "kept_pass": null,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r1-base": {
+   "attack": 71,
+   "normal": 38,
+   "score": 33,
+   "loops": {
+    "P1-FC": [
+     16,
+     6
+    ],
+    "P1-LC": [
+     37,
+     9
+    ],
+    "P1-PC": [
+     7,
+     23
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   },
+   "run": "r1-base",
+   "round": 1,
+   "seed": 0,
+   "design": "Range view, pass chosen by loss",
+   "kept_pass": null,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r1-first": {
+   "attack": 61,
+   "normal": 52,
+   "score": 9,
+   "loops": {
+    "P1-FC": [
+     14,
+     20
+    ],
+    "P1-LC": [
+     34,
+     9
+    ],
+    "P1-PC": [
+     11,
+     23
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     2,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   },
+   "run": "r1-first",
+   "round": 1,
+   "seed": 0,
+   "design": "Range view, verdict first, pass chosen by loss",
+   "kept_pass": null,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r1-only-s1": {
+   "attack": 43,
+   "normal": 12,
+   "score": 31,
+   "loops": {
+    "P1-FC": [
+     9,
+     1
+    ],
+    "P1-LC": [
+     25,
+     7
+    ],
+    "P1-PC": [
+     3,
+     4
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     3,
+     0
+    ],
+    "P3-LC": [
+     3,
+     0
+    ]
+   },
+   "run": "r1-only-s1",
+   "round": 1,
+   "seed": 1,
+   "design": "Range view, verdict only, pass chosen by loss",
+   "kept_pass": null,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r1-only": {
+   "attack": 27,
+   "normal": 7,
+   "score": 20,
+   "loops": {
+    "P1-FC": [
+     0,
+     0
+    ],
+    "P1-LC": [
+     27,
+     6
+    ],
+    "P1-PC": [
+     0,
+     1
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     0,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   },
+   "run": "r1-only",
+   "round": 1,
+   "seed": 0,
+   "design": "Range view, verdict only, pass chosen by loss",
+   "kept_pass": null,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r1-tsqa": {
+   "attack": 34,
+   "normal": 13,
+   "score": 21,
+   "loops": {
+    "P1-FC": [
+     5,
+     4
+    ],
+    "P1-LC": [
+     26,
+     5
+    ],
+    "P1-PC": [
+     3,
+     4
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     0,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   },
+   "run": "r1-tsqa",
+   "round": 1,
+   "seed": 0,
+   "design": "Range view, start `tsqa`, pass chosen by loss",
+   "kept_pass": null,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r1-zscore": {
+   "attack": 78,
+   "normal": 39,
+   "score": 39,
+   "loops": {
+    "P1-FC": [
+     18,
+     13
+    ],
+    "P1-LC": [
+     29,
+     11
+    ],
+    "P1-PC": [
+     12,
+     15
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "run": "r1-zscore",
+   "round": 1,
+   "seed": 0,
+   "design": "Z-score view, pass chosen by loss",
+   "kept_pass": null,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r2-base-pv": {
+   "attack": 73,
+   "normal": 36,
+   "score": 37,
+   "loops": {
+    "P1-FC": [
+     18,
+     4
+    ],
+    "P1-LC": [
+     33,
+     9
+    ],
+    "P1-PC": [
+     9,
+     22
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     10,
+     0
+    ],
+    "P3-LC": [
+     3,
+     1
+    ]
+   },
+   "run": "r2-base-pv",
+   "round": 2,
+   "seed": 0,
+   "design": "Range view",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r2-base-s2-pv": {
+   "attack": 75,
+   "normal": 43,
+   "score": 32,
+   "loops": {
+    "P1-FC": [
+     16,
+     14
+    ],
+    "P1-LC": [
+     35,
+     9
+    ],
+    "P1-PC": [
+     9,
+     20
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     0
+    ],
+    "P3-LC": [
+     4,
+     0
+    ]
+   },
+   "run": "r2-base-s2-pv",
+   "round": 2,
+   "seed": 2,
+   "design": "Range view",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r2-from-only": {
+   "attack": 38,
+   "normal": 7,
+   "score": 31,
+   "loops": {
+    "P1-FC": [
+     7,
+     0
+    ],
+    "P1-LC": [
+     24,
+     7
+    ],
+    "P1-PC": [
+     1,
+     0
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     6,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   },
+   "run": "r2-from-only",
+   "round": 2,
+   "seed": 0,
+   "design": "Range view, starts from another run, pass chosen by loss",
+   "kept_pass": 2,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r2-only-lr": {
+   "attack": 51,
+   "normal": 31,
+   "score": 20,
+   "loops": {
+    "P1-FC": [
+     15,
+     6
+    ],
+    "P1-LC": [
+     31,
+     13
+    ],
+    "P1-PC": [
+     3,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     2,
+     2
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   },
+   "run": "r2-only-lr",
+   "round": 2,
+   "seed": 0,
+   "design": "Range view, verdict only, encoder step 5e-05, pass chosen by loss",
+   "kept_pass": 1,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r2-share35": {
+   "attack": 81,
+   "normal": 68,
+   "score": 13,
+   "loops": {
+    "P1-FC": [
+     18,
+     27
+    ],
+    "P1-LC": [
+     38,
+     15
+    ],
+    "P1-PC": [
+     9,
+     25
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     1
+    ],
+    "P3-LC": [
+     5,
+     0
+    ]
+   },
+   "run": "r2-share35",
+   "round": 2,
+   "seed": 0,
+   "design": "Range view, attack share 0.35, pass chosen by loss",
+   "kept_pass": 2,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r2-share50": {
+   "attack": 82,
+   "normal": 85,
+   "score": -3,
+   "loops": {
+    "P1-FC": [
+     17,
+     24
+    ],
+    "P1-LC": [
+     39,
+     11
+    ],
+    "P1-PC": [
+     9,
+     41
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     1
+    ],
+    "P3-LC": [
+     6,
+     8
+    ]
+   },
+   "run": "r2-share50",
+   "round": 2,
+   "seed": 0,
+   "design": "Range view, attack share 0.5, pass chosen by loss",
+   "kept_pass": 2,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r2-zscore-s1": {
+   "attack": 54,
+   "normal": 11,
+   "score": 43,
+   "loops": {
+    "P1-FC": [
+     16,
+     7
+    ],
+    "P1-LC": [
+     22,
+     2
+    ],
+    "P1-PC": [
+     2,
+     1
+    ],
+    "P1-TC": [
+     0,
+     1
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     2,
+     0
+    ]
+   },
+   "run": "r2-zscore-s1",
+   "round": 2,
+   "seed": 1,
+   "design": "Z-score view, pass chosen by loss",
+   "kept_pass": 2,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r2-zscore-s2": {
+   "attack": 72,
+   "normal": 30,
+   "score": 42,
+   "loops": {
+    "P1-FC": [
+     17,
+     18
+    ],
+    "P1-LC": [
+     32,
+     9
+    ],
+    "P1-PC": [
+     5,
+     3
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     6,
+     0
+    ]
+   },
+   "run": "r2-zscore-s2",
+   "round": 2,
+   "seed": 2,
+   "design": "Z-score view, pass chosen by loss",
+   "kept_pass": 3,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r3-e6-last": {
+   "attack": 69,
+   "normal": 40,
+   "score": 29,
+   "loops": {
+    "P1-FC": [
+     14,
+     11
+    ],
+    "P1-LC": [
+     33,
+     9
+    ],
+    "P1-PC": [
+     7,
+     20
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     10,
+     0
+    ],
+    "P3-LC": [
+     5,
+     0
+    ]
+   },
+   "run": "r3-e6-last",
+   "round": 3,
+   "seed": 0,
+   "design": "Range view, 6 passes",
+   "kept_pass": 6,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r3-looprange-pv": {
+   "attack": 81,
+   "normal": 21,
+   "score": 60,
+   "loops": {
+    "P1-FC": [
+     17,
+     4
+    ],
+    "P1-LC": [
+     40,
+     11
+    ],
+    "P1-PC": [
+     7,
+     6
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     0
+    ],
+    "P3-LC": [
+     6,
+     0
+    ]
+   },
+   "run": "r3-looprange-pv",
+   "round": 3,
+   "seed": 0,
+   "design": "Loop-relative, no clause",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r3-looprange-s2-pv": {
+   "attack": 82,
+   "normal": 27,
+   "score": 55,
+   "loops": {
+    "P1-FC": [
+     16,
+     6
+    ],
+    "P1-LC": [
+     38,
+     11
+    ],
+    "P1-PC": [
+     11,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     5,
+     0
+    ]
+   },
+   "run": "r3-looprange-s2-pv",
+   "round": 3,
+   "seed": 2,
+   "design": "Loop-relative, no clause",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r3-mirror-last": {
+   "attack": 81,
+   "normal": 37,
+   "score": 44,
+   "loops": {
+    "P1-FC": [
+     18,
+     5
+    ],
+    "P1-LC": [
+     35,
+     9
+    ],
+    "P1-PC": [
+     11,
+     23
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     0
+    ],
+    "P3-LC": [
+     6,
+     0
+    ]
+   },
+   "run": "r3-mirror-last",
+   "round": 3,
+   "seed": 0,
+   "design": "Range view, mirrored rows 0.5",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r3-zscore-pv": {
+   "attack": 76,
+   "normal": 30,
+   "score": 46,
+   "loops": {
+    "P1-FC": [
+     18,
+     10
+    ],
+    "P1-LC": [
+     31,
+     9
+    ],
+    "P1-PC": [
+     8,
+     10
+    ],
+    "P1-TC": [
+     2,
+     1
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     5,
+     0
+    ]
+   },
+   "run": "r3-zscore-pv",
+   "round": 3,
+   "seed": 0,
+   "design": "Z-score view",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r3-zscore-s1-pv": {
+   "attack": 85,
+   "normal": 24,
+   "score": 61,
+   "loops": {
+    "P1-FC": [
+     18,
+     4
+    ],
+    "P1-LC": [
+     36,
+     12
+    ],
+    "P1-PC": [
+     12,
+     8
+    ],
+    "P1-TC": [
+     1,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     6,
+     0
+    ]
+   },
+   "run": "r3-zscore-s1-pv",
+   "round": 3,
+   "seed": 1,
+   "design": "Z-score view",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r3-zsize-pv": {
+   "attack": 82,
+   "normal": 20,
+   "score": 62,
+   "loops": {
+    "P1-FC": [
+     18,
+     2
+    ],
+    "P1-LC": [
+     33,
+     9
+    ],
+    "P1-PC": [
+     5,
+     8
+    ],
+    "P1-TC": [
+     0,
+     1
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     14,
+     0
+    ]
+   },
+   "run": "r3-zsize-pv",
+   "round": 3,
+   "seed": 0,
+   "design": "Hybrid, no clause",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r3-zsize-s1-pv": {
+   "attack": 85,
+   "normal": 34,
+   "score": 51,
+   "loops": {
+    "P1-FC": [
+     18,
+     11
+    ],
+    "P1-LC": [
+     38,
+     10
+    ],
+    "P1-PC": [
+     5,
+     13
+    ],
+    "P1-TC": [
+     1,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     11,
+     0
+    ]
+   },
+   "run": "r3-zsize-s1-pv",
+   "round": 3,
+   "seed": 1,
+   "design": "Hybrid, no clause",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r4-looprange-s1": {
+   "attack": 77,
+   "normal": 27,
+   "score": 50,
+   "loops": {
+    "P1-FC": [
+     17,
+     4
+    ],
+    "P1-LC": [
+     37,
+     11
+    ],
+    "P1-PC": [
+     11,
+     12
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     0
+    ],
+    "P3-LC": [
+     1,
+     0
+    ]
+   },
+   "run": "r4-looprange-s1",
+   "round": 4,
+   "seed": 1,
+   "design": "Loop-relative, no clause",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r4-looprange-s3": {
+   "attack": 77,
+   "normal": 23,
+   "score": 54,
+   "loops": {
+    "P1-FC": [
+     18,
+     3
+    ],
+    "P1-LC": [
+     39,
+     8
+    ],
+    "P1-PC": [
+     8,
+     12
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   },
+   "run": "r4-looprange-s3",
+   "round": 4,
+   "seed": 3,
+   "design": "Loop-relative, no clause",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r4-zsize-law": {
+   "attack": 97,
+   "normal": 26,
+   "score": 71,
+   "loops": {
+    "P1-FC": [
+     18,
+     12
+    ],
+    "P1-LC": [
+     40,
+     13
+    ],
+    "P1-PC": [
+     12,
+     1
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     15,
+     0
+    ]
+   },
+   "run": "r4-zsize-law",
+   "round": 4,
+   "seed": 0,
+   "design": "Hybrid + law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r4-zsize-s2": {
+   "attack": 87,
+   "normal": 30,
+   "score": 57,
+   "loops": {
+    "P1-FC": [
+     17,
+     5
+    ],
+    "P1-LC": [
+     37,
+     10
+    ],
+    "P1-PC": [
+     8,
+     15
+    ],
+    "P1-TC": [
+     2,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     11,
+     0
+    ]
+   },
+   "run": "r4-zsize-s2",
+   "round": 4,
+   "seed": 2,
+   "design": "Hybrid, no clause",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r4-zsize-s3": {
+   "attack": 91,
+   "normal": 28,
+   "score": 63,
+   "loops": {
+    "P1-FC": [
+     17,
+     5
+    ],
+    "P1-LC": [
+     39,
+     10
+    ],
+    "P1-PC": [
+     11,
+     13
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     12,
+     0
+    ]
+   },
+   "run": "r4-zsize-s3",
+   "round": 4,
+   "seed": 3,
+   "design": "Hybrid, no clause",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r4-zsize-step": {
+   "attack": 96,
+   "normal": 24,
+   "score": 72,
+   "loops": {
+    "P1-FC": [
+     17,
+     8
+    ],
+    "P1-LC": [
+     35,
+     10
+    ],
+    "P1-PC": [
+     14,
+     6
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r4-zsize-step",
+   "round": 4,
+   "seed": 0,
+   "design": "Hybrid + step",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r4-zsize-steplaw-s1": {
+   "attack": 95,
+   "normal": 25,
+   "score": 70,
+   "loops": {
+    "P1-FC": [
+     15,
+     15
+    ],
+    "P1-LC": [
+     36,
+     9
+    ],
+    "P1-PC": [
+     13,
+     1
+    ],
+    "P1-TC": [
+     1,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r4-zsize-steplaw-s1",
+   "round": 4,
+   "seed": 1,
+   "design": "Hybrid + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r4-zsize-steplaw": {
+   "attack": 95,
+   "normal": 24,
+   "score": 71,
+   "loops": {
+    "P1-FC": [
+     17,
+     7
+    ],
+    "P1-LC": [
+     36,
+     11
+    ],
+    "P1-PC": [
+     12,
+     5
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     1
+    ]
+   },
+   "run": "r4-zsize-steplaw",
+   "round": 4,
+   "seed": 0,
+   "design": "Hybrid + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r5-looprange-ssl": {
+   "attack": 91,
+   "normal": 26,
+   "score": 65,
+   "loops": {
+    "P1-FC": [
+     13,
+     6
+    ],
+    "P1-LC": [
+     32,
+     10
+    ],
+    "P1-PC": [
+     16,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r5-looprange-ssl",
+   "round": 5,
+   "seed": 0,
+   "design": "Loop-relative + size, step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r5-looprange-steplaw-s1": {
+   "attack": 98,
+   "normal": 12,
+   "score": 86,
+   "loops": {
+    "P1-FC": [
+     13,
+     5
+    ],
+    "P1-LC": [
+     40,
+     6
+    ],
+    "P1-PC": [
+     16,
+     1
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     17,
+     0
+    ]
+   },
+   "run": "r5-looprange-steplaw-s1",
+   "round": 5,
+   "seed": 1,
+   "design": "Loop-relative + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r5-looprange-steplaw": {
+   "attack": 95,
+   "normal": 11,
+   "score": 84,
+   "loops": {
+    "P1-FC": [
+     13,
+     3
+    ],
+    "P1-LC": [
+     36,
+     7
+    ],
+    "P1-PC": [
+     16,
+     1
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r5-looprange-steplaw",
+   "round": 5,
+   "seed": 0,
+   "design": "Loop-relative + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r5-zsize-law-s1": {
+   "attack": 99,
+   "normal": 20,
+   "score": 79,
+   "loops": {
+    "P1-FC": [
+     18,
+     10
+    ],
+    "P1-LC": [
+     39,
+     10
+    ],
+    "P1-PC": [
+     14,
+     0
+    ],
+    "P1-TC": [
+     3,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     13,
+     0
+    ]
+   },
+   "run": "r5-zsize-law-s1",
+   "round": 5,
+   "seed": 1,
+   "design": "Hybrid + law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r5-zsize-step-s1": {
+   "attack": 88,
+   "normal": 21,
+   "score": 67,
+   "loops": {
+    "P1-FC": [
+     12,
+     8
+    ],
+    "P1-LC": [
+     34,
+     8
+    ],
+    "P1-PC": [
+     12,
+     5
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r5-zsize-step-s1",
+   "round": 5,
+   "seed": 1,
+   "design": "Hybrid + step",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r5-zsize-steplaw-har": {
+   "attack": 97,
+   "normal": 16,
+   "score": 81,
+   "loops": {
+    "P1-FC": [
+     17,
+     4
+    ],
+    "P1-LC": [
+     37,
+     9
+    ],
+    "P1-PC": [
+     13,
+     3
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r5-zsize-steplaw-har",
+   "round": 5,
+   "seed": 0,
+   "design": "Hybrid + step and law, start `har`",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r5-zsize-steplaw-s2": {
+   "attack": 97,
+   "normal": 24,
+   "score": 73,
+   "loops": {
+    "P1-FC": [
+     18,
+     13
+    ],
+    "P1-LC": [
+     35,
+     8
+    ],
+    "P1-PC": [
+     14,
+     3
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r5-zsize-steplaw-s2",
+   "round": 5,
+   "seed": 2,
+   "design": "Hybrid + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r5-zsize-steplaw-s3": {
+   "attack": 98,
+   "normal": 27,
+   "score": 71,
+   "loops": {
+    "P1-FC": [
+     17,
+     11
+    ],
+    "P1-LC": [
+     38,
+     11
+    ],
+    "P1-PC": [
+     13,
+     4
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     1
+    ]
+   },
+   "run": "r5-zsize-steplaw-s3",
+   "round": 5,
+   "seed": 3,
+   "design": "Hybrid + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r6-lr-law": {
+   "attack": 83,
+   "normal": 19,
+   "score": 64,
+   "loops": {
+    "P1-FC": [
+     16,
+     4
+    ],
+    "P1-LC": [
+     38,
+     9
+    ],
+    "P1-PC": [
+     12,
+     6
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     5,
+     0
+    ]
+   },
+   "run": "r6-lr-law",
+   "round": 6,
+   "seed": 0,
+   "design": "Loop-relative + law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r6-lr-slp-s1": {
+   "attack": 87,
+   "normal": 12,
+   "score": 75,
+   "loops": {
+    "P1-FC": [
+     13,
+     1
+    ],
+    "P1-LC": [
+     30,
+     6
+    ],
+    "P1-PC": [
+     15,
+     5
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r6-lr-slp-s1",
+   "round": 6,
+   "seed": 1,
+   "design": "Loop-relative + step, law and plant",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r6-lr-slp": {
+   "attack": 94,
+   "normal": 8,
+   "score": 86,
+   "loops": {
+    "P1-FC": [
+     15,
+     0
+    ],
+    "P1-LC": [
+     33,
+     8
+    ],
+    "P1-PC": [
+     16,
+     0
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r6-lr-slp",
+   "round": 6,
+   "seed": 0,
+   "design": "Loop-relative + step, law and plant",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r6-lr-steplaw-har": {
+   "attack": 94,
+   "normal": 22,
+   "score": 72,
+   "loops": {
+    "P1-FC": [
+     13,
+     4
+    ],
+    "P1-LC": [
+     35,
+     8
+    ],
+    "P1-PC": [
+     16,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r6-lr-steplaw-har",
+   "round": 6,
+   "seed": 0,
+   "design": "Loop-relative + step and law, start `har`",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r6-lr-steplaw-s2": {
+   "attack": 90,
+   "normal": 27,
+   "score": 63,
+   "loops": {
+    "P1-FC": [
+     13,
+     9
+    ],
+    "P1-LC": [
+     36,
+     11
+    ],
+    "P1-PC": [
+     13,
+     7
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     10,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r6-lr-steplaw-s2",
+   "round": 6,
+   "seed": 2,
+   "design": "Loop-relative + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r6-lr-steplaw-s3": {
+   "attack": 97,
+   "normal": 23,
+   "score": 74,
+   "loops": {
+    "P1-FC": [
+     15,
+     4
+    ],
+    "P1-LC": [
+     40,
+     8
+    ],
+    "P1-PC": [
+     12,
+     11
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r6-lr-steplaw-s3",
+   "round": 6,
+   "seed": 3,
+   "design": "Loop-relative + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r6-zsize-steplaw-har-s1": {
+   "attack": 97,
+   "normal": 26,
+   "score": 71,
+   "loops": {
+    "P1-FC": [
+     18,
+     5
+    ],
+    "P1-LC": [
+     38,
+     11
+    ],
+    "P1-PC": [
+     11,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r6-zsize-steplaw-har-s1",
+   "round": 6,
+   "seed": 1,
+   "design": "Hybrid + step and law, start `har`",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r6-zsize-steplaw-har-s2": {
+   "attack": 88,
+   "normal": 21,
+   "score": 67,
+   "loops": {
+    "P1-FC": [
+     17,
+     7
+    ],
+    "P1-LC": [
+     30,
+     10
+    ],
+    "P1-PC": [
+     11,
+     3
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     1
+    ]
+   },
+   "run": "r6-zsize-steplaw-har-s2",
+   "round": 6,
+   "seed": 2,
+   "design": "Hybrid + step and law, start `har`",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r7-lr-slp-s2": {
+   "attack": 92,
+   "normal": 10,
+   "score": 82,
+   "loops": {
+    "P1-FC": [
+     18,
+     3
+    ],
+    "P1-LC": [
+     28,
+     6
+    ],
+    "P1-PC": [
+     16,
+     1
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r7-lr-slp-s2",
+   "round": 7,
+   "seed": 2,
+   "design": "Loop-relative + step, law and plant",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r7-lr-slp-s3": {
+   "attack": 91,
+   "normal": 12,
+   "score": 79,
+   "loops": {
+    "P1-FC": [
+     18,
+     3
+    ],
+    "P1-LC": [
+     27,
+     9
+    ],
+    "P1-PC": [
+     16,
+     0
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r7-lr-slp-s3",
+   "round": 7,
+   "seed": 3,
+   "design": "Loop-relative + step, law and plant",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r7-lr-slp-s4": {
+   "attack": 90,
+   "normal": 14,
+   "score": 76,
+   "loops": {
+    "P1-FC": [
+     12,
+     3
+    ],
+    "P1-LC": [
+     34,
+     8
+    ],
+    "P1-PC": [
+     14,
+     3
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r7-lr-slp-s4",
+   "round": 7,
+   "seed": 4,
+   "design": "Loop-relative + step, law and plant",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r7-lr-steplaw-s4": {
+   "attack": 99,
+   "normal": 22,
+   "score": 77,
+   "loops": {
+    "P1-FC": [
+     14,
+     5
+    ],
+    "P1-LC": [
+     39,
+     9
+    ],
+    "P1-PC": [
+     16,
+     8
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r7-lr-steplaw-s4",
+   "round": 7,
+   "seed": 4,
+   "design": "Loop-relative + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r7-lr-steplaw-s5": {
+   "attack": 97,
+   "normal": 18,
+   "score": 79,
+   "loops": {
+    "P1-FC": [
+     16,
+     4
+    ],
+    "P1-LC": [
+     37,
+     11
+    ],
+    "P1-PC": [
+     14,
+     3
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r7-lr-steplaw-s5",
+   "round": 7,
+   "seed": 5,
+   "design": "Loop-relative + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r7-lr-steplaw-s6": {
+   "attack": 100,
+   "normal": 17,
+   "score": 83,
+   "loops": {
+    "P1-FC": [
+     16,
+     6
+    ],
+    "P1-LC": [
+     39,
+     9
+    ],
+    "P1-PC": [
+     16,
+     2
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r7-lr-steplaw-s6",
+   "round": 7,
+   "seed": 6,
+   "design": "Loop-relative + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r7-lr-steplaw-s7": {
+   "attack": 93,
+   "normal": 23,
+   "score": 70,
+   "loops": {
+    "P1-FC": [
+     11,
+     7
+    ],
+    "P1-LC": [
+     35,
+     6
+    ],
+    "P1-PC": [
+     17,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "run": "r7-lr-steplaw-s7",
+   "round": 7,
+   "seed": 7,
+   "design": "Loop-relative + step and law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r7-zsize-law-s2": {
+   "attack": 95,
+   "normal": 17,
+   "score": 78,
+   "loops": {
+    "P1-FC": [
+     18,
+     6
+    ],
+    "P1-LC": [
+     38,
+     11
+    ],
+    "P1-PC": [
+     14,
+     0
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     13,
+     0
+    ]
+   },
+   "run": "r7-zsize-law-s2",
+   "round": 7,
+   "seed": 2,
+   "design": "Hybrid + law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r8-lr-law-s1": {
+   "attack": 89,
+   "normal": 27,
+   "score": 62,
+   "loops": {
+    "P1-FC": [
+     18,
+     7
+    ],
+    "P1-LC": [
+     40,
+     10
+    ],
+    "P1-PC": [
+     15,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     4,
+     0
+    ]
+   },
+   "run": "r8-lr-law-s1",
+   "round": 8,
+   "seed": 1,
+   "design": "Loop-relative + law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r8-lr-law-s2": {
+   "attack": 81,
+   "normal": 25,
+   "score": 56,
+   "loops": {
+    "P1-FC": [
+     15,
+     9
+    ],
+    "P1-LC": [
+     38,
+     11
+    ],
+    "P1-PC": [
+     14,
+     5
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     2,
+     0
+    ]
+   },
+   "run": "r8-lr-law-s2",
+   "round": 8,
+   "seed": 2,
+   "design": "Loop-relative + law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r8-lr-law-s3": {
+   "attack": 82,
+   "normal": 20,
+   "score": 62,
+   "loops": {
+    "P1-FC": [
+     17,
+     4
+    ],
+    "P1-LC": [
+     38,
+     10
+    ],
+    "P1-PC": [
+     14,
+     6
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     1,
+     0
+    ]
+   },
+   "run": "r8-lr-law-s3",
+   "round": 8,
+   "seed": 3,
+   "design": "Loop-relative + law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r8-zsize-law-s3": {
+   "attack": 96,
+   "normal": 18,
+   "score": 78,
+   "loops": {
+    "P1-FC": [
+     18,
+     6
+    ],
+    "P1-LC": [
+     39,
+     11
+    ],
+    "P1-PC": [
+     10,
+     1
+    ],
+    "P1-TC": [
+     1,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     16,
+     0
+    ]
+   },
+   "run": "r8-zsize-law-s3",
+   "round": 8,
+   "seed": 3,
+   "design": "Hybrid + law",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r8-zsize-lawplant-s1": {
+   "attack": 94,
+   "normal": 23,
+   "score": 71,
+   "loops": {
+    "P1-FC": [
+     18,
+     7
+    ],
+    "P1-LC": [
+     40,
+     14
+    ],
+    "P1-PC": [
+     15,
+     1
+    ],
+    "P1-TC": [
+     1,
+     1
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     8,
+     0
+    ]
+   },
+   "run": "r8-zsize-lawplant-s1",
+   "round": 8,
+   "seed": 1,
+   "design": "Hybrid + law and plant",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r8-zsize-lawplant-s2": {
+   "attack": 92,
+   "normal": 20,
+   "score": 72,
+   "loops": {
+    "P1-FC": [
+     18,
+     6
+    ],
+    "P1-LC": [
+     41,
+     13
+    ],
+    "P1-PC": [
+     15,
+     1
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     6,
+     0
+    ]
+   },
+   "run": "r8-zsize-lawplant-s2",
+   "round": 8,
+   "seed": 2,
+   "design": "Hybrid + law and plant",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r8-zsize-lawplant-s3": {
+   "attack": 94,
+   "normal": 20,
+   "score": 74,
+   "loops": {
+    "P1-FC": [
+     16,
+     6
+    ],
+    "P1-LC": [
+     40,
+     13
+    ],
+    "P1-PC": [
+     13,
+     1
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     13,
+     0
+    ]
+   },
+   "run": "r8-zsize-lawplant-s3",
+   "round": 8,
+   "seed": 3,
+   "design": "Hybrid + law and plant",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  },
+  "r8-zsize-lawplant": {
+   "attack": 91,
+   "normal": 19,
+   "score": 72,
+   "loops": {
+    "P1-FC": [
+     16,
+     5
+    ],
+    "P1-LC": [
+     41,
+     12
+    ],
+    "P1-PC": [
+     11,
+     2
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     11,
+     0
+    ]
+   },
+   "run": "r8-zsize-lawplant",
+   "round": 8,
+   "seed": 0,
+   "design": "Hybrid + law and plant",
+   "kept_pass": 4,
+   "rows": 1092,
+   "invalid": 0
+  }
+ },
+ "designs": [
+  {
+   "design": "Loop-relative + step, law and plant",
+   "runs": [
+    "r6-lr-slp",
+    "r6-lr-slp-s1",
+    "r7-lr-slp-s2",
+    "r7-lr-slp-s3",
+    "r7-lr-slp-s4"
+   ],
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "scores": [
+    86,
+    75,
+    82,
+    79,
+    76
+   ],
+   "mean": 79.6,
+   "low": 75,
+   "high": 86,
+   "mean_attack": 90.8,
+   "mean_normal": 11.2,
+   "loops_mean": {
+    "P1-FC": [
+     15.2,
+     2
+    ],
+    "P1-LC": [
+     30.4,
+     7.4
+    ],
+    "P1-PC": [
+     15.4,
+     1.8
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11.8,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   },
+   "vote": {
+    "runs": [
+     "r6-lr-slp",
+     "r6-lr-slp-s1",
+     "r7-lr-slp-s2",
+     "r7-lr-slp-s3",
+     "r7-lr-slp-s4"
+    ],
+    "need": 3,
+    "attack": 91,
+    "normal": 10,
+    "score": 81,
+    "loops": {
+     "P1-FC": [
+      15,
+      2
+     ],
+     "P1-LC": [
+      30,
+      7
+     ],
+     "P1-PC": [
+      16,
+      1
+     ],
+     "P1-TC": [
+      0,
+      0
+     ],
+     "P2-SC": [
+      12,
+      0
+     ],
+     "P3-LC": [
+      18,
+      0
+     ]
+    }
+   },
+   "vote_sizes": {
+    "3": {
+     "mean": 81.6,
+     "low": 75,
+     "high": 86,
+     "choices": 10
+    },
+    "5": {
+     "mean": 81,
+     "low": 81,
+     "high": 81,
+     "choices": 1
+    }
+   }
+  },
+  {
+   "design": "Loop-relative + step and law",
+   "runs": [
+    "r5-looprange-steplaw",
+    "r5-looprange-steplaw-s1",
+    "r6-lr-steplaw-s2",
+    "r6-lr-steplaw-s3",
+    "r7-lr-steplaw-s4",
+    "r7-lr-steplaw-s5",
+    "r7-lr-steplaw-s6",
+    "r7-lr-steplaw-s7"
+   ],
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "scores": [
+    84,
+    86,
+    63,
+    74,
+    77,
+    79,
+    83,
+    70
+   ],
+   "mean": 77,
+   "low": 63,
+   "high": 86,
+   "mean_attack": 96.125,
+   "mean_normal": 19.125,
+   "loops_mean": {
+    "P1-FC": [
+     13.875,
+     5.375
+    ],
+    "P1-LC": [
+     37.75,
+     8.375
+    ],
+    "P1-PC": [
+     15,
+     5.375
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11.625,
+     0
+    ],
+    "P3-LC": [
+     17.875,
+     0
+    ]
+   },
+   "vote": {
+    "runs": [
+     "r5-looprange-steplaw",
+     "r5-looprange-steplaw-s1",
+     "r6-lr-steplaw-s2",
+     "r6-lr-steplaw-s3",
+     "r7-lr-steplaw-s4",
+     "r7-lr-steplaw-s5",
+     "r7-lr-steplaw-s6"
+    ],
+    "need": 4,
+    "attack": 101,
+    "normal": 11,
+    "score": 90,
+    "loops": {
+     "P1-FC": [
+      15,
+      3
+     ],
+     "P1-LC": [
+      40,
+      8
+     ],
+     "P1-PC": [
+      16,
+      0
+     ],
+     "P1-TC": [
+      0,
+      0
+     ],
+     "P2-SC": [
+      12,
+      0
+     ],
+     "P3-LC": [
+      18,
+      0
+     ]
+    }
+   },
+   "vote_sizes": {
+    "3": {
+     "mean": 83.60714285714286,
+     "low": 74,
+     "high": 90,
+     "choices": 56
+    },
+    "5": {
+     "mean": 86.71428571428571,
+     "low": 80,
+     "high": 91,
+     "choices": 56
+    },
+    "7": {
+     "mean": 88.5,
+     "low": 87,
+     "high": 90,
+     "choices": 8
+    }
+   }
+  },
+  {
+   "design": "Hybrid + law",
+   "runs": [
+    "r4-zsize-law",
+    "r5-zsize-law-s1",
+    "r7-zsize-law-s2",
+    "r8-zsize-law-s3"
+   ],
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "scores": [
+    71,
+    79,
+    78,
+    78
+   ],
+   "mean": 76.5,
+   "low": 71,
+   "high": 79,
+   "mean_attack": 96.75,
+   "mean_normal": 20.25,
+   "loops_mean": {
+    "P1-FC": [
+     18,
+     8.5
+    ],
+    "P1-LC": [
+     39,
+     11.25
+    ],
+    "P1-PC": [
+     12.5,
+     0.5
+    ],
+    "P1-TC": [
+     1,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     14.25,
+     0
+    ]
+   },
+   "vote": {
+    "runs": [
+     "r4-zsize-law",
+     "r5-zsize-law-s1",
+     "r7-zsize-law-s2"
+    ],
+    "need": 2,
+    "attack": 98,
+    "normal": 18,
+    "score": 80,
+    "loops": {
+     "P1-FC": [
+      18,
+      7
+     ],
+     "P1-LC": [
+      40,
+      11
+     ],
+     "P1-PC": [
+      14,
+      0
+     ],
+     "P1-TC": [
+      0,
+      0
+     ],
+     "P2-SC": [
+      12,
+      0
+     ],
+     "P3-LC": [
+      14,
+      0
+     ]
+    }
+   }
+  },
+  {
+   "design": "Hybrid + step and law, start `har`",
+   "runs": [
+    "r5-zsize-steplaw-har",
+    "r6-zsize-steplaw-har-s1",
+    "r6-zsize-steplaw-har-s2"
+   ],
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "scores": [
+    81,
+    71,
+    67
+   ],
+   "mean": 73,
+   "low": 67,
+   "high": 81,
+   "mean_attack": 94,
+   "mean_normal": 21,
+   "loops_mean": {
+    "P1-FC": [
+     17.333333333333332,
+     5.333333333333333
+    ],
+    "P1-LC": [
+     35,
+     10
+    ],
+    "P1-PC": [
+     11.666666666666666,
+     5.333333333333333
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0.3333333333333333
+    ]
+   },
+   "vote": {
+    "runs": [
+     "r5-zsize-steplaw-har",
+     "r6-zsize-steplaw-har-s1",
+     "r6-zsize-steplaw-har-s2"
+    ],
+    "need": 2,
+    "attack": 95,
+    "normal": 20,
+    "score": 75,
+    "loops": {
+     "P1-FC": [
+      18,
+      5
+     ],
+     "P1-LC": [
+      37,
+      10
+     ],
+     "P1-PC": [
+      10,
+      5
+     ],
+     "P1-TC": [
+      0,
+      0
+     ],
+     "P2-SC": [
+      12,
+      0
+     ],
+     "P3-LC": [
+      18,
+      0
+     ]
+    }
+   }
+  },
+  {
+   "design": "Hybrid + law and plant",
+   "runs": [
+    "r8-zsize-lawplant",
+    "r8-zsize-lawplant-s1",
+    "r8-zsize-lawplant-s2",
+    "r8-zsize-lawplant-s3"
+   ],
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "scores": [
+    72,
+    71,
+    72,
+    74
+   ],
+   "mean": 72.25,
+   "low": 71,
+   "high": 74,
+   "mean_attack": 92.75,
+   "mean_normal": 20.5,
+   "loops_mean": {
+    "P1-FC": [
+     17,
+     6
+    ],
+    "P1-LC": [
+     40.5,
+     13
+    ],
+    "P1-PC": [
+     13.5,
+     1.25
+    ],
+    "P1-TC": [
+     0.25,
+     0.25
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     9.5,
+     0
+    ]
+   },
+   "vote": {
+    "runs": [
+     "r8-zsize-lawplant",
+     "r8-zsize-lawplant-s1",
+     "r8-zsize-lawplant-s2"
+    ],
+    "need": 2,
+    "attack": 94,
+    "normal": 20,
+    "score": 74,
+    "loops": {
+     "P1-FC": [
+      18,
+      6
+     ],
+     "P1-LC": [
+      41,
+      13
+     ],
+     "P1-PC": [
+      14,
+      1
+     ],
+     "P1-TC": [
+      0,
+      0
+     ],
+     "P2-SC": [
+      12,
+      0
+     ],
+     "P3-LC": [
+      9,
+      0
+     ]
+    }
+   }
+  },
+  {
+   "design": "Loop-relative + step and law, start `har`",
+   "runs": [
+    "r6-lr-steplaw-har"
+   ],
+   "seeds": [
+    0
+   ],
+   "scores": [
+    72
+   ],
+   "mean": 72,
+   "low": 72,
+   "high": 72,
+   "mean_attack": 94,
+   "mean_normal": 22,
+   "loops_mean": {
+    "P1-FC": [
+     13,
+     4
+    ],
+    "P1-LC": [
+     35,
+     8
+    ],
+    "P1-PC": [
+     16,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Hybrid + step and law",
+   "runs": [
+    "r4-zsize-steplaw",
+    "r4-zsize-steplaw-s1",
+    "r5-zsize-steplaw-s2",
+    "r5-zsize-steplaw-s3"
+   ],
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "scores": [
+    71,
+    70,
+    73,
+    71
+   ],
+   "mean": 71.25,
+   "low": 70,
+   "high": 73,
+   "mean_attack": 96.25,
+   "mean_normal": 25,
+   "loops_mean": {
+    "P1-FC": [
+     16.75,
+     11.5
+    ],
+    "P1-LC": [
+     36.25,
+     9.75
+    ],
+    "P1-PC": [
+     13,
+     3.25
+    ],
+    "P1-TC": [
+     0.25,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0.5
+    ]
+   },
+   "vote": {
+    "runs": [
+     "r4-zsize-steplaw",
+     "r4-zsize-steplaw-s1",
+     "r5-zsize-steplaw-s2"
+    ],
+    "need": 2,
+    "attack": 97,
+    "normal": 24,
+    "score": 73,
+    "loops": {
+     "P1-FC": [
+      18,
+      12
+     ],
+     "P1-LC": [
+      36,
+      9
+     ],
+     "P1-PC": [
+      13,
+      3
+     ],
+     "P1-TC": [
+      0,
+      0
+     ],
+     "P2-SC": [
+      12,
+      0
+     ],
+     "P3-LC": [
+      18,
+      0
+     ]
+    }
+   }
+  },
+  {
+   "design": "Hybrid + step",
+   "runs": [
+    "r4-zsize-step",
+    "r5-zsize-step-s1"
+   ],
+   "seeds": [
+    0,
+    1
+   ],
+   "scores": [
+    72,
+    67
+   ],
+   "mean": 69.5,
+   "low": 67,
+   "high": 72,
+   "mean_attack": 92,
+   "mean_normal": 22.5,
+   "loops_mean": {
+    "P1-FC": [
+     14.5,
+     8
+    ],
+    "P1-LC": [
+     34.5,
+     9
+    ],
+    "P1-PC": [
+     13,
+     5.5
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Loop-relative + size, step and law",
+   "runs": [
+    "r5-looprange-ssl"
+   ],
+   "seeds": [
+    0
+   ],
+   "scores": [
+    65
+   ],
+   "mean": 65,
+   "low": 65,
+   "high": 65,
+   "mean_attack": 91,
+   "mean_normal": 26,
+   "loops_mean": {
+    "P1-FC": [
+     13,
+     6
+    ],
+    "P1-LC": [
+     32,
+     10
+    ],
+    "P1-PC": [
+     16,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Loop-relative + law",
+   "runs": [
+    "r6-lr-law",
+    "r8-lr-law-s1",
+    "r8-lr-law-s2",
+    "r8-lr-law-s3"
+   ],
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "scores": [
+    64,
+    62,
+    56,
+    62
+   ],
+   "mean": 61,
+   "low": 56,
+   "high": 64,
+   "mean_attack": 83.75,
+   "mean_normal": 22.75,
+   "loops_mean": {
+    "P1-FC": [
+     16.5,
+     6
+    ],
+    "P1-LC": [
+     38.5,
+     10
+    ],
+    "P1-PC": [
+     13.75,
+     6.75
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     3,
+     0
+    ]
+   },
+   "vote": {
+    "runs": [
+     "r6-lr-law",
+     "r8-lr-law-s1",
+     "r8-lr-law-s2"
+    ],
+    "need": 2,
+    "attack": 85,
+    "normal": 20,
+    "score": 65,
+    "loops": {
+     "P1-FC": [
+      16,
+      4
+     ],
+     "P1-LC": [
+      40,
+      10
+     ],
+     "P1-PC": [
+      14,
+      6
+     ],
+     "P1-TC": [
+      0,
+      0
+     ],
+     "P2-SC": [
+      12,
+      0
+     ],
+     "P3-LC": [
+      3,
+      0
+     ]
+    }
+   }
+  },
+  {
+   "design": "Hybrid, no clause",
+   "runs": [
+    "r3-zsize-pv",
+    "r3-zsize-s1-pv",
+    "r4-zsize-s2",
+    "r4-zsize-s3"
+   ],
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "scores": [
+    62,
+    51,
+    57,
+    63
+   ],
+   "mean": 58.25,
+   "low": 51,
+   "high": 63,
+   "mean_attack": 86.25,
+   "mean_normal": 28,
+   "loops_mean": {
+    "P1-FC": [
+     17.5,
+     5.75
+    ],
+    "P1-LC": [
+     36.75,
+     9.75
+    ],
+    "P1-PC": [
+     7.25,
+     12.25
+    ],
+    "P1-TC": [
+     0.75,
+     0.25
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     12,
+     0
+    ]
+   },
+   "vote": {
+    "runs": [
+     "r3-zsize-pv",
+     "r3-zsize-s1-pv",
+     "r4-zsize-s2"
+    ],
+    "need": 2,
+    "attack": 83,
+    "normal": 24,
+    "score": 59,
+    "loops": {
+     "P1-FC": [
+      18,
+      4
+     ],
+     "P1-LC": [
+      38,
+      10
+     ],
+     "P1-PC": [
+      4,
+      10
+     ],
+     "P1-TC": [
+      0,
+      0
+     ],
+     "P2-SC": [
+      12,
+      0
+     ],
+     "P3-LC": [
+      11,
+      0
+     ]
+    }
+   }
+  },
+  {
+   "design": "Loop-relative, no clause",
+   "runs": [
+    "r3-looprange-pv",
+    "r4-looprange-s1",
+    "r3-looprange-s2-pv",
+    "r4-looprange-s3"
+   ],
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "scores": [
+    60,
+    50,
+    55,
+    54
+   ],
+   "mean": 54.75,
+   "low": 50,
+   "high": 60,
+   "mean_attack": 79.25,
+   "mean_normal": 24.5,
+   "loops_mean": {
+    "P1-FC": [
+     17,
+     4.25
+    ],
+    "P1-LC": [
+     38.5,
+     10.25
+    ],
+    "P1-PC": [
+     9.25,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11.5,
+     0
+    ],
+    "P3-LC": [
+     3,
+     0
+    ]
+   },
+   "vote": {
+    "runs": [
+     "r3-looprange-pv",
+     "r4-looprange-s1",
+     "r3-looprange-s2-pv"
+    ],
+    "need": 2,
+    "attack": 81,
+    "normal": 21,
+    "score": 60,
+    "loops": {
+     "P1-FC": [
+      17,
+      4
+     ],
+     "P1-LC": [
+      39,
+      10
+     ],
+     "P1-PC": [
+      9,
+      7
+     ],
+     "P1-TC": [
+      0,
+      0
+     ],
+     "P2-SC": [
+      11,
+      0
+     ],
+     "P3-LC": [
+      5,
+      0
+     ]
+    }
+   }
+  },
+  {
+   "design": "Z-score view",
+   "runs": [
+    "r3-zscore-pv",
+    "r3-zscore-s1-pv"
+   ],
+   "seeds": [
+    0,
+    1
+   ],
+   "scores": [
+    46,
+    61
+   ],
+   "mean": 53.5,
+   "low": 46,
+   "high": 61,
+   "mean_attack": 80.5,
+   "mean_normal": 27,
+   "loops_mean": {
+    "P1-FC": [
+     18,
+     7
+    ],
+    "P1-LC": [
+     33.5,
+     10.5
+    ],
+    "P1-PC": [
+     10,
+     9
+    ],
+    "P1-TC": [
+     1.5,
+     0.5
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     5.5,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Range view, mirrored rows 0.5",
+   "runs": [
+    "r3-mirror-last"
+   ],
+   "seeds": [
+    0
+   ],
+   "scores": [
+    44
+   ],
+   "mean": 44,
+   "low": 44,
+   "high": 44,
+   "mean_attack": 81,
+   "mean_normal": 37,
+   "loops_mean": {
+    "P1-FC": [
+     18,
+     5
+    ],
+    "P1-LC": [
+     35,
+     9
+    ],
+    "P1-PC": [
+     11,
+     23
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     0
+    ],
+    "P3-LC": [
+     6,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Z-score view, pass chosen by loss",
+   "runs": [
+    "r1-zscore",
+    "r2-zscore-s1",
+    "r2-zscore-s2"
+   ],
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "scores": [
+    39,
+    43,
+    42
+   ],
+   "mean": 41.333333333333336,
+   "low": 39,
+   "high": 43,
+   "mean_attack": 68,
+   "mean_normal": 26.666666666666668,
+   "loops_mean": {
+    "P1-FC": [
+     17,
+     12.666666666666666
+    ],
+    "P1-LC": [
+     27.666666666666668,
+     7.333333333333333
+    ],
+    "P1-PC": [
+     6.333333333333333,
+     6.333333333333333
+    ],
+    "P1-TC": [
+     0,
+     0.3333333333333333
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     5,
+     0
+    ]
+   },
+   "vote": {
+    "runs": [
+     "r1-zscore",
+     "r2-zscore-s1",
+     "r2-zscore-s2"
+    ],
+    "need": 2,
+    "attack": 70,
+    "normal": 24,
+    "score": 46,
+    "loops": {
+     "P1-FC": [
+      18,
+      11
+     ],
+     "P1-LC": [
+      28,
+      9
+     ],
+     "P1-PC": [
+      7,
+      4
+     ],
+     "P1-TC": [
+      0,
+      0
+     ],
+     "P2-SC": [
+      12,
+      0
+     ],
+     "P3-LC": [
+      5,
+      0
+     ]
+    }
+   }
+  },
+  {
+   "design": "Range view",
+   "runs": [
+    "r2-base-pv",
+    "r2-base-s2-pv"
+   ],
+   "seeds": [
+    0,
+    2
+   ],
+   "scores": [
+    37,
+    32
+   ],
+   "mean": 34.5,
+   "low": 32,
+   "high": 37,
+   "mean_attack": 74,
+   "mean_normal": 39.5,
+   "loops_mean": {
+    "P1-FC": [
+     17,
+     9
+    ],
+    "P1-LC": [
+     34,
+     9
+    ],
+    "P1-PC": [
+     9,
+     21
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     10.5,
+     0
+    ],
+    "P3-LC": [
+     3.5,
+     0.5
+    ]
+   }
+  },
+  {
+   "design": "Range view, starts from another run, pass chosen by loss",
+   "runs": [
+    "r2-from-only"
+   ],
+   "seeds": [
+    0
+   ],
+   "scores": [
+    31
+   ],
+   "mean": 31,
+   "low": 31,
+   "high": 31,
+   "mean_attack": 38,
+   "mean_normal": 7,
+   "loops_mean": {
+    "P1-FC": [
+     7,
+     0
+    ],
+    "P1-LC": [
+     24,
+     7
+    ],
+    "P1-PC": [
+     1,
+     0
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     6,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Range view, 6 passes",
+   "runs": [
+    "r3-e6-last"
+   ],
+   "seeds": [
+    0
+   ],
+   "scores": [
+    29
+   ],
+   "mean": 29,
+   "low": 29,
+   "high": 29,
+   "mean_attack": 69,
+   "mean_normal": 40,
+   "loops_mean": {
+    "P1-FC": [
+     14,
+     11
+    ],
+    "P1-LC": [
+     33,
+     9
+    ],
+    "P1-PC": [
+     7,
+     20
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     10,
+     0
+    ],
+    "P3-LC": [
+     5,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Range view, pass chosen by loss",
+   "runs": [
+    "r1-base",
+    "r1-base-s1",
+    "r1-base-s2"
+   ],
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "scores": [
+    33,
+    33,
+    17
+   ],
+   "mean": 27.666666666666668,
+   "low": 17,
+   "high": 33,
+   "mean_attack": 65,
+   "mean_normal": 37.333333333333336,
+   "loops_mean": {
+    "P1-FC": [
+     14.333333333333334,
+     8.333333333333334
+    ],
+    "P1-LC": [
+     34,
+     9.333333333333334
+    ],
+    "P1-PC": [
+     7.333333333333333,
+     19.666666666666668
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     7.666666666666667,
+     0
+    ],
+    "P3-LC": [
+     1.6666666666666667,
+     0
+    ]
+   },
+   "vote": {
+    "runs": [
+     "r1-base",
+     "r1-base-s1",
+     "r1-base-s2"
+    ],
+    "need": 2,
+    "attack": 68,
+    "normal": 39,
+    "score": 29,
+    "loops": {
+     "P1-FC": [
+      16,
+      7
+     ],
+     "P1-LC": [
+      34,
+      9
+     ],
+     "P1-PC": [
+      7,
+      23
+     ],
+     "P1-TC": [
+      0,
+      0
+     ],
+     "P2-SC": [
+      11,
+      0
+     ],
+     "P3-LC": [
+      0,
+      0
+     ]
+    }
+   }
+  },
+  {
+   "design": "Range view, verdict only, pass chosen by loss",
+   "runs": [
+    "r1-only",
+    "r1-only-s1"
+   ],
+   "seeds": [
+    0,
+    1
+   ],
+   "scores": [
+    20,
+    31
+   ],
+   "mean": 25.5,
+   "low": 20,
+   "high": 31,
+   "mean_attack": 35,
+   "mean_normal": 9.5,
+   "loops_mean": {
+    "P1-FC": [
+     4.5,
+     0.5
+    ],
+    "P1-LC": [
+     26,
+     6.5
+    ],
+    "P1-PC": [
+     1.5,
+     2.5
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     1.5,
+     0
+    ],
+    "P3-LC": [
+     1.5,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Range view, start `tsqa`, pass chosen by loss",
+   "runs": [
+    "r1-tsqa"
+   ],
+   "seeds": [
+    0
+   ],
+   "scores": [
+    21
+   ],
+   "mean": 21,
+   "low": 21,
+   "high": 21,
+   "mean_attack": 34,
+   "mean_normal": 13,
+   "loops_mean": {
+    "P1-FC": [
+     5,
+     4
+    ],
+    "P1-LC": [
+     26,
+     5
+    ],
+    "P1-PC": [
+     3,
+     4
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     0,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Range view, verdict only, encoder step 5e-05, pass chosen by loss",
+   "runs": [
+    "r2-only-lr"
+   ],
+   "seeds": [
+    0
+   ],
+   "scores": [
+    20
+   ],
+   "mean": 20,
+   "low": 20,
+   "high": 20,
+   "mean_attack": 51,
+   "mean_normal": 31,
+   "loops_mean": {
+    "P1-FC": [
+     15,
+     6
+    ],
+    "P1-LC": [
+     31,
+     13
+    ],
+    "P1-PC": [
+     3,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     2,
+     2
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Range view, attack share 0.35, pass chosen by loss",
+   "runs": [
+    "r2-share35"
+   ],
+   "seeds": [
+    0
+   ],
+   "scores": [
+    13
+   ],
+   "mean": 13,
+   "low": 13,
+   "high": 13,
+   "mean_attack": 81,
+   "mean_normal": 68,
+   "loops_mean": {
+    "P1-FC": [
+     18,
+     27
+    ],
+    "P1-LC": [
+     38,
+     15
+    ],
+    "P1-PC": [
+     9,
+     25
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     1
+    ],
+    "P3-LC": [
+     5,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Range view, verdict first, pass chosen by loss",
+   "runs": [
+    "r1-first"
+   ],
+   "seeds": [
+    0
+   ],
+   "scores": [
+    9
+   ],
+   "mean": 9,
+   "low": 9,
+   "high": 9,
+   "mean_attack": 61,
+   "mean_normal": 52,
+   "loops_mean": {
+    "P1-FC": [
+     14,
+     20
+    ],
+    "P1-LC": [
+     34,
+     9
+    ],
+    "P1-PC": [
+     11,
+     23
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     2,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "design": "Range view, attack share 0.5, pass chosen by loss",
+   "runs": [
+    "r2-share50"
+   ],
+   "seeds": [
+    0
+   ],
+   "scores": [
+    -3
+   ],
+   "mean": -3,
+   "low": -3,
+   "high": -3,
+   "mean_attack": 82,
+   "mean_normal": 85,
+   "loops_mean": {
+    "P1-FC": [
+     17,
+     24
+    ],
+    "P1-LC": [
+     39,
+     11
+    ],
+    "P1-PC": [
+     9,
+     41
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     1
+    ],
+    "P3-LC": [
+     6,
+     8
+    ]
+   }
+  }
+ ],
+ "n_runs": 64
+}

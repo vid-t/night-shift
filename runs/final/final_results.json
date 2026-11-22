@@ -1,0 +1,2847 @@
+{
+ "test_rows": {
+  "attack": 82,
+  "neighbour": 254,
+  "quiet": 1200
+ },
+ "sample_rows": {
+  "quiet": 600,
+  "attack": 82,
+  "neighbour": 129
+ },
+ "scale": {
+  "neighbour": 1.9689922480620154,
+  "quiet": 2.0
+ },
+ "missing_runs": [],
+ "full": {
+  "r4-zsize-law": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 65,
+   "neighbour_rows": 254,
+   "fa_neighbour": 12,
+   "quiet_rows": 1200,
+   "fa_quiet": 11,
+   "false_alarms": 23,
+   "score": 42,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     18,
+     1
+    ],
+    "P1-LC": [
+     11,
+     6
+    ],
+    "P1-PC": [
+     16,
+     11
+    ],
+    "P1-TC": [
+     0,
+     1
+    ],
+    "P2-SC": [
+     15,
+     4
+    ],
+    "P3-LC": [
+     5,
+     0
+    ]
+   },
+   "found": "50 of 56"
+  },
+  "r5-zsize-law-s1": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 65,
+   "neighbour_rows": 254,
+   "fa_neighbour": 10,
+   "quiet_rows": 1200,
+   "fa_quiet": 3,
+   "false_alarms": 13,
+   "score": 52,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     18,
+     0
+    ],
+    "P1-LC": [
+     12,
+     5
+    ],
+    "P1-PC": [
+     16,
+     3
+    ],
+    "P1-TC": [
+     0,
+     1
+    ],
+    "P2-SC": [
+     15,
+     3
+    ],
+    "P3-LC": [
+     4,
+     1
+    ]
+   },
+   "found": "50 of 56"
+  },
+  "r7-zsize-law-s2": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 68,
+   "neighbour_rows": 254,
+   "fa_neighbour": 12,
+   "quiet_rows": 1200,
+   "fa_quiet": 4,
+   "false_alarms": 16,
+   "score": 52,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     19,
+     1
+    ],
+    "P1-LC": [
+     12,
+     5
+    ],
+    "P1-PC": [
+     15,
+     2
+    ],
+    "P1-TC": [
+     1,
+     4
+    ],
+    "P2-SC": [
+     15,
+     3
+    ],
+    "P3-LC": [
+     6,
+     1
+    ]
+   },
+   "found": "52 of 56"
+  },
+  "r8-zsize-law-s3": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 61,
+   "neighbour_rows": 254,
+   "fa_neighbour": 12,
+   "quiet_rows": 1200,
+   "fa_quiet": 6,
+   "false_alarms": 18,
+   "score": 43,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     16,
+     1
+    ],
+    "P1-LC": [
+     12,
+     7
+    ],
+    "P1-PC": [
+     14,
+     2
+    ],
+    "P1-TC": [
+     0,
+     4
+    ],
+    "P2-SC": [
+     15,
+     3
+    ],
+    "P3-LC": [
+     4,
+     1
+    ]
+   },
+   "found": "48 of 56"
+  },
+  "r5-looprange-steplaw": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 62,
+   "neighbour_rows": 254,
+   "fa_neighbour": 10,
+   "quiet_rows": 1200,
+   "fa_quiet": 2,
+   "false_alarms": 12,
+   "score": 50,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     12,
+     2
+    ],
+    "P1-LC": [
+     10,
+     6
+    ],
+    "P1-PC": [
+     15,
+     0
+    ],
+    "P1-TC": [
+     2,
+     2
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     8,
+     0
+    ]
+   },
+   "found": "48 of 56"
+  },
+  "r5-looprange-steplaw-s1": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 63,
+   "neighbour_rows": 254,
+   "fa_neighbour": 14,
+   "quiet_rows": 1200,
+   "fa_quiet": 6,
+   "false_alarms": 20,
+   "score": 43,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     14,
+     3
+    ],
+    "P1-LC": [
+     9,
+     11
+    ],
+    "P1-PC": [
+     15,
+     4
+    ],
+    "P1-TC": [
+     3,
+     0
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "found": "48 of 56"
+  },
+  "r6-lr-steplaw-s2": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 63,
+   "neighbour_rows": 254,
+   "fa_neighbour": 11,
+   "quiet_rows": 1200,
+   "fa_quiet": 3,
+   "false_alarms": 14,
+   "score": 49,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     14,
+     3
+    ],
+    "P1-LC": [
+     9,
+     4
+    ],
+    "P1-PC": [
+     15,
+     2
+    ],
+    "P1-TC": [
+     3,
+     2
+    ],
+    "P2-SC": [
+     15,
+     3
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "found": "49 of 56"
+  },
+  "r6-lr-steplaw-s3": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 59,
+   "neighbour_rows": 254,
+   "fa_neighbour": 11,
+   "quiet_rows": 1200,
+   "fa_quiet": 9,
+   "false_alarms": 20,
+   "score": 39,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     13,
+     3
+    ],
+    "P1-LC": [
+     9,
+     9
+    ],
+    "P1-PC": [
+     13,
+     4
+    ],
+    "P1-TC": [
+     2,
+     3
+    ],
+    "P2-SC": [
+     15,
+     1
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "found": "45 of 56"
+  },
+  "r7-lr-steplaw-s4": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 64,
+   "neighbour_rows": 254,
+   "fa_neighbour": 11,
+   "quiet_rows": 1200,
+   "fa_quiet": 6,
+   "false_alarms": 17,
+   "score": 47,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     15,
+     2
+    ],
+    "P1-LC": [
+     9,
+     8
+    ],
+    "P1-PC": [
+     17,
+     4
+    ],
+    "P1-TC": [
+     1,
+     2
+    ],
+    "P2-SC": [
+     14,
+     1
+    ],
+    "P3-LC": [
+     8,
+     0
+    ]
+   },
+   "found": "49 of 56"
+  },
+  "r7-lr-steplaw-s5": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 62,
+   "neighbour_rows": 254,
+   "fa_neighbour": 11,
+   "quiet_rows": 1200,
+   "fa_quiet": 5,
+   "false_alarms": 16,
+   "score": 46,
+   "valid": 1535,
+   "loops": {
+    "P1-FC": [
+     14,
+     2
+    ],
+    "P1-LC": [
+     10,
+     9
+    ],
+    "P1-PC": [
+     14,
+     2
+    ],
+    "P1-TC": [
+     2,
+     1
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "found": "51 of 56"
+  },
+  "r7-lr-steplaw-s6": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 63,
+   "neighbour_rows": 254,
+   "fa_neighbour": 13,
+   "quiet_rows": 1200,
+   "fa_quiet": 6,
+   "false_alarms": 19,
+   "score": 44,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     13,
+     3
+    ],
+    "P1-LC": [
+     9,
+     8
+    ],
+    "P1-PC": [
+     16,
+     5
+    ],
+    "P1-TC": [
+     2,
+     1
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     8,
+     0
+    ]
+   },
+   "found": "49 of 56"
+  },
+  "r7-lr-steplaw-s7": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 63,
+   "neighbour_rows": 254,
+   "fa_neighbour": 12,
+   "quiet_rows": 1200,
+   "fa_quiet": 9,
+   "false_alarms": 21,
+   "score": 42,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     13,
+     1
+    ],
+    "P1-LC": [
+     8,
+     11
+    ],
+    "P1-PC": [
+     18,
+     4
+    ],
+    "P1-TC": [
+     2,
+     3
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "found": "50 of 56"
+  },
+  "A vote (seeds 0 to 2, 2 of 3)": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 66,
+   "neighbour_rows": 254,
+   "fa_neighbour": 11,
+   "quiet_rows": 1200,
+   "fa_quiet": 4,
+   "false_alarms": 15,
+   "score": 51,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     18,
+     0
+    ],
+    "P1-LC": [
+     12,
+     5
+    ],
+    "P1-PC": [
+     16,
+     4
+    ],
+    "P1-TC": [
+     0,
+     2
+    ],
+    "P2-SC": [
+     15,
+     3
+    ],
+    "P3-LC": [
+     5,
+     1
+    ]
+   }
+  },
+  "B vote (seeds 0 to 6, 4 of 7)": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 65,
+   "neighbour_rows": 254,
+   "fa_neighbour": 10,
+   "quiet_rows": 1200,
+   "fa_quiet": 5,
+   "false_alarms": 15,
+   "score": 50,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     15,
+     3
+    ],
+    "P1-LC": [
+     9,
+     8
+    ],
+    "P1-PC": [
+     17,
+     1
+    ],
+    "P1-TC": [
+     2,
+     2
+    ],
+    "P2-SC": [
+     15,
+     1
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   }
+  },
+  "Gradient boosting": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 71,
+   "neighbour_rows": 254,
+   "fa_neighbour": 14,
+   "quiet_rows": 1200,
+   "fa_quiet": 3,
+   "false_alarms": 17,
+   "score": 54,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     18,
+     2
+    ],
+    "P1-LC": [
+     13,
+     8
+    ],
+    "P1-PC": [
+     16,
+     2
+    ],
+    "P1-TC": [
+     0,
+     1
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     9,
+     2
+    ]
+   },
+   "found": "52 of 56"
+  },
+  "Gradient boosting with neighbours": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 68,
+   "neighbour_rows": 254,
+   "fa_neighbour": 11,
+   "quiet_rows": 1200,
+   "fa_quiet": 3,
+   "false_alarms": 14,
+   "score": 54,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     18,
+     1
+    ],
+    "P1-LC": [
+     11,
+     3
+    ],
+    "P1-PC": [
+     16,
+     2
+    ],
+    "P1-TC": [
+     0,
+     2
+    ],
+    "P2-SC": [
+     14,
+     3
+    ],
+    "P3-LC": [
+     9,
+     3
+    ]
+   },
+   "found": "52 of 56"
+  },
+  "Range alarm": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 38,
+   "neighbour_rows": 254,
+   "fa_neighbour": 43,
+   "quiet_rows": 1200,
+   "fa_quiet": 130,
+   "false_alarms": 173,
+   "score": -135,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     13,
+     4
+    ],
+    "P1-LC": [
+     4,
+     3
+    ],
+    "P1-PC": [
+     3,
+     10
+    ],
+    "P1-TC": [
+     2,
+     83
+    ],
+    "P2-SC": [
+     13,
+     60
+    ],
+    "P3-LC": [
+     3,
+     13
+    ]
+   },
+   "found": "31 of 56"
+  }
+ },
+ "sample": {
+  "r4-zsize-law": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 65,
+   "neighbour_rows": 129,
+   "fa_neighbour": 5,
+   "quiet_rows": 600,
+   "fa_quiet": 6,
+   "false_alarms": 11,
+   "score": 54,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     18,
+     1
+    ],
+    "P1-LC": [
+     11,
+     2
+    ],
+    "P1-PC": [
+     16,
+     5
+    ],
+    "P1-TC": [
+     0,
+     1
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     5,
+     0
+    ]
+   },
+   "estimated_full_false_alarms": 21.8,
+   "estimated_full_score": 43.2
+  },
+  "r5-zsize-law-s1": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 65,
+   "neighbour_rows": 129,
+   "fa_neighbour": 4,
+   "quiet_rows": 600,
+   "fa_quiet": 2,
+   "false_alarms": 6,
+   "score": 59,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     18,
+     0
+    ],
+    "P1-LC": [
+     12,
+     2
+    ],
+    "P1-PC": [
+     16,
+     1
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     4,
+     1
+    ]
+   },
+   "estimated_full_false_alarms": 11.9,
+   "estimated_full_score": 53.1
+  },
+  "r7-zsize-law-s2": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 68,
+   "neighbour_rows": 129,
+   "fa_neighbour": 5,
+   "quiet_rows": 600,
+   "fa_quiet": 2,
+   "false_alarms": 7,
+   "score": 61,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     19,
+     0
+    ],
+    "P1-LC": [
+     12,
+     2
+    ],
+    "P1-PC": [
+     15,
+     0
+    ],
+    "P1-TC": [
+     1,
+     2
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     6,
+     1
+    ]
+   },
+   "estimated_full_false_alarms": 13.8,
+   "estimated_full_score": 54.2
+  },
+  "r8-zsize-law-s3": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 61,
+   "neighbour_rows": 129,
+   "fa_neighbour": 6,
+   "quiet_rows": 600,
+   "fa_quiet": 3,
+   "false_alarms": 9,
+   "score": 52,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     16,
+     1
+    ],
+    "P1-LC": [
+     12,
+     2
+    ],
+    "P1-PC": [
+     14,
+     0
+    ],
+    "P1-TC": [
+     0,
+     3
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     4,
+     1
+    ]
+   },
+   "estimated_full_false_alarms": 17.8,
+   "estimated_full_score": 43.2
+  },
+  "r5-looprange-steplaw": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 62,
+   "neighbour_rows": 129,
+   "fa_neighbour": 6,
+   "quiet_rows": 600,
+   "fa_quiet": 1,
+   "false_alarms": 7,
+   "score": 55,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     12,
+     1
+    ],
+    "P1-LC": [
+     10,
+     3
+    ],
+    "P1-PC": [
+     15,
+     0
+    ],
+    "P1-TC": [
+     2,
+     1
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     8,
+     0
+    ]
+   },
+   "estimated_full_false_alarms": 13.8,
+   "estimated_full_score": 48.2
+  },
+  "r5-looprange-steplaw-s1": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 63,
+   "neighbour_rows": 129,
+   "fa_neighbour": 6,
+   "quiet_rows": 600,
+   "fa_quiet": 3,
+   "false_alarms": 9,
+   "score": 54,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     14,
+     2
+    ],
+    "P1-LC": [
+     9,
+     6
+    ],
+    "P1-PC": [
+     15,
+     0
+    ],
+    "P1-TC": [
+     3,
+     0
+    ],
+    "P2-SC": [
+     15,
+     1
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "estimated_full_false_alarms": 17.8,
+   "estimated_full_score": 45.2
+  },
+  "r6-lr-steplaw-s2": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 63,
+   "neighbour_rows": 129,
+   "fa_neighbour": 5,
+   "quiet_rows": 600,
+   "fa_quiet": 1,
+   "false_alarms": 6,
+   "score": 57,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     14,
+     2
+    ],
+    "P1-LC": [
+     9,
+     2
+    ],
+    "P1-PC": [
+     15,
+     0
+    ],
+    "P1-TC": [
+     3,
+     1
+    ],
+    "P2-SC": [
+     15,
+     1
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "estimated_full_false_alarms": 11.8,
+   "estimated_full_score": 51.2
+  },
+  "r6-lr-steplaw-s3": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 59,
+   "neighbour_rows": 129,
+   "fa_neighbour": 5,
+   "quiet_rows": 600,
+   "fa_quiet": 5,
+   "false_alarms": 10,
+   "score": 49,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     13,
+     1
+    ],
+    "P1-LC": [
+     9,
+     5
+    ],
+    "P1-PC": [
+     13,
+     2
+    ],
+    "P1-TC": [
+     2,
+     1
+    ],
+    "P2-SC": [
+     15,
+     1
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "estimated_full_false_alarms": 19.8,
+   "estimated_full_score": 39.2
+  },
+  "r7-lr-steplaw-s4": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 64,
+   "neighbour_rows": 129,
+   "fa_neighbour": 5,
+   "quiet_rows": 600,
+   "fa_quiet": 3,
+   "false_alarms": 8,
+   "score": 56,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     15,
+     1
+    ],
+    "P1-LC": [
+     9,
+     4
+    ],
+    "P1-PC": [
+     17,
+     1
+    ],
+    "P1-TC": [
+     1,
+     1
+    ],
+    "P2-SC": [
+     14,
+     1
+    ],
+    "P3-LC": [
+     8,
+     0
+    ]
+   },
+   "estimated_full_false_alarms": 15.8,
+   "estimated_full_score": 48.2
+  },
+  "r7-lr-steplaw-s5": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 62,
+   "neighbour_rows": 129,
+   "fa_neighbour": 5,
+   "quiet_rows": 600,
+   "fa_quiet": 3,
+   "false_alarms": 8,
+   "score": 54,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     14,
+     1
+    ],
+    "P1-LC": [
+     10,
+     5
+    ],
+    "P1-PC": [
+     14,
+     0
+    ],
+    "P1-TC": [
+     2,
+     1
+    ],
+    "P2-SC": [
+     15,
+     1
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "estimated_full_false_alarms": 15.8,
+   "estimated_full_score": 46.2
+  },
+  "r7-lr-steplaw-s6": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 63,
+   "neighbour_rows": 129,
+   "fa_neighbour": 5,
+   "quiet_rows": 600,
+   "fa_quiet": 4,
+   "false_alarms": 9,
+   "score": 54,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     13,
+     2
+    ],
+    "P1-LC": [
+     9,
+     4
+    ],
+    "P1-PC": [
+     16,
+     1
+    ],
+    "P1-TC": [
+     2,
+     1
+    ],
+    "P2-SC": [
+     15,
+     1
+    ],
+    "P3-LC": [
+     8,
+     0
+    ]
+   },
+   "estimated_full_false_alarms": 17.8,
+   "estimated_full_score": 45.2
+  },
+  "r7-lr-steplaw-s7": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 63,
+   "neighbour_rows": 129,
+   "fa_neighbour": 6,
+   "quiet_rows": 600,
+   "fa_quiet": 6,
+   "false_alarms": 12,
+   "score": 51,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     13,
+     0
+    ],
+    "P1-LC": [
+     8,
+     7
+    ],
+    "P1-PC": [
+     18,
+     2
+    ],
+    "P1-TC": [
+     2,
+     2
+    ],
+    "P2-SC": [
+     15,
+     1
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "estimated_full_false_alarms": 23.8,
+   "estimated_full_score": 39.2
+  },
+  "A vote (seeds 0 to 2, 2 of 3)": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 66,
+   "neighbour_rows": 129,
+   "fa_neighbour": 5,
+   "quiet_rows": 600,
+   "fa_quiet": 2,
+   "false_alarms": 7,
+   "score": 59,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     18,
+     0
+    ],
+    "P1-LC": [
+     12,
+     2
+    ],
+    "P1-PC": [
+     16,
+     1
+    ],
+    "P1-TC": [
+     0,
+     1
+    ],
+    "P2-SC": [
+     15,
+     2
+    ],
+    "P3-LC": [
+     5,
+     1
+    ]
+   },
+   "estimated_full_false_alarms": 13.8,
+   "estimated_full_score": 52.2
+  },
+  "B vote (seeds 0 to 6, 4 of 7)": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 65,
+   "neighbour_rows": 129,
+   "fa_neighbour": 5,
+   "quiet_rows": 600,
+   "fa_quiet": 3,
+   "false_alarms": 8,
+   "score": 57,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     15,
+     2
+    ],
+    "P1-LC": [
+     9,
+     4
+    ],
+    "P1-PC": [
+     17,
+     0
+    ],
+    "P1-TC": [
+     2,
+     1
+    ],
+    "P2-SC": [
+     15,
+     1
+    ],
+    "P3-LC": [
+     7,
+     0
+    ]
+   },
+   "estimated_full_false_alarms": 15.8,
+   "estimated_full_score": 49.2
+  },
+  "Gradient boosting": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 71,
+   "neighbour_rows": 129,
+   "fa_neighbour": 7,
+   "quiet_rows": 600,
+   "fa_quiet": 1,
+   "false_alarms": 8,
+   "score": 63,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     18,
+     0
+    ],
+    "P1-LC": [
+     13,
+     5
+    ],
+    "P1-PC": [
+     16,
+     0
+    ],
+    "P1-TC": [
+     0,
+     1
+    ],
+    "P2-SC": [
+     15,
+     1
+    ],
+    "P3-LC": [
+     9,
+     1
+    ]
+   },
+   "estimated_full_false_alarms": 15.8,
+   "estimated_full_score": 55.2
+  },
+  "Gradient boosting with neighbours": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 68,
+   "neighbour_rows": 129,
+   "fa_neighbour": 4,
+   "quiet_rows": 600,
+   "fa_quiet": 2,
+   "false_alarms": 6,
+   "score": 62,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     18,
+     0
+    ],
+    "P1-LC": [
+     11,
+     2
+    ],
+    "P1-PC": [
+     16,
+     0
+    ],
+    "P1-TC": [
+     0,
+     1
+    ],
+    "P2-SC": [
+     14,
+     1
+    ],
+    "P3-LC": [
+     9,
+     2
+    ]
+   },
+   "estimated_full_false_alarms": 11.9,
+   "estimated_full_score": 56.1
+  },
+  "Range alarm": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 38,
+   "neighbour_rows": 129,
+   "fa_neighbour": 20,
+   "quiet_rows": 600,
+   "fa_quiet": 69,
+   "false_alarms": 89,
+   "score": -51,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     13,
+     2
+    ],
+    "P1-LC": [
+     4,
+     2
+    ],
+    "P1-PC": [
+     3,
+     4
+    ],
+    "P1-TC": [
+     2,
+     45
+    ],
+    "P2-SC": [
+     13,
+     30
+    ],
+    "P3-LC": [
+     3,
+     6
+    ]
+   },
+   "estimated_full_false_alarms": 177.4,
+   "estimated_full_score": -139.4
+  },
+  "Kimi K3.1 Pro, cold": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 78,
+   "neighbour_rows": 129,
+   "fa_neighbour": 71,
+   "quiet_rows": 600,
+   "fa_quiet": 291,
+   "false_alarms": 362,
+   "score": -284,
+   "valid": 807,
+   "loops": {
+    "P1-FC": [
+     19,
+     80
+    ],
+    "P1-LC": [
+     14,
+     35
+    ],
+    "P1-PC": [
+     17,
+     64
+    ],
+    "P1-TC": [
+     5,
+     63
+    ],
+    "P2-SC": [
+     13,
+     22
+    ],
+    "P3-LC": [
+     10,
+     98
+    ]
+   },
+   "valid_strict": 788,
+   "estimated_full_false_alarms": 721.8,
+   "estimated_full_score": -643.8
+  },
+  "Kimi K3.1 Pro, hints and solved examples": {
+   "rows": 811,
+   "attack_rows": 82,
+   "caught": 78,
+   "neighbour_rows": 129,
+   "fa_neighbour": 52,
+   "quiet_rows": 600,
+   "fa_quiet": 207,
+   "false_alarms": 259,
+   "score": -181,
+   "valid": 811,
+   "loops": {
+    "P1-FC": [
+     19,
+     72
+    ],
+    "P1-LC": [
+     14,
+     26
+    ],
+    "P1-PC": [
+     18,
+     41
+    ],
+    "P1-TC": [
+     4,
+     50
+    ],
+    "P2-SC": [
+     15,
+     7
+    ],
+    "P3-LC": [
+     8,
+     63
+    ]
+   },
+   "valid_strict": 810,
+   "estimated_full_false_alarms": 516.4,
+   "estimated_full_score": -438.4
+  }
+ },
+ "thinking": {
+  "Kimi K3.1 Pro, cold, thinking off": {
+   "rows": 58,
+   "attack_rows": 28,
+   "caught": 27,
+   "neighbour_rows": 6,
+   "fa_neighbour": 5,
+   "quiet_rows": 24,
+   "fa_quiet": 15,
+   "false_alarms": 20,
+   "score": 7,
+   "valid": 57,
+   "loops": {
+    "P1-FC": [
+     6,
+     5
+    ],
+    "P1-LC": [
+     5,
+     0
+    ],
+    "P1-PC": [
+     4,
+     0
+    ],
+    "P1-TC": [
+     2,
+     5
+    ],
+    "P2-SC": [
+     6,
+     2
+    ],
+    "P3-LC": [
+     4,
+     8
+    ]
+   }
+  },
+  "Kimi K3.1 Pro, cold, thinking on (low)": {
+   "rows": 58,
+   "attack_rows": 28,
+   "caught": 25,
+   "neighbour_rows": 6,
+   "fa_neighbour": 5,
+   "quiet_rows": 24,
+   "fa_quiet": 10,
+   "false_alarms": 15,
+   "score": 10,
+   "valid": 58,
+   "loops": {
+    "P1-FC": [
+     6,
+     4
+    ],
+    "P1-LC": [
+     5,
+     0
+    ],
+    "P1-PC": [
+     4,
+     1
+    ],
+    "P1-TC": [
+     1,
+     3
+    ],
+    "P2-SC": [
+     6,
+     2
+    ],
+    "P3-LC": [
+     3,
+     5
+    ]
+   }
+  },
+  "Kimi K3.1 Pro, hints and solved examples, thinking off": {
+   "rows": 58,
+   "attack_rows": 28,
+   "caught": 25,
+   "neighbour_rows": 6,
+   "fa_neighbour": 3,
+   "quiet_rows": 24,
+   "fa_quiet": 15,
+   "false_alarms": 18,
+   "score": 7,
+   "valid": 58,
+   "loops": {
+    "P1-FC": [
+     6,
+     4
+    ],
+    "P1-LC": [
+     5,
+     0
+    ],
+    "P1-PC": [
+     4,
+     0
+    ],
+    "P1-TC": [
+     1,
+     7
+    ],
+    "P2-SC": [
+     6,
+     1
+    ],
+    "P3-LC": [
+     3,
+     6
+    ]
+   }
+  },
+  "Gradient boosting": {
+   "rows": 58,
+   "attack_rows": 28,
+   "caught": 25,
+   "neighbour_rows": 6,
+   "fa_neighbour": 0,
+   "quiet_rows": 24,
+   "fa_quiet": 0,
+   "false_alarms": 0,
+   "score": 25,
+   "valid": 58,
+   "loops": {
+    "P1-FC": [
+     6,
+     0
+    ],
+    "P1-LC": [
+     4,
+     0
+    ],
+    "P1-PC": [
+     5,
+     0
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     6,
+     0
+    ],
+    "P3-LC": [
+     4,
+     0
+    ]
+   }
+  },
+  "A vote (seeds 0 to 2, 2 of 3)": {
+   "rows": 58,
+   "attack_rows": 28,
+   "caught": 20,
+   "neighbour_rows": 6,
+   "fa_neighbour": 0,
+   "quiet_rows": 24,
+   "fa_quiet": 0,
+   "false_alarms": 0,
+   "score": 20,
+   "valid": 58,
+   "loops": {
+    "P1-FC": [
+     5,
+     0
+    ],
+    "P1-LC": [
+     3,
+     0
+    ],
+    "P1-PC": [
+     5,
+     0
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     6,
+     0
+    ],
+    "P3-LC": [
+     1,
+     0
+    ]
+   }
+  },
+  "B vote (seeds 0 to 6, 4 of 7)": {
+   "rows": 58,
+   "attack_rows": 28,
+   "caught": 21,
+   "neighbour_rows": 6,
+   "fa_neighbour": 0,
+   "quiet_rows": 24,
+   "fa_quiet": 0,
+   "false_alarms": 0,
+   "score": 21,
+   "valid": 58,
+   "loops": {
+    "P1-FC": [
+     4,
+     0
+    ],
+    "P1-LC": [
+     3,
+     0
+    ],
+    "P1-PC": [
+     5,
+     0
+    ],
+    "P1-TC": [
+     1,
+     0
+    ],
+    "P2-SC": [
+     6,
+     0
+    ],
+    "P3-LC": [
+     2,
+     0
+    ]
+   }
+  }
+ },
+ "shuffled": {
+  "r4-zsize-law": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 25,
+   "neighbour_rows": 254,
+   "fa_neighbour": 5,
+   "quiet_rows": 1200,
+   "fa_quiet": 4,
+   "false_alarms": 9,
+   "score": 16,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     2,
+     0
+    ],
+    "P1-LC": [
+     2,
+     0
+    ],
+    "P1-PC": [
+     16,
+     9
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     5,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   }
+  },
+  "r5-zsize-law-s1": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 33,
+   "neighbour_rows": 254,
+   "fa_neighbour": 6,
+   "quiet_rows": 1200,
+   "fa_quiet": 6,
+   "false_alarms": 12,
+   "score": 21,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     3,
+     0
+    ],
+    "P1-LC": [
+     4,
+     0
+    ],
+    "P1-PC": [
+     17,
+     11
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     9,
+     1
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   }
+  },
+  "r7-zsize-law-s2": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 32,
+   "neighbour_rows": 254,
+   "fa_neighbour": 3,
+   "quiet_rows": 1200,
+   "fa_quiet": 2,
+   "false_alarms": 5,
+   "score": 27,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     4,
+     0
+    ],
+    "P1-LC": [
+     2,
+     0
+    ],
+    "P1-PC": [
+     14,
+     4
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     1
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   }
+  },
+  "r8-zsize-law-s3": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 25,
+   "neighbour_rows": 254,
+   "fa_neighbour": 1,
+   "quiet_rows": 1200,
+   "fa_quiet": 3,
+   "false_alarms": 4,
+   "score": 21,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     3,
+     0
+    ],
+    "P1-LC": [
+     2,
+     0
+    ],
+    "P1-PC": [
+     13,
+     4
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     7,
+     0
+    ],
+    "P3-LC": [
+     0,
+     0
+    ]
+   }
+  },
+  "r5-looprange-steplaw": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 38,
+   "neighbour_rows": 254,
+   "fa_neighbour": 106,
+   "quiet_rows": 1200,
+   "fa_quiet": 518,
+   "false_alarms": 624,
+   "score": -586,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     8,
+     138
+    ],
+    "P1-LC": [
+     1,
+     63
+    ],
+    "P1-PC": [
+     17,
+     230
+    ],
+    "P1-TC": [
+     0,
+     12
+    ],
+    "P2-SC": [
+     7,
+     4
+    ],
+    "P3-LC": [
+     5,
+     177
+    ]
+   }
+  },
+  "r5-looprange-steplaw-s1": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 44,
+   "neighbour_rows": 254,
+   "fa_neighbour": 113,
+   "quiet_rows": 1200,
+   "fa_quiet": 564,
+   "false_alarms": 677,
+   "score": -633,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     7,
+     127
+    ],
+    "P1-LC": [
+     1,
+     44
+    ],
+    "P1-PC": [
+     19,
+     232
+    ],
+    "P1-TC": [
+     0,
+     28
+    ],
+    "P2-SC": [
+     7,
+     7
+    ],
+    "P3-LC": [
+     10,
+     239
+    ]
+   }
+  },
+  "r6-lr-steplaw-s2": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 38,
+   "neighbour_rows": 254,
+   "fa_neighbour": 111,
+   "quiet_rows": 1200,
+   "fa_quiet": 537,
+   "false_alarms": 648,
+   "score": -610,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     9,
+     139
+    ],
+    "P1-LC": [
+     0,
+     7
+    ],
+    "P1-PC": [
+     15,
+     221
+    ],
+    "P1-TC": [
+     1,
+     46
+    ],
+    "P2-SC": [
+     5,
+     5
+    ],
+    "P3-LC": [
+     8,
+     230
+    ]
+   }
+  },
+  "r6-lr-steplaw-s3": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 39,
+   "neighbour_rows": 254,
+   "fa_neighbour": 114,
+   "quiet_rows": 1200,
+   "fa_quiet": 558,
+   "false_alarms": 672,
+   "score": -633,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     9,
+     110
+    ],
+    "P1-LC": [
+     1,
+     64
+    ],
+    "P1-PC": [
+     15,
+     223
+    ],
+    "P1-TC": [
+     0,
+     25
+    ],
+    "P2-SC": [
+     4,
+     6
+    ],
+    "P3-LC": [
+     10,
+     244
+    ]
+   }
+  },
+  "r7-lr-steplaw-s4": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 37,
+   "neighbour_rows": 254,
+   "fa_neighbour": 88,
+   "quiet_rows": 1200,
+   "fa_quiet": 414,
+   "false_alarms": 502,
+   "score": -465,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     10,
+     111
+    ],
+    "P1-LC": [
+     0,
+     1
+    ],
+    "P1-PC": [
+     19,
+     216
+    ],
+    "P1-TC": [
+     0,
+     8
+    ],
+    "P2-SC": [
+     4,
+     7
+    ],
+    "P3-LC": [
+     4,
+     159
+    ]
+   }
+  },
+  "r7-lr-steplaw-s5": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 33,
+   "neighbour_rows": 254,
+   "fa_neighbour": 82,
+   "quiet_rows": 1200,
+   "fa_quiet": 442,
+   "false_alarms": 524,
+   "score": -491,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     8,
+     107
+    ],
+    "P1-LC": [
+     0,
+     34
+    ],
+    "P1-PC": [
+     18,
+     224
+    ],
+    "P1-TC": [
+     1,
+     48
+    ],
+    "P2-SC": [
+     3,
+     0
+    ],
+    "P3-LC": [
+     3,
+     111
+    ]
+   }
+  },
+  "r7-lr-steplaw-s6": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 29,
+   "neighbour_rows": 254,
+   "fa_neighbour": 63,
+   "quiet_rows": 1200,
+   "fa_quiet": 332,
+   "false_alarms": 395,
+   "score": -366,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     4,
+     133
+    ],
+    "P1-LC": [
+     0,
+     15
+    ],
+    "P1-PC": [
+     19,
+     218
+    ],
+    "P1-TC": [
+     0,
+     12
+    ],
+    "P2-SC": [
+     4,
+     5
+    ],
+    "P3-LC": [
+     2,
+     12
+    ]
+   }
+  },
+  "r7-lr-steplaw-s7": {
+   "rows": 1536,
+   "attack_rows": 82,
+   "caught": 30,
+   "neighbour_rows": 254,
+   "fa_neighbour": 83,
+   "quiet_rows": 1200,
+   "fa_quiet": 414,
+   "false_alarms": 497,
+   "score": -467,
+   "valid": 1536,
+   "loops": {
+    "P1-FC": [
+     9,
+     116
+    ],
+    "P1-LC": [
+     3,
+     56
+    ],
+    "P1-PC": [
+     14,
+     230
+    ],
+    "P1-TC": [
+     0,
+     28
+    ],
+    "P2-SC": [
+     1,
+     3
+    ],
+    "P3-LC": [
+     3,
+     64
+    ]
+   }
+  }
+ },
+ "validation": {
+  "r4-zsize-law": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 97,
+   "neighbour_rows": 396,
+   "fa_neighbour": 21,
+   "quiet_rows": 552,
+   "fa_quiet": 5,
+   "false_alarms": 26,
+   "score": 71,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     18,
+     12
+    ],
+    "P1-LC": [
+     40,
+     13
+    ],
+    "P1-PC": [
+     12,
+     1
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     15,
+     0
+    ]
+   }
+  },
+  "r5-zsize-law-s1": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 99,
+   "neighbour_rows": 396,
+   "fa_neighbour": 15,
+   "quiet_rows": 552,
+   "fa_quiet": 5,
+   "false_alarms": 20,
+   "score": 79,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     18,
+     10
+    ],
+    "P1-LC": [
+     39,
+     10
+    ],
+    "P1-PC": [
+     14,
+     0
+    ],
+    "P1-TC": [
+     3,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     13,
+     0
+    ]
+   }
+  },
+  "r7-zsize-law-s2": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 95,
+   "neighbour_rows": 396,
+   "fa_neighbour": 15,
+   "quiet_rows": 552,
+   "fa_quiet": 2,
+   "false_alarms": 17,
+   "score": 78,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     18,
+     6
+    ],
+    "P1-LC": [
+     38,
+     11
+    ],
+    "P1-PC": [
+     14,
+     0
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     13,
+     0
+    ]
+   }
+  },
+  "r8-zsize-law-s3": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 96,
+   "neighbour_rows": 396,
+   "fa_neighbour": 15,
+   "quiet_rows": 552,
+   "fa_quiet": 3,
+   "false_alarms": 18,
+   "score": 78,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     18,
+     6
+    ],
+    "P1-LC": [
+     39,
+     11
+    ],
+    "P1-PC": [
+     10,
+     1
+    ],
+    "P1-TC": [
+     1,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     16,
+     0
+    ]
+   }
+  },
+  "r5-looprange-steplaw": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 95,
+   "neighbour_rows": 396,
+   "fa_neighbour": 10,
+   "quiet_rows": 552,
+   "fa_quiet": 1,
+   "false_alarms": 11,
+   "score": 84,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     13,
+     3
+    ],
+    "P1-LC": [
+     36,
+     7
+    ],
+    "P1-PC": [
+     16,
+     1
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   }
+  },
+  "r5-looprange-steplaw-s1": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 98,
+   "neighbour_rows": 396,
+   "fa_neighbour": 10,
+   "quiet_rows": 552,
+   "fa_quiet": 2,
+   "false_alarms": 12,
+   "score": 86,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     13,
+     5
+    ],
+    "P1-LC": [
+     40,
+     6
+    ],
+    "P1-PC": [
+     16,
+     1
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     17,
+     0
+    ]
+   }
+  },
+  "r6-lr-steplaw-s2": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 90,
+   "neighbour_rows": 396,
+   "fa_neighbour": 26,
+   "quiet_rows": 552,
+   "fa_quiet": 1,
+   "false_alarms": 27,
+   "score": 63,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     13,
+     9
+    ],
+    "P1-LC": [
+     36,
+     11
+    ],
+    "P1-PC": [
+     13,
+     7
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     10,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   }
+  },
+  "r6-lr-steplaw-s3": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 97,
+   "neighbour_rows": 396,
+   "fa_neighbour": 21,
+   "quiet_rows": 552,
+   "fa_quiet": 2,
+   "false_alarms": 23,
+   "score": 74,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     15,
+     4
+    ],
+    "P1-LC": [
+     40,
+     8
+    ],
+    "P1-PC": [
+     12,
+     11
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   }
+  },
+  "r7-lr-steplaw-s4": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 99,
+   "neighbour_rows": 396,
+   "fa_neighbour": 22,
+   "quiet_rows": 552,
+   "fa_quiet": 0,
+   "false_alarms": 22,
+   "score": 77,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     14,
+     5
+    ],
+    "P1-LC": [
+     39,
+     9
+    ],
+    "P1-PC": [
+     16,
+     8
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   }
+  },
+  "r7-lr-steplaw-s5": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 97,
+   "neighbour_rows": 396,
+   "fa_neighbour": 17,
+   "quiet_rows": 552,
+   "fa_quiet": 1,
+   "false_alarms": 18,
+   "score": 79,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     16,
+     4
+    ],
+    "P1-LC": [
+     37,
+     11
+    ],
+    "P1-PC": [
+     14,
+     3
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   }
+  },
+  "r7-lr-steplaw-s6": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 100,
+   "neighbour_rows": 396,
+   "fa_neighbour": 13,
+   "quiet_rows": 552,
+   "fa_quiet": 4,
+   "false_alarms": 17,
+   "score": 83,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     16,
+     6
+    ],
+    "P1-LC": [
+     39,
+     9
+    ],
+    "P1-PC": [
+     16,
+     2
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   }
+  },
+  "r7-lr-steplaw-s7": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 93,
+   "neighbour_rows": 396,
+   "fa_neighbour": 21,
+   "quiet_rows": 552,
+   "fa_quiet": 2,
+   "false_alarms": 23,
+   "score": 70,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     11,
+     7
+    ],
+    "P1-LC": [
+     35,
+     6
+    ],
+    "P1-PC": [
+     17,
+     10
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   }
+  },
+  "A vote (seeds 0 to 2, 2 of 3)": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 98,
+   "neighbour_rows": 396,
+   "fa_neighbour": 16,
+   "quiet_rows": 552,
+   "fa_quiet": 2,
+   "false_alarms": 18,
+   "score": 80,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     18,
+     7
+    ],
+    "P1-LC": [
+     40,
+     11
+    ],
+    "P1-PC": [
+     14,
+     0
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     14,
+     0
+    ]
+   }
+  },
+  "B vote (seeds 0 to 6, 4 of 7)": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 101,
+   "neighbour_rows": 396,
+   "fa_neighbour": 9,
+   "quiet_rows": 552,
+   "fa_quiet": 2,
+   "false_alarms": 11,
+   "score": 90,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     15,
+     3
+    ],
+    "P1-LC": [
+     40,
+     8
+    ],
+    "P1-PC": [
+     16,
+     0
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     18,
+     0
+    ]
+   }
+  },
+  "Gradient boosting": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 108,
+   "neighbour_rows": 396,
+   "fa_neighbour": 14,
+   "quiet_rows": 552,
+   "fa_quiet": 12,
+   "false_alarms": 26,
+   "score": 82,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     11,
+     9
+    ],
+    "P1-LC": [
+     40,
+     9
+    ],
+    "P1-PC": [
+     18,
+     3
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     12,
+     1
+    ],
+    "P3-LC": [
+     27,
+     4
+    ]
+   }
+  },
+  "Gradient boosting with neighbours": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 108,
+   "neighbour_rows": 396,
+   "fa_neighbour": 15,
+   "quiet_rows": 552,
+   "fa_quiet": 6,
+   "false_alarms": 21,
+   "score": 87,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     12,
+     6
+    ],
+    "P1-LC": [
+     40,
+     11
+    ],
+    "P1-PC": [
+     18,
+     2
+    ],
+    "P1-TC": [
+     0,
+     0
+    ],
+    "P2-SC": [
+     11,
+     0
+    ],
+    "P3-LC": [
+     27,
+     2
+    ]
+   }
+  },
+  "Range alarm": {
+   "rows": 1092,
+   "attack_rows": 144,
+   "caught": 49,
+   "neighbour_rows": 396,
+   "fa_neighbour": 80,
+   "quiet_rows": 552,
+   "fa_quiet": 33,
+   "false_alarms": 113,
+   "score": -64,
+   "valid": 1092,
+   "loops": {
+    "P1-FC": [
+     7,
+     3
+    ],
+    "P1-LC": [
+     9,
+     10
+    ],
+    "P1-PC": [
+     12,
+     39
+    ],
+    "P1-TC": [
+     3,
+     60
+    ],
+    "P2-SC": [
+     12,
+     0
+    ],
+    "P3-LC": [
+     6,
+     1
+    ]
+   }
+  }
+ },
+ "big_model_cost": {
+  "final_k31_cold.jsonl": {
+   "questions": 811,
+   "usd": 1.2457,
+   "usd_per_1000": 1.54,
+   "seconds": 1.4,
+   "tokens_in": 4421,
+   "tokens_out": 55
+  },
+  "final_k31_cold_more_room.jsonl": {
+   "questions": 23,
+   "usd": 0.0632,
+   "usd_per_1000": 2.75,
+   "seconds": 2.6,
+   "tokens_in": 5226,
+   "tokens_out": 183
+  },
+  "final_k31_cold_thinking.jsonl": {
+   "questions": 58,
+   "usd": 0.3578,
+   "usd_per_1000": 6.17,
+   "seconds": 6.1,
+   "tokens_in": 4587,
+   "tokens_out": 580
+  },
+  "final_k31_hints_examples.jsonl": {
+   "questions": 811,
+   "usd": 1.3274,
+   "usd_per_1000": 1.64,
+   "seconds": 1.4,
+   "tokens_in": 5440,
+   "tokens_out": 43
+  },
+  "final_k31_hints_examples_more_room.jsonl": {
+   "questions": 1,
+   "usd": 0.0019,
+   "usd_per_1000": 1.92,
+   "seconds": 1.4,
+   "tokens_in": 6628,
+   "tokens_out": 52
+  },
+  "pilot20_k31_cold.jsonl": {
+   "questions": 20,
+   "usd": 0.0324,
+   "usd_per_1000": 1.62,
+   "seconds": 1.6,
+   "tokens_in": 4573,
+   "tokens_out": 58
+  },
+  "pilot20_k31_hints_examples.jsonl": {
+   "questions": 20,
+   "usd": 0.0354,
+   "usd_per_1000": 1.77,
+   "seconds": 1.5,
+   "tokens_in": 5600,
+   "tokens_out": 46
+  },
+  "pilot_k31_cold.jsonl": {
+   "questions": 12,
+   "usd": 0.0182,
+   "usd_per_1000": 1.52,
+   "seconds": 1.4,
+   "tokens_in": 4558,
+   "tokens_out": 50
+  }
+ },
+ "big_model_total_usd": 3.082
+}

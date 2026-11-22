@@ -14,7 +14,8 @@ import time
 from pathlib import Path
 from types import SimpleNamespace
 
-RESULTS = Path("/kaggle/working/results")
+# what a run keeps; on a machine that is not Kaggle, HAI_KEEP_DIR names the folder (training/cloud/run_variant.py)
+RESULTS = Path(os.environ.get("HAI_KEEP_DIR") or "/kaggle/working/results")
 LOG = RESULTS / "log.txt"
 PROGRESS_EVERY = 30              # seconds between progress-bar lines in the log
 LLM_ID = "unsloth/Llama-3.2-1B"  # open copy; its weights file has the same SHA-256 as meta-llama/Llama-3.2-1B
@@ -106,8 +107,11 @@ def count_rows(jsonl: Path) -> dict:
     return rows
 
 
-def prepare() -> SimpleNamespace:
-    """Lay the run files out like the repo, set up OpenTSLM, report the GPU. Returns the paths."""
+def prepare(start_checkpoint: str | None = None) -> SimpleNamespace:
+    """Lay the run files out like the repo, set up OpenTSLM, report the GPU. Returns the paths.
+
+    `start_checkpoint` is the Hugging Face repo of the starting checkpoint (default: the one of setup.sh).
+    """
     RESULTS.mkdir(parents=True, exist_ok=True)
     LOG.write_text("")
     hits = glob.glob("/kaggle/input/**/add_stage.py", recursive=True)
@@ -130,10 +134,11 @@ def prepare() -> SimpleNamespace:
         elif path.suffix in (".py", ".sh"):
             shutil.copy(path, root / "training" / path.name)
     cache = {"HF_HOME": f"{scratch}/hf", "UV_CACHE_DIR": f"{scratch}/uv-cache", "HF_HUB_DISABLE_PROGRESS_BARS": "1"}
+    start = {"HAI_START_CHECKPOINT": start_checkpoint} if start_checkpoint else {}
 
     if not shutil.which("uv"):
         run(f"{sys.executable} -m pip install -q uv")
-    _, setup_seconds, _ = run(f"bash training/setup.sh {LLM_ID}", cwd=root, **cache)
+    _, setup_seconds, _ = run(f"bash training/setup.sh {LLM_ID}", cwd=root, **cache, **start)
     checkout = root / "external" / "OpenTSLM"
     _, _, check = run("uv run python ../../training/gpu_check.py", cwd=checkout, **cache)
     return SimpleNamespace(root=root, checkout=checkout, jsonl=jsonl, cache=cache, version=version,
@@ -142,8 +147,12 @@ def prepare() -> SimpleNamespace:
 
 def train(paths: SimpleNamespace, rows: int, batch_size: int, dtype: str, epochs: int | None = None,
           max_new_tokens: int = 128, seed: int = 0, check: bool = True, attention: str | None = None,
-          loss_scale: float | None = None) -> dict:
-    """One run of stage6_hai on the first `rows` training rows (0 = the real split). Starts fresh."""
+          loss_scale: float | None = None, series_view: str | None = None, answer_order: str | None = None,
+          test_file: str | None = None) -> dict:
+    """One run of stage6_hai on the first `rows` training rows (0 = the real split). Starts fresh.
+
+    After training the stage answers `test_file` (default test.jsonl), a file name inside the exported folder.
+    """
     stage = paths.checkout / STAGE
     if stage.exists():
         shutil.rmtree(stage)
@@ -157,11 +166,20 @@ def train(paths: SimpleNamespace, rows: int, batch_size: int, dtype: str, epochs
         env["HAI_ATTENTION"] = attention
     if loss_scale:
         env["HAI_LOSS_SCALE"] = str(loss_scale)
+    if series_view:
+        env["HAI_SERIES_VIEW"] = series_view
+    if answer_order:
+        env["HAI_ANSWER_ORDER"] = answer_order
+    if test_file:
+        env["HAI_TEST_FILE"] = test_file
     code, seconds, lines = run(
         f"uv run python ../../training/launch.py --model OpenTSLMSP --llm_id {LLM_ID} "
         f"--stages stage6_hai --batch_size {batch_size} --device cuda", cwd=paths.checkout, check=check, **env)
     bars, text = bar_seconds(lines), "\n".join(lines)
     full = count_rows(paths.jsonl)
+    if test_file and (Path(paths.jsonl) / test_file).exists():
+        with open(Path(paths.jsonl) / test_file, encoding="utf-8") as f:
+            full["test"] = sum(1 for line in f if line.strip())  # the rows the stage answered
     n = {name: rows or full[name] for name in full}
     later = bars["Epoch"][1:] or bars["Epoch"]   # the first epoch also warms the GPU up
     per_row = {
@@ -171,7 +189,8 @@ def train(paths: SimpleNamespace, rows: int, batch_size: int, dtype: str, epochs
     }
     peak = re.search(r"peak GPU memory: ([\d.]+) GB", text)
     scale = re.search(r"loss scale ended at ([\d.e+]+); steps with a gradient that was not finite: (\d+) of (\d+)", text)
-    return {"dtype": dtype, "attention": attention or "eager", "batch_size": batch_size, "rows": rows, "exit": code,
+    return {"dtype": dtype, "attention": attention or "eager", "series_view": series_view or "zscore",
+            "answer_order": answer_order or "label_last", "batch_size": batch_size, "rows": rows, "exit": code,
             "seconds": round(seconds),
             "rows_used": n, "out_of_memory": "OutOfMemoryError" in text, "epochs_run": len(bars["Epoch"]),
             "epoch_seconds": bars["Epoch"], "seconds_per_row": per_row, "losses": losses(lines),
@@ -182,22 +201,30 @@ def train(paths: SimpleNamespace, rows: int, batch_size: int, dtype: str, epochs
 
 
 def answer_again(paths: SimpleNamespace, test_file: str, dtype: str, attention: str | None = None,
-                 max_new_tokens: int = 128, rows: int = 0) -> dict:
+                 max_new_tokens: int = 128, rows: int = 0, series_view: str | None = None,
+                 answer_order: str | None = None) -> dict:
     """Answers of the trained stage on another test file, without training (step 6 of the README).
 
-    Keeps the stage and its checkpoint. The first results move aside as metrics_plain.json and
-    test_predictions_plain.jsonl, because OpenTSLM skips a stage whose metrics.json says completed.
+    Keeps the stage and its checkpoint. OpenTSLM skips a stage whose metrics.json says completed, so the
+    results of the answers before move aside first, as metrics_1.json and test_predictions_1.jsonl, then
+    _2 and so on. The new answers are in the stage's results/test_predictions.jsonl when this returns.
     """
     results = paths.checkout / STAGE / "results"
-    for name, aside in (("metrics.json", "metrics_plain.json"), ("test_predictions.jsonl", "test_predictions_plain.jsonl")):
+    k = 1 + len(list(results.glob("metrics_*.json")))
+    for name in ("metrics.json", "test_predictions.jsonl"):
         if (results / name).exists():
-            (results / name).rename(results / aside)
+            stem, suffix = name.split(".", 1)
+            (results / name).rename(results / f"{stem}_{k}.{suffix}")
     env = dict(paths.cache, HAI_JSONL_DIR=str(paths.jsonl), HAI_LLM_DTYPE=dtype, HAI_TEST_FILE=test_file,
                HAI_MAX_NEW_TOKENS=str(max_new_tokens))
     if rows:
         env["HAI_OVERFIT_ROWS"] = str(rows)
     if attention:
         env["HAI_ATTENTION"] = attention
+    if series_view:
+        env["HAI_SERIES_VIEW"] = series_view
+    if answer_order:
+        env["HAI_ANSWER_ORDER"] = answer_order
     code, seconds, lines = run(
         f"uv run python ../../training/launch.py --model OpenTSLMSP --llm_id {LLM_ID} "
         f"--stages stage6_hai --eval_only --device cuda", cwd=paths.checkout, **env)

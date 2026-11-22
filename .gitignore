@@ -26,4 +26,30 @@ external/
 *.pt
 *.safetensors
 results/
-runs/
+
+# runs/ holds answers, logs and saved models: they are in the release, not in git.
+# The final results, the scoring scripts and the report of the training night are kept in git.
+runs/*
+!runs/final/
+!runs/final/*.jsonl
+runs/final/final_results.before_shuffled.json
+!runs/nebius/
+runs/nebius/*
+!runs/nebius/NIGHT-SUMMARY.md
+!runs/nebius/summary_source/
+runs/nebius/summary_source/*
+!runs/nebius/summary_source/night_numbers.py
+!runs/nebius/summary_source/night_numbers.json
+!runs/nebius/summary_source/curve_read2.py
+!runs/nebius/summary_source/curve_lr.json
+!runs/nebius/summary_source/curve_zl.json
+
+# written during a copy to a rented machine (training/cloud/remote.sh sync)
+training/VERSION
+
+# demo page: local working folders
+demo/.*/
+
+# downloaded from the release, and the work folders of training runs
+answers.tar.gz
+work/

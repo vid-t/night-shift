@@ -7,16 +7,22 @@
 # 2. install it with uv (its own .venv, editable)
 # 3. copy HAIAttackQADataset.py into src/opentslm/time_series_datasets/hai/
 # 4. add stage6_hai to curriculum_learning.py (add_stage.py; safe to rerun)
-# 5. seed the starting checkpoint OpenTSLM/llama-3.2-1b-tsqa-sp where the stage before
+# 5. seed the starting checkpoint (default OpenTSLM/llama-3.2-1b-sleep-sp) where the stage before
 #    stage6_hai is expected: results/<llm>/OpenTSLMSP/stage5_ecg_cot/{checkpoints/best_model.pt,results/metrics.json}
 #
-# Environment: OPENTSLM_DIR (default external/OpenTSLM), SKIP_INSTALL=1 skips step 2.
+# Environment: OPENTSLM_DIR (default external/OpenTSLM), SKIP_INSTALL=1 skips step 2,
+# HAI_START_CHECKPOINT (Hugging Face repo of the starting checkpoint, file model_checkpoint.pt).
 set -euo pipefail
 
 LLM_ID="${1:-meta-llama/Llama-3.2-1B}"
 COMMIT="2968f4b891baab4307f7e9d0043e87677b593a30"
 REPO_URL="https://github.com/OpenTSLM/OpenTSLM.git"
-CHECKPOINT_REPO="OpenTSLM/llama-3.2-1b-tsqa-sp"
+# stage6_hai loads its starting weights from the slot of the stage before it, stage5_ecg_cot. The default is
+# the checkpoint of OpenTSLM's stage 4 (sleep): encoder, projector and adapter (LoRA) weights, 164 MB, and the
+# last published stage whose encoder still responds to its input. Do not use `llama-3.2-1b-ecg-sp`, the end of
+# the curriculum: its encoder gives the same output for every curve (measured 2026-11-21; training/launch.py
+# refuses it). `llama-3.2-1b-tsqa-sp` is stage 1 (29 MB, no adapters) and works too.
+CHECKPOINT_REPO="${HAI_START_CHECKPOINT:-OpenTSLM/llama-3.2-1b-sleep-sp}"
 CHECKPOINT_FILE="model_checkpoint.pt"
 PREVIOUS_STAGE="stage5_ecg_cot"
 

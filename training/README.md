@@ -2,7 +2,17 @@
 
 Seven steps on a Linux machine with one NVIDIA GPU. Run them in order from the repo root unless a step says otherwise.
 
-Needs: `git`, [uv](https://docs.astral.sh/uv/) 0.9 or newer, Python 3.12, CUDA, and a Hugging Face login with access to `meta-llama/Llama-3.2-1B` (export `HF_TOKEN` with a read token before step 3). The starting checkpoint `OpenTSLM/llama-3.2-1b-tsqa-sp` is open.
+## Status and results (21 November 2026, after the one test run)
+
+**The final models were not trained with the seven steps below.** They were trained with `training/cloud/run_variant.py` on a rented card, several runs side by side, after `bash training/setup.sh unsloth/Llama-3.2-1B`. The seven steps and the Kaggle section remain the single-card path and the record of how the setup was found; the starting checkpoint, the padding fix, greedy answers and the encoder check described there are all used by the final runs.
+
+- **The training search:** 64 full runs in 8 rounds, judged on the check set (validation) only. Text hints computed by code made the difference. The two final designs: hybrid view + law hint (`--view zsize --clauses law`) and loop-relative view + step and law hints (`--view looprange --clauses step,law`), both `--start sleep --order label_last --epochs 4 --choose-pass last`. Record: `runs/nebius/NIGHT-SUMMARY.md`. What was fixed before the test run: `runs/final/DECLARED.md`.
+- **The test run, once:** `python3 training/cloud/run_variant.py NAME --answer-only test test_shuffled` per model, then `training/vote.py` for the votes, then `runs/final/final_score.py`.
+- **Result on the test set** (score = attack windows called attack minus normal windows called attack; perfect is 82): gradient boosting 54, our hybrid + law design with three models voting 51, our loop-relative + step and law design with seven models voting 50. One model of ours averages 45 to 47. Kimi K3.1 Pro, asked directly on 811 of the test windows, calls about half of the normal windows attack cold (362 of 729) and about a third with our hints and examples (259) (score -181 with our hints and examples, -284 cold, against 63 for gradient boosting on the same windows).
+- **What our model adds:** a start second and a sentence. The three-model vote times 30 of the 56 test attacks within 30 seconds (median error 22 seconds); always answering second 108 times 26.
+- **Where the numbers are:** `runs/final/FACTS.md` (the sheet of final facts), `runs/final/FINAL-RESULTS.md`, `runs/final/results_table_test.md`, `runs/final/final_results.json`. These are in git; the answer files and the saved models are in the release (see the main README, "No graphics card?" and "Use a trained model", and `MODELS.md`).
+
+Needs: `git`, [uv](https://docs.astral.sh/uv/) 0.9 or newer, Python 3.12, CUDA, and a Hugging Face login with access to `meta-llama/Llama-3.2-1B` (export `HF_TOKEN` with a read token before step 3). The starting checkpoint `OpenTSLM/llama-3.2-1b-sleep-sp` is open.
 
 **Another copy of the model.** With any id other than `meta-llama/Llama-3.2-1B`, replace `curriculum_learning.py` by `../../training/launch.py` in the commands below. The open copy `unsloth/Llama-3.2-1B` pads text on the left, and OpenTSLM then loses every series label (see "Run on Kaggle"). `launch.py` corrects that.
 
@@ -34,6 +44,7 @@ uv run hai-build && uv run hai-export
 ```
   3880 rows  data/processed/opentslm/train.jsonl
   1092 rows  data/processed/opentslm/validation.jsonl
+  1092 rows  data/processed/opentslm/validation_shuffled.jsonl
   1536 rows  data/processed/opentslm/test.jsonl
   4404 rows  data/processed/opentslm/test_full.jsonl
   1536 rows  data/processed/opentslm/test_shuffled.jsonl
@@ -51,10 +62,10 @@ bash training/setup.sh                    # LLM id, default meta-llama/Llama-3.2
 It ends with:
 
 ```
-seeded results/Llama_3_2_1B/OpenTSLMSP/stage5_ecg_cot/checkpoints/best_model.pt (28.6 MB) and results/Llama_3_2_1B/OpenTSLMSP/stage5_ecg_cot/results/metrics.json
+seeded results/Llama_3_2_1B/OpenTSLMSP/stage5_ecg_cot/checkpoints/best_model.pt (164.1 MB) and results/Llama_3_2_1B/OpenTSLMSP/stage5_ecg_cot/results/metrics.json
 ```
 
-A stage loads the stage before it, so the pretrained checkpoint goes where `stage5_ecg_cot` would be. The folder name comes from the code (`Llama_3_2_1B`), not from OpenTSLM's README (`Llama3_2_1B`). If you pass another LLM id, pass the same id to every command below.
+A stage loads the stage before it, so the pretrained checkpoint goes where `stage5_ecg_cot` would be. The default is OpenTSLM's stage 4 checkpoint (`OpenTSLM/llama-3.2-1b-sleep-sp`); `HAI_START_CHECKPOINT` names another one. Do not use the stage 5 checkpoint: see "The starting checkpoint" below. The folder name comes from the code (`Llama_3_2_1B`), not from OpenTSLM's README (`Llama3_2_1B`). If you pass another LLM id, pass the same id to every command below.
 
 All later commands run inside `external/OpenTSLM` with these variables:
 
@@ -163,6 +174,24 @@ The probe times whole seconds on short epochs, so read the speeds as rough. The 
 
 `unsloth/Llama-3.2-1B` has the weights of Meta's copy and a different tokenizer setting: it pads on the left with `<|finetune_right_pad_id|>`. OpenTSLM's `pad_and_apply_batch` keeps the first n tokens of each padded text piece. With left padding those are all padding: the model got the opening instruction and the curves, but no series label ("This is the target ...") and no closing "Answer:". `launch.py` and `smoke_cpu.py` now make every tokenizer pad on the right with the end-of-text token. `tests/test_launch.py` checks it against the real tokenizer.
 
+### The starting checkpoint: not the end of the curriculum
+
+The encoder turns each curve into soft tokens for the language model. In the published stage 5 checkpoint, `OpenTSLM/llama-3.2-1b-ecg-sp`, it gives the same soft tokens for every curve: the signal dies in the last two of its six layers. A model that starts there never sees a curve, and four epochs on the HAI rows did not revive it. Two full runs on 2026-11-21 started from it: both gave the same answers on 1,536 of 1,536 test rows after the seconds were shuffled.
+
+Encoder response: six fixed curves (flat, ramp, step up, wave, step down, late ramp) go through the encoder and the projector; the number is how far their soft tokens lie apart, relative to their size (`encoder_response` in `launch.py`).
+
+| Published checkpoint | Encoder response |
+|---|---|
+| stage 1, `llama-3.2-1b-tsqa-sp` | 0.28 |
+| stage 2, `llama-3.2-1b-m4-sp` | 0.25 |
+| stage 3, `llama-3.2-1b-har-sp` | 0.37 |
+| stage 4, `llama-3.2-1b-sleep-sp` | 0.38 |
+| stage 5, `llama-3.2-1b-ecg-sp` | 0.00001 |
+
+An encoder can also die while it trains: it did in the first full run (z-score view, labels before the repair), which then read only the mean and the spread printed in the text. So `launch.py` checks the response three times: at the start, where it refuses a checkpoint under 0.01; after every epoch; and before the answers. Look for the `[launch] encoder response` lines in the log.
+
+`launch.py` also makes the answers greedy (Llama's own settings sample at temperature 0.6, so the same model gave different answers to 7 of 50 rows) and switches the adapters on before the previous stage loads (OpenTSLM switches them on afterwards and so drops the adapter weights of the starting checkpoint).
+
 ### First run, 2026-11-20: the overfit check on 50 training rows
 
 float16, sdpa, seed 0, up to 40 epochs, on one T4. The same 50 rows serve as train, validation and test.
@@ -208,7 +237,7 @@ The script loads the language model in float32 and makes the tokenizer pad on th
 
 ### Outcome on 2026-11-20, in float32, tokenizer padding fixed: passed
 
-Mac mini (Apple M4, 16 GB RAM, 10 cores, CPU only), weights already in the cache.
+A desktop computer (Apple M4, 16 GB RAM, 10 cores, CPU only), weights already in the cache.
 
 ```
 [launch] tokenizer padded on the left with '<|finetune_right_pad_id|>': now on the right with '<|end_of_text|>'
