@@ -1,4 +1,4 @@
-/* HAI attack reader: the write-up view. Plain JavaScript, no build step.
+/* Night Shift: the write-up view. Plain JavaScript, no build step.
    Data: data/demo.json (check set), data/results_extra.json (test set, huge model).
    Binds the numbers in the static text and draws the charts (SVG). */
 (function () {
@@ -13,9 +13,9 @@
   function shown() { return document.body.getAttribute("data-view") === "writeup"; }
 
   var FAMILIES = [
-    ["hints", "With hints beside the curves", "circle"],
-    ["nohint", "Newer designs, no hints", "square"],
-    ["zscore", "Curve scaled to its own mean and spread, no hints", "diamond"],
+    ["hints", "With computed features beside the curves", "circle"],
+    ["nohint", "Newer designs, no added features", "square"],
+    ["zscore", "Curve scaled to its own mean and spread, no added features", "diamond"],
     ["range", "The design we started with, and its variants", "triangle"]
   ];
 
@@ -34,7 +34,7 @@
     size: "size of the largest change"
   };
   var MOD_PLAIN = [
-    [/^no clause$/, "no extra hints"],
+    [/^no clause$/, "no added features"],
     [/^pass chosen by loss$/, "kept the training pass with the lowest training error"],
     [/^start `har`$/, "started from the OpenTSLM model trained on human activity"],
     [/^start `tsqa`$/, "started from the OpenTSLM model trained on curve questions"],
@@ -57,7 +57,7 @@
     while (parts.length && parts[0].split(" and ").every(function (c) { return CLAUSE_PLAIN[c]; })) {
       clauses = clauses.concat(parts.shift().split(" and "));
     }
-    if (clauses.length) out += "; hints: " + clauses.map(function (c) { return CLAUSE_PLAIN[c] || c; }).join(", ");
+    if (clauses.length) out += "; computed features: " + clauses.map(function (c) { return CLAUSE_PLAIN[c] || c; }).join(", ");
     parts.forEach(function (p) {
       var done = false;
       MOD_PLAIN.forEach(function (m) {
@@ -330,7 +330,7 @@
   function scoreChart() {
     var sc = D.score;
     scoreRows($("#score-chart"), [
-      { label: "Hint-heavy design, one model, each repeat", range: [sc.voting_design_single.low, sc.voting_design_single.high], dots: sc.voting_design_single.scores, color: "var(--model)" },
+      { label: "Feature-heavy design, one model, each repeat", range: [sc.voting_design_single.low, sc.voting_design_single.high], dots: sc.voting_design_single.scores, color: "var(--model)" },
       { label: "Seven models voting", value: sc.vote.score, counts: sc.vote, color: "var(--model)", big: true }
     ].concat(gbRows()));
   }
@@ -423,7 +423,7 @@
     if (firstHint < 99) {
       var ax = padL + (firstHint - 1) * bandW + 4;
       var ay = y(96);
-      txt(s, ax, ay, "hints arrive", { fill: "var(--ink)", "font-size": 12, "font-weight": 700 });
+      txt(s, ax, ay, "computed features arrive", { fill: "var(--ink)", "font-size": 12, "font-weight": 700 });
       svg("path", { d: "M" + (ax + 2) + " " + (ay + 5) + "V" + y(76), stroke: "var(--ink)", "stroke-width": 1.25, fill: "none" }, s);
     }
   }
@@ -484,7 +484,7 @@
       var tipHtml;
       if (r.sy) {
         var sy = r.sy, ours = sy.kind === "ours", col = KIND_COLOR[sy.kind];
-        // The data's sub-lines ("hybrid view + law hint") use terms the write-up no longer explains: name only.
+        // The data's sub-lines ("hybrid view + law ...") use terms the write-up no longer explains: name only.
         label(s, 0, narrow ? y0 + 14 : cy + 4, sy.name, null, ours);
         svg("circle", { cx: x(sy.score), cy: cy, r: ours ? 8 : 7, fill: ours ? col : "var(--paper)", stroke: col, "stroke-width": ours ? 2 : 2.5 }, s);
         var t = txt(s, x(sy.score) + 14, cy + 5, String(sy.score), { fill: "var(--ink)", "font-size": ours ? 16 : 15, "font-weight": 800 });

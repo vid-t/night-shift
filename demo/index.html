@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HAI Attack Reader</title>
-<meta name="description" content="A small language model watches one control loop of a lab plant and says whether it is under attack. On the test set, gradient boosting is slightly ahead; our model adds the start second and a sentence. An interactive demo with real windows, the test result, and its limits.">
+<title>Night Shift</title>
+<meta name="description" content="Night Shift: a small language model watches one control loop of a lab plant and says whether it is under attack. On the test set, gradient boosting scores 54 of 82 and our votes 51 and 50, so gradient boosting is slightly ahead; our model adds the start second and a sentence. An interactive demo with real windows, the test result, and its limits.">
 <link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/geist-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/style.css">
@@ -18,7 +18,7 @@
 
 <header class="bar">
   <div class="bar__in">
-    <a class="bar__name" href="#demo">HAI attack reader</a>
+    <a class="bar__name" href="#demo">Night Shift</a>
     <div class="viewseg" role="group" aria-label="View">
       <button type="button" class="viewseg__btn" data-view-to="demo" aria-pressed="true">Demo</button>
       <button type="button" class="viewseg__btn" data-view-to="writeup" aria-pressed="false">Write-up</button>
@@ -40,7 +40,7 @@
     <h1 class="cr-sr">Control room: a replay of recorded answers</h1>
     <div class="cr-top">
       <div class="cr-scenes" role="group" aria-label="Scenes: recorded moments of the plant" id="cr-scenes"></div>
-      <p class="cr-replay">Replay of recorded answers on recorded plant data (check set). Research demo, not a deployed detector.</p>
+      <p class="cr-replay">Replay of recorded answers on recorded plant data (check set).</p>
     </div>
 
     <div class="cr-floor" id="cr-floor">
@@ -58,20 +58,20 @@
             <span class="cr-mx__c-votes"><span data-cr="voters">Seven</span> models</span>
             <span class="cr-mx__c-ans">Answer</span>
             <span class="cr-mx__c-log">Plant log</span>
-            <span class="cr-mx__c-hints">Hints: biggest step vs usual</span>
+            <span class="cr-mx__c-hints">Features: step vs usual</span>
           </div>
           <ol class="cr-mx__rows" id="cr-rows"><li class="cr-row"></li><li class="cr-row"></li><li class="cr-row"></li><li class="cr-row"></li><li class="cr-row"></li><li class="cr-row"></li></ol>
-          <p class="cr-mx__rule"><span class="cr-mk cr-mk--legend is-on is-yes" aria-hidden="true"></span><span aria-hidden="true"> a model says attack, </span><span class="cr-mk cr-mk--legend is-on" aria-hidden="true"></span><span aria-hidden="true"> normal.</span><span class="cr-mx__flat" aria-hidden="true"> Hint "flat": the curve never moves.</span><span class="cr-sr">Filled mark: a model says attack. Outlined mark: a model says normal.</span> <span id="cr-rule"></span></p>
+          <p class="cr-mx__rule"><span class="cr-mk cr-mk--legend is-on is-yes" aria-hidden="true"></span><span aria-hidden="true"> a model says attack, </span><span class="cr-mk cr-mk--legend is-on" aria-hidden="true"></span><span aria-hidden="true"> normal.</span><span class="cr-mx__flat" aria-hidden="true"> Feature "flat": the curve never moves.</span><span class="cr-sr">Filled mark: a model says attack. Outlined mark: a model says normal.</span> <span id="cr-rule"></span></p>
         </div>
         <div class="cr-stage" id="cr-stage">
           <div class="cr-pre" id="cr-pre">
             <div class="cr-wait">
               <p class="cr-wait__big" id="cr-wait-a">The model answers once, after all <span data-cr="seconds">300</span> seconds are in.</p>
-              <p class="cr-wait__big cr-wait__alt" id="cr-wait-b">Reading: each window goes in with its hint lines, and <span data-cr="voters-l">seven</span> models vote on it.</p>
+              <p class="cr-wait__big cr-wait__alt" id="cr-wait-b">Reading: each window goes in with its feature lines, and <span data-cr="voters-l">seven</span> models vote on it.</p>
             </div>
             <div class="cr-prog" aria-hidden="true"><span class="cr-prog__track"><span class="cr-prog__fill" id="cr-prog"></span></span><span class="cr-prog__t" id="cr-prog-t"></span></div>
             <div class="cr-pipe" id="cr-pipe" role="group" aria-label="What the model does with each window">
-              <p class="cr-pipe__box"><b>In</b> the loop's curves, plus one hint line per curve</p>
+              <p class="cr-pipe__box"><b>In</b> the loop's curves, plus one feature line per curve</p>
               <svg class="cr-pipe__arrow" viewBox="0 0 24 12" aria-hidden="true" focusable="false"><path d="M1 6h20M16 1.5l5 4.5-5 4.5"/></svg>
               <p class="cr-pipe__box"><b><span data-cr="voters">Seven</span> models</b> read it and vote</p>
               <svg class="cr-pipe__arrow" viewBox="0 0 24 12" aria-hidden="true" focusable="false"><path d="M1 6h20M16 1.5l5 4.5-5 4.5"/></svg>
@@ -119,8 +119,8 @@
       <div class="cr-deck__end">
         <div class="cr-speed" role="group" aria-label="Speed, plant seconds per second" id="cr-speed">
           <button type="button" class="cr-speed__b" data-speed="10" aria-pressed="false">10×</button>
-          <button type="button" class="cr-speed__b" data-speed="25" aria-pressed="true">25×</button>
-          <button type="button" class="cr-speed__b" data-speed="50" aria-pressed="false">50×</button>
+          <button type="button" class="cr-speed__b" data-speed="25" aria-pressed="false">25×</button>
+          <button type="button" class="cr-speed__b" data-speed="50" aria-pressed="true">50×</button>
         </div>
         <button type="button" class="cr-btn" id="cr-next">Next scene<span class="cr-next__cd" aria-hidden="true"></span></button>
       </div>
@@ -227,17 +227,35 @@
   <h2 class="part__h" id="training-h">Training: <span data-k="night.runs.length">64</span> runs. Numbers computed from the curves helped most.</h2>
   <div class="prose">
     <p><b>The model.</b> OpenTSLM-SP joins Llama 3.2 1B, a small language model, to a curve encoder. The encoder turns each curve into input the language model can read next to ordinary text. We trained the encoder, the link between the two, and small add-on weights inside the language model, on the 3,880 training windows. The language model's own weights stayed fixed.</p>
-    <p><b>What it reads and what it writes.</b> It reads one instruction, then each curve of the loop. Beside each curve our code writes one line with one or two numbers computed from that curve, for example "its largest one-second step is 5.8 times its usual one, at second 243". We call these lines hints. A hint describes the curve. It is not a label and never contains the answer. The model writes a sentence or two on how the curves move. For an attack, it adds the second the change starts. It ends with attack or normal.</p>
+    <p><b>What the model reads.</b> For each window the model gets one instruction and two kinds of input.</p>
+    <ul>
+      <li><b>The curves.</b> 300 seconds of the loop's target, measurement and command. The curve encoder turns each one into input the language model can read.</li>
+      <li><b>Computed features.</b> Beside each curve our code writes one or two numbers that it computes from that same curve, as a short sentence. They are measurements of the curve.</li>
+    </ul>
+  </div>
+  <div class="dtab dtab--text" role="region" aria-label="The three computed features" tabindex="0">
+    <table>
+      <thead><tr><th scope="col">Computed feature</th><th scope="col">What it measures</th><th scope="col">What the model reads</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Largest change</th><td>how far the curve moves, against a quiet stretch of the same loop</td><td>"its largest change is 0.5 times its usual quiet change"</td></tr>
+        <tr><th scope="row">Largest one-second step</th><td>the biggest jump from one second to the next, and when it happens</td><td>"its largest one-second step is 5.8 times its usual one, at second 243"</td></tr>
+        <tr><th scope="row">Controller check, boiler pressure only</th><td>whether the valve moves the way the controller would</td><td>"for 54 seconds it moves the opposite way to what the controller would do"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p><b>Computed features are not labels.</b> Code computes them from the same 300 seconds the model reads. It never sees whether the window is an attack. Gradient boosting works on computed features only: seven per curve, plus a few that compare the curves. Our model reads the curve as well. The dated result records still call them "hints".</p>
+    <p><b>What the model writes.</b> A sentence or two on how the curves move. For an attack, it adds the second the change starts. It ends with attack or normal.</p>
   </div>
   <figure class="fig fig--flow" aria-labelledby="flow-fig-h">
-    <h3 class="fig__h" id="flow-fig-h">One real window: the curves and their hint lines go in, a verdict and a sentence come out.</h3>
+    <h3 class="fig__h" id="flow-fig-h">One real window: the curves and their computed features go in, a verdict and a sentence come out.</h3>
     <div class="flow">
       <div class="flow__step flow__step--chart">
         <p class="flow__label">In: 300 seconds of the boiler-level loop</p>
         <div class="chart" id="flow-chart" role="img" aria-label="Curves of the boiler-level loop over 300 seconds with the true attack start and the answer's start marked."></div>
       </div>
       <div class="flow__step">
-        <p class="flow__label">In: the hint line code wrote for each signal</p>
+        <p class="flow__label">In: the feature line code wrote for each signal</p>
         <ul class="hints" id="flow-hints"></ul>
       </div>
       <div class="flow__step flow__step--out">
@@ -248,14 +266,14 @@
     <figcaption class="fig__src">A window from the check set. Answer: the seven-model vote. Source: HAI dataset, CC BY-SA 4.0.</figcaption>
   </figure>
   <div class="prose">
-    <p><b>A design and a run.</b> A design is one recipe: how each curve is turned into numbers, which hints sit beside it, and how many attack examples the model sees. A run trains one model from one design. It shows the model every training window four times, takes about 67 minutes on one eighth of a rented graphics card and costs under 1 dollar.</p>
+    <p><b>A design and a run.</b> A design is one recipe: how each curve is turned into numbers, which computed features sit beside it, and how many attack examples the model sees. A run trains one model from one design. It shows the model every training window four times, takes about 67 minutes on one eighth of a rented graphics card and costs under 1 dollar.</p>
     <p><b>The search.</b> We ran <span data-k="night.runs.length">64</span> runs in <span data-k="night.rounds">8</span> rounds. We scored every run on the check set. During the search, no run touched the test set.</p>
   </div>
   <figure class="fig" aria-labelledby="night-fig-h">
     <h3 class="fig__h" id="night-fig-h">Check-set score of every run, by round.</h3>
     <div class="legend" id="night-legend"></div>
     <div class="chart chart--night" id="night-chart" role="img" aria-label="Dot chart of 64 runs by round and score, coloured by design family."></div>
-    <figcaption class="fig__src">Each dot is one run. Ringed dots are the seven runs of the hint-heavy design that vote. Lines mark gradient boosting on the check set. Perfect is <span data-k="score.perfect">144</span>. Source: run table of the search; HAI dataset, CC BY-SA 4.0.</figcaption>
+    <figcaption class="fig__src">Each dot is one run. Ringed dots are the seven runs of the feature-heavy design that vote. Lines mark gradient boosting on the check set. Perfect is <span data-k="score.perfect">144</span>. Source: run table of the search; HAI dataset, CC BY-SA 4.0.</figcaption>
     <details class="tbl">
       <summary>Show all <span data-k="night.runs.length">64</span> runs as a table</summary>
       <div class="tbl__wrap"><table id="night-table"></table></div>
@@ -265,8 +283,8 @@
     <div>
       <h3>What worked</h3>
       <ul>
-        <li><b>Hints: computed numbers beside the curves.</b> A hint adds no label, only one or two numbers that code computes from the curve itself. Runs with hints average <span data-k="score.hint_runs.mean">73.1</span>. The same designs without added hints average 56.5.</li>
-        <li><b>A better way to turn the curve into numbers.</b> The design we started with scored <span data-k="score.start_of_night.low">17</span> to <span data-k="score.start_of_night.high">37</span> over five runs. Showing each curve against how much its loop normally moves, still without hints, scored <span data-k="night.designs.11.low">50</span> to <span data-k="night.designs.11.high">60</span> over four runs.</li>
+        <li><b>Computed features beside the curves.</b> Runs with them average <span data-k="score.hint_runs.mean">73.1</span>. The same designs without added features average 56.5.</li>
+        <li><b>A better way to turn the curve into numbers.</b> The design we started with scored <span data-k="score.start_of_night.low">17</span> to <span data-k="score.start_of_night.high">37</span> over five runs. Showing each curve against how much its loop normally moves, still without added features, scored <span data-k="night.designs.11.low">50</span> to <span data-k="night.designs.11.high">60</span> over four runs.</li>
         <li><b>Using the model from the last pass.</b> We scored the model after every pass in 8 runs. In all 8, the last pass scored best.</li>
       </ul>
     </div>
@@ -274,7 +292,7 @@
       <h3>What failed</h3>
       <ul>
         <li><b>More attack examples.</b> With half of the training windows attacks, the score fell to <span data-k="night.designs.24.mean">−3</span>.</li>
-        <li><b>A different starting point and a third hint.</b> Neither gave a gain beyond the noise between repeats.</li>
+        <li><b>A different starting point and a third computed feature.</b> Neither gave a gain beyond the noise between repeats.</li>
       </ul>
     </div>
   </div>
@@ -286,13 +304,13 @@
       <thead><tr><th scope="col">Design</th><th scope="col">One model, check set</th><th scope="col">Voting, check set</th></tr></thead>
       <tbody>
         <tr><th scope="row">Simpler design</th><td><span data-k="night.designs.2.scores.0">71</span>, <span data-k="night.designs.2.scores.1">79</span>, <span data-k="night.designs.2.scores.2">78</span>, <span data-k="night.designs.2.scores.3">78</span></td><td>three vote: <span data-x="test.check.vote3">80</span></td></tr>
-        <tr><th scope="row">Hint-heavy design</th><td><span data-k="score.voting_design_single.low">63</span> to <span data-k="score.voting_design_single.high">86</span>, eight repeats</td><td>seven vote: <span data-k="score.vote.score">90</span></td></tr>
+        <tr><th scope="row">Feature-heavy design</th><td><span data-k="score.voting_design_single.low">63</span> to <span data-k="score.voting_design_single.high">86</span>, eight repeats</td><td>seven vote: <span data-k="score.vote.score">90</span></td></tr>
         <tr><th scope="row">Gradient boosting</th><td><span data-k="score.gradient_boosting.score">82</span>, or <span data-k="score.gradient_boosting_neighbours.score">87</span> when it reads the other loops</td><td></td></tr>
       </tbody>
     </table>
   </div>
   <div class="prose">
-    <p>Both designs write numbers beside the curves. The simpler one states the size of each curve's largest change. The hint-heavy one states each curve's largest one-second jump and the second it happens. In the boiler pressure loop, both add how long the valve moved against the controller.</p>
+    <p>Both designs give the model computed features. The simpler design gives each curve its largest change. The feature-heavy design gives each curve its largest one-second step and the second it happens. In the boiler pressure loop, both add the controller check.</p>
   </div>
   <figure class="fig" aria-labelledby="score-fig-h">
     <h3 class="fig__h" id="score-fig-h">On the check set, seven models voting scored <span data-k="score.vote.score">90</span> and gradient boosting <span data-k="score.gradient_boosting.score">82</span>, or <span data-k="score.gradient_boosting_neighbours.score">87</span> when it reads the other loops. The lead did not hold on the test set.</h3>
@@ -322,9 +340,9 @@
         <tr><th scope="row">Gradient boosting</th><td><span data-x="test.systems.0.caught">71</span></td><td><span data-x="test.systems.0.false_alarms">17</span></td><td><span data-x="test.systems.0.score">54</span></td></tr>
         <tr><th scope="row">Gradient boosting reading the other loops</th><td><span data-x="test.systems.1.caught">68</span></td><td><span data-x="test.systems.1.false_alarms">14</span></td><td><span data-x="test.systems.1.score">54</span></td></tr>
         <tr class="is-ours"><th scope="row">Our simpler design, three models voting</th><td><span data-x="test.systems.2.caught">66</span></td><td><span data-x="test.systems.2.false_alarms">15</span></td><td><span data-x="test.systems.2.score">51</span></td></tr>
-        <tr class="is-ours"><th scope="row">Our hint-heavy design, seven models voting</th><td><span data-x="test.systems.3.caught">65</span></td><td><span data-x="test.systems.3.false_alarms">15</span></td><td><span data-x="test.systems.3.score">50</span></td></tr>
+        <tr class="is-ours"><th scope="row">Our feature-heavy design, seven models voting</th><td><span data-x="test.systems.3.caught">65</span></td><td><span data-x="test.systems.3.false_alarms">15</span></td><td><span data-x="test.systems.3.score">50</span></td></tr>
         <tr><th scope="row">Our simpler design, one model, four repeats</th><td><span data-x="test.single.0.caught.0">61</span> to <span data-x="test.single.0.caught.1">68</span></td><td><span data-x="test.single.0.false_alarms.0">13</span> to <span data-x="test.single.0.false_alarms.1">23</span></td><td><span data-x="test.single.0.scores_low">42</span> to <span data-x="test.single.0.scores_high">52</span>, mean <span data-x="test.single.0.mean" data-round>47</span></td></tr>
-        <tr><th scope="row">Our hint-heavy design, one model, eight repeats</th><td><span data-x="test.single.1.caught.0">59</span> to <span data-x="test.single.1.caught.1">64</span></td><td><span data-x="test.single.1.false_alarms.0">12</span> to <span data-x="test.single.1.false_alarms.1">21</span></td><td><span data-x="test.single.1.scores_low">39</span> to <span data-x="test.single.1.scores_high">50</span>, mean <span data-x="test.single.1.mean" data-round>45</span></td></tr>
+        <tr><th scope="row">Our feature-heavy design, one model, eight repeats</th><td><span data-x="test.single.1.caught.0">59</span> to <span data-x="test.single.1.caught.1">64</span></td><td><span data-x="test.single.1.false_alarms.0">12</span> to <span data-x="test.single.1.false_alarms.1">21</span></td><td><span data-x="test.single.1.scores_low">39</span> to <span data-x="test.single.1.scores_high">50</span>, mean <span data-x="test.single.1.mean" data-round>45</span></td></tr>
         <tr><th scope="row">Range alarm</th><td><span data-x="test.floor.caught">38</span></td><td><span data-x="test.floor.false_alarms">173</span></td><td><span data-x="test.floor.score">−135</span></td></tr>
       </tbody>
     </table>
@@ -351,7 +369,7 @@
   </figure>
   <div id="kimi" class="kimi">
     <div class="prose">
-      <p><b>Kimi K3.1 Pro.</b> We asked Kimi K3.1 Pro, a much larger general-purpose model that was not trained on the plant, to judge <span data-x="big_model.rows.total">811</span> of the test windows: all <span data-x="big_model.rows.attack">82</span> attack windows and half of the normal ones. It caught <span data-x="big_model.systems.3.caught">78</span> of the <span data-x="big_model.rows.attack">82</span> attack windows, but it called a third to a half of the normal windows attacks. It scores <span data-x="big_model.systems.3.score">−181</span> when given our hints and a few worked examples, and <span data-x="big_model.systems.4.score">−284</span> without. On the same windows gradient boosting scores <span data-x="big_model.systems.0.score">63</span> and our votes <span data-x="big_model.systems.1.score">59</span> and <span data-x="big_model.systems.2.score">57</span>.</p>
+      <p><b>Kimi K3.1 Pro.</b> We asked Kimi K3.1 Pro, a much larger general-purpose model that was not trained on the plant, to judge <span data-x="big_model.rows.total">811</span> of the test windows: all <span data-x="big_model.rows.attack">82</span> attack windows and half of the normal ones. It caught <span data-x="big_model.systems.3.caught">78</span> of the <span data-x="big_model.rows.attack">82</span> attack windows, but it called a third to a half of the normal windows attacks. It scores <span data-x="big_model.systems.3.score">−181</span> when given our computed features and a few worked examples, and <span data-x="big_model.systems.4.score">−284</span> without. On the same windows gradient boosting scores <span data-x="big_model.systems.0.score">63</span> and our votes <span data-x="big_model.systems.1.score">59</span> and <span data-x="big_model.systems.2.score">57</span>.</p>
     </div>
     <figure class="fig" aria-labelledby="big-fig-h">
       <h3 class="fig__h" id="big-fig-h">On the same <span data-x="big_model.rows.total">811</span> windows: attack windows caught, and false alarms.</h3>
@@ -400,13 +418,13 @@
     <ul class="limits">
       <li><b>The test set is not fully fresh.</b> We scored earlier models and both comparisons on it before the search, and chose the starting design after seeing those scores. No choice made during the search used it. The two final designs answered it once, at the end.</li>
       <li><b><span data-x="test.rows.attacks">56</span> attacks are few,</b> and they come from four recordings.</li>
-      <li><b>The model leans on computed hints.</b> On the check set, one hint-heavy model makes <span data-k="curve_check.totals.machine.attack_called">95</span> attack calls. With every curve blanked out it still makes <span data-k="curve_check.totals.flat.attack_called">84</span>. One simpler model goes from 99 to 72. With the seconds of the curve shuffled, the hint-heavy model makes <span data-k="curve_check.totals.curveshuffle.attack_called">48</span>. So it does read the curve, but the hints carry most of the verdict. On the test set with the seconds shuffled, the hint-heavy design calls <span data-x="test.shuffled.heavy.false_alarms.0">395</span> to <span data-x="test.shuffled.heavy.false_alarms.1">677</span> of the <span data-x="test.shuffled.normal">1,454</span> normal windows attack, because its hint then reports a large jump.</li>
+      <li><b>The model leans on the computed features.</b> On the check set, one feature-heavy model makes <span data-k="curve_check.totals.machine.attack_called">95</span> attack calls. With every curve blanked out it still makes <span data-k="curve_check.totals.flat.attack_called">84</span>. One simpler model goes from 99 to 72. With the seconds of the curve shuffled, the feature-heavy model makes <span data-k="curve_check.totals.curveshuffle.attack_called">48</span>. So it does read the curve, but the computed features carry most of the verdict. On the test set with the seconds shuffled, the feature-heavy design calls <span data-x="test.shuffled.heavy.false_alarms.0">395</span> to <span data-x="test.shuffled.heavy.false_alarms.1">677</span> of the <span data-x="test.shuffled.normal">1,454</span> normal windows attack, because its computed feature then reports a large jump.</li>
     </ul>
   </div>
   <figure class="fig" aria-labelledby="reads-fig-h">
     <h3 class="fig__h" id="reads-fig-h">Attack windows called attack, out of <span data-k="curve_check.rows.attack">144</span>, with the curve normal, blank and shuffled.</h3>
     <div class="chart" id="reads-chart" role="img" aria-label="Bar chart: attack calls with normal, blank and shuffled curves."></div>
-    <figcaption class="fig__src">One model of the hint-heavy design, on the check set's <span data-k="curve_check.rows.attack">144</span> attack windows. The text stayed identical; only the curve changed. Source: HAI dataset, CC BY-SA 4.0.</figcaption>
+    <figcaption class="fig__src">One model of the feature-heavy design, on the check set's <span data-k="curve_check.rows.attack">144</span> attack windows. The text stayed identical; only the curve changed. Source: HAI dataset, CC BY-SA 4.0.</figcaption>
   </figure>
   <div class="prose">
     <ul class="limits">

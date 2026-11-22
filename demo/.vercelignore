@@ -1,0 +1,10 @@
+# Only the page goes out: index.html, css/, js/, fonts/, data/.
+README.md
+build_data.py
+build_results.py
+build_scenes.py
+PRODUCT.md
+DESIGN.md
+__pycache__
+.review
+.impeccable

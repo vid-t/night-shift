@@ -44,7 +44,7 @@
    {
     "key": "vote7",
     "kind": "ours",
-    "name": "Our hint-heavy design, seven models voting",
+    "name": "Our feature-heavy design, seven models voting",
     "sub": "loop view + step and law hints",
     "caught": 65,
     "false_alarms": 15,
@@ -81,8 +81,8 @@
     "scores_list": "42, 52, 52, 43"
    },
    {
-    "name": "Our hint-heavy design, one model",
-    "short": "hint-heavy design, one model",
+    "name": "Our feature-heavy design, one model",
+    "short": "feature-heavy design, one model",
     "repeats": 8,
     "scores": [
      50,
@@ -144,13 +144,13 @@
    },
    {
     "key": "vote7",
-    "name": "Our hint-heavy design, seven models voting",
+    "name": "Our feature-heavy design, seven models voting",
     "within_30": 30,
     "median_error": 26
    },
    {
     "key": "one_heavy",
-    "name": "Our hint-heavy design, one model (seed 0)",
+    "name": "Our feature-heavy design, one model (seed 0)",
     "within_30": 28,
     "median_error": 26
    }
@@ -240,7 +240,7 @@
    {
     "key": "vote7",
     "kind": "ours",
-    "name": "Our hint-heavy design, seven models voting",
+    "name": "Our feature-heavy design, seven models voting",
     "caught": 65,
     "false_alarms": 8,
     "score": 57
@@ -248,7 +248,7 @@
    {
     "key": "kimi_hints",
     "kind": "big",
-    "name": "Kimi K3.1 Pro with our hints and six solved examples",
+    "name": "Kimi K3.1 Pro with our computed features and six solved examples",
     "caught": 78,
     "false_alarms": 259,
     "score": -181
@@ -336,7 +336,7 @@
    {
     "key": "kimi_hints",
     "kind": "big",
-    "name": "Kimi K3.1 Pro, hints and examples",
+    "name": "Kimi K3.1 Pro, features and examples",
     "usd_per_1000": 1.64,
     "speed": "1.4 s an answer",
     "data": "leaves the site"

@@ -94,10 +94,13 @@ html { scrollbar-color: var(--ink-3) var(--band); }
 .bar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter: saturate(1.4) blur(8px); border-bottom: 1px solid var(--rule-soft); }
 .bar__in { max-width: var(--max); margin: 0 auto; padding: 0 var(--gut); display: flex; align-items: center; gap: var(--s5); height: 52px; }
 .bar__name { font-weight: 650; color: var(--ink); text-decoration: none; letter-spacing: -.02em; white-space: nowrap; }
-.viewseg { display: inline-flex; flex: none; padding: 2px; gap: 2px; border: 1px solid var(--rule); border-radius: 7px; background: var(--panel); }
-.viewseg__btn { font: inherit; font-size: .875rem; font-weight: 500; line-height: 1; min-height: 32px; padding: 0 12px; border: 0; border-radius: 5px; background: transparent; color: var(--ink-2); cursor: pointer; transition: background .18s var(--ease), color .18s var(--ease); }
+/* two equal segments; the thumb (::before) slides under the pressed one. js/views.js sets data-on. */
+.viewseg { position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; flex: none; padding: 2px; gap: 2px; border: 1px solid var(--rule); border-radius: 7px; background: var(--panel); }
+.viewseg::before { content: ""; position: absolute; top: 2px; bottom: 2px; left: 2px; width: calc(50% - 3px); border-radius: 5px; background: var(--ink); pointer-events: none; }
+.viewseg[data-on="writeup"]::before { transform: translateX(calc(100% + 2px)); }
+.viewseg__btn { position: relative; font: inherit; font-size: .875rem; font-weight: 500; line-height: 1; min-height: 32px; padding: 0 12px; border: 0; border-radius: 5px; background: transparent; color: var(--ink-2); cursor: pointer; transition: color .18s var(--ease); }
 .viewseg__btn:hover { color: var(--ink); }
-.viewseg__btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.viewseg__btn[aria-pressed="true"] { color: var(--paper); }
 .viewseg__btn:focus-visible { outline-offset: 1px; border-radius: 5px; }
 @media (prefers-reduced-motion: reduce) { .viewseg__btn { transition: none; } }
 .bar__nav { display: flex; gap: var(--s5); margin-left: auto; overflow-x: auto; scrollbar-width: none; font-size: .9375rem; }
@@ -124,6 +127,49 @@ body[data-view="demo"] .bar__nav,
 body[data-view="demo"] .skip--writeup,
 body[data-view="writeup"] .skip--demo { display: none; }
 #view-demo:focus { outline: none; }
+
+/* ---- switching views (js/views.js): the lights come on, the lights go down ----
+   html.is-switching lasts one switch; never on the first load or under reduced motion.
+   View Transitions API: the header and each view get their own name, so the root holds only the
+   ground, which cross-fades. The outgoing view fades and settles back (towards the middle of the
+   screen, --hai-oy), the incoming one fades in and rises 8px. The header is shown live, not as a
+   snapshot: its colours and the toggle's thumb move by the transitions below. The part links fade.
+   Without the API (html.is-fading) the same moves run on the views with the swap in between. */
+:root { --switch: 420ms; --switch-out: 200ms; --switch-ease: cubic-bezier(.33, 1, .68, 1); }
+/* during a switch the header is fixed (its place kept by the body's padding, same layout): WebKit
+   draws a sticky header's new snapshot without its content after the switch scrolls the page */
+html.is-switching .bar { view-transition-name: hai-bar; position: fixed; top: 0; left: 0; right: 0; }
+html.is-switching body { padding-top: var(--hai-bar-h, 0px); }
+html.is-switching .bar__nav { view-transition-name: hai-nav; }
+html.is-switching #view-demo { view-transition-name: hai-demo; }
+html.is-switching #view-writeup { view-transition-name: hai-writeup; }
+::view-transition { pointer-events: none; } /* WebKit: clicks and hover reach the page during a switch (Chromium: js/views.js) */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--switch); animation-timing-function: var(--switch-ease); }
+::view-transition-group(hai-bar), ::view-transition-old(hai-bar), ::view-transition-new(hai-bar) { animation: none; }
+::view-transition-group(hai-bar), ::view-transition-group(hai-nav) { z-index: 1; } /* WebKit paints groups in tree order */
+::view-transition-old(hai-bar) { opacity: 0; }
+::view-transition-group(hai-nav) { animation-duration: var(--switch-out); }
+::view-transition-old(hai-nav), ::view-transition-new(hai-nav) { animation-duration: var(--switch-out); animation-timing-function: var(--switch-ease); }
+::view-transition-old(hai-demo), ::view-transition-old(hai-writeup) { transform-origin: 50% var(--hai-oy, 50%); animation: hai-view-out var(--switch-out) var(--switch-ease) both; }
+::view-transition-new(hai-demo), ::view-transition-new(hai-writeup) { animation: hai-view-in calc(var(--switch) - 80ms) var(--switch-ease) 80ms both; }
+@keyframes hai-view-out { to { opacity: 0; transform: scale(.985); } }
+@keyframes hai-view-in { from { opacity: 0; transform: translateY(8px); } }
+@keyframes hai-fade-out { to { opacity: 0; } }
+@keyframes hai-fade-in { from { opacity: 0; } }
+html.is-switching .bar,
+html.is-switching .viewseg { transition: background-color var(--switch) var(--switch-ease), border-color var(--switch) var(--switch-ease); }
+html.is-switching .bar__name,
+html.is-switching .viewseg__btn,
+html.is-switching .bar__nav a { transition: color var(--switch) var(--switch-ease), border-color var(--switch) var(--switch-ease); }
+html.is-switching .viewseg::before { transition: transform var(--switch) var(--switch-ease), background-color var(--switch) var(--switch-ease); }
+html.is-fading body { transition: background-color calc(var(--switch) - var(--switch-out)) var(--switch-ease); }
+html.is-fading .view.is-leaving { transform-origin: 50% var(--hai-oy, 50%); animation: hai-view-out var(--switch-out) var(--switch-ease) both; }
+html.is-fading .view.is-entering { animation: hai-view-in calc(var(--switch) - var(--switch-out)) var(--switch-ease) both; }
+html.is-fading.is-switching-to-demo .bar__nav { animation: hai-fade-out var(--switch-out) var(--switch-ease) both; }
+html.is-fading.is-switching-to-writeup .bar__nav { animation: hai-fade-in calc(var(--switch) - var(--switch-out)) var(--switch-ease) both; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
 
 /* ---- write-up: one calm reading column; the top, then five numbered parts ---- */
 #view-writeup { --col: 920px; counter-reset: part; }
@@ -184,6 +230,9 @@ body[data-view="writeup"] .skip--demo { display: none; }
   .dtab.is-labelled td.is-empty { display: none; }
   .dtab.is-labelled tr.is-diff { border-top: 1px solid var(--ink); border-bottom: 0; }
   .dtab.is-labelled tr.is-diff th, .dtab.is-labelled tr.is-diff td { border: 0; }
+  /* a table of sentences (part 3's computed features): each column's header sits above its text */
+  .dtab--text.is-labelled td { padding: 4px 0; text-align: left; }
+  .dtab--text.is-labelled td::before { float: none; display: block; max-width: none; margin: 0 0 2px; padding-top: 0; }
 }
 
 /* ---- figures (chart-journalism grammar: heavy rule, sentence title, source line) ---- */

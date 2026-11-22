@@ -7,7 +7,9 @@
    verdict; the page only replays recorded answers. Derived phrases ("17 seconds late") are
    computed from those files.
 
-   One timeline per scene, in milliseconds at 25 plant seconds per second ("tau"):
+   One timeline per scene ("tau", milliseconds). The watch is 12000 ms at 25 plant seconds per
+   second; the speed setting (10x, 25x, 50x; 50x by default) scales the watch only, so at 50x it takes 6 s.
+   The later steps always run at their designed pace, one tau millisecond per real millisecond:
      watch    0 .. 12000   the clock runs over the window; the panel stays neutral
      read     .. 17200     the six windows travel into the central control, the models read
      verdict  .. 22800     votes resolve, every answer travels back to its instrument
@@ -35,7 +37,7 @@
   // loops whose (first) target is in the measurement's units, so the gauge can mark it
   // (P1-FC, P2-SC and P3-LC targets are on another scale: no target mark there)
   var TARGET_ON_GAUGE = { "P1-PC": true, "P1-LC": true, "P1-TC": true };
-  var SPIN = 17.28;         // rotor degrees per plant second at the window's starting speed (1.2 turns a second at 25x)
+  var SPIN = 17.28;         // rotor degrees per plant second at the window's starting speed (2.4 turns a second at 50x)
   var FLOWPX = 1.2;         // pipe marks: px per plant second at the window's starting flow
   var CD_MS = 8000;         // countdown to the next scene after the check
   var WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
@@ -49,7 +51,7 @@
   var SEC = 300;                    // window length, replaced by D.seconds
   var scales = {};                  // loop -> "role|name" -> series scale
   var si = 0, sc = null;            // scene index, scene
-  var tau = 0, playing = false, speed = 25, lastTs = 0, raf = 0;
+  var tau = 0, playing = false, speed = 50, lastTs = 0, raf = 0;  // speed: plant seconds per second, watch only
   var played = {};                  // scene key -> true once its check was reached
   var announced = 0;                // 0 none, 1 verdict, 2 check (per scene)
   var L = [];                       // per loop: data, scale, elements, geometry
@@ -507,9 +509,9 @@
       card.appendChild(said);
       var kh = keyHint(l);
       var hint = el("p", "cr-hint");
-      hint.innerHTML = "<span class=\"cr-hint__h\">One of the hint lines it was given</span> <b>" + esc((l.series[kh] || {}).name || "") + ":</b> " + esc(clauseOf(l.hints[kh] || ""));
+      hint.innerHTML = "<span class=\"cr-hint__h\">One of the feature lines it was given</span> <b>" + esc((l.series[kh] || {}).name || "") + ":</b> " + esc(clauseOf(l.hints[kh] || ""));
       card.appendChild(hint);
-      var more = el("button", "cr-more", "All " + word(l.hints.length) + " hint lines");
+      var more = el("button", "cr-more", "All " + word(l.hints.length) + " feature lines");
       more.type = "button";
       more.setAttribute("aria-expanded", "false");
       var dl = el("dl", "cr-why");
@@ -524,7 +526,7 @@
         var open = more.getAttribute("aria-expanded") !== "true";
         more.setAttribute("aria-expanded", open ? "true" : "false");
         dl.hidden = !open;
-        more.textContent = open ? "Hide the hint lines" : "All " + word(l.hints.length) + " hint lines";
+        more.textContent = open ? "Hide the feature lines" : "All " + word(l.hints.length) + " feature lines";
       });
       var mr = el("div", "cr-more__wrap");
       mr.appendChild(more);
@@ -1077,7 +1079,11 @@
     if (!playing) return;
     var dt = lastTs ? Math.min(100, ts - lastTs) : 16;
     lastTs = ts;
-    tau = Math.min(END, tau + dt * speed / 25);
+    // the speed drives the watch (tau runs at speed / 25 there); the later steps keep their designed pace
+    var k = speed / 25;
+    if (tau < W_MS && tau + dt * k > W_MS) tau = W_MS + (dt - (W_MS - tau) / k);
+    else tau += tau < W_MS ? dt * k : dt;
+    tau = Math.min(END, tau);
     render();
     if (tau >= END) { setPlaying(false); startCountdown(); return; }
     raf = requestAnimationFrame(tickFrame);
@@ -1295,7 +1301,9 @@
     document.addEventListener("hai:viewchange", function (e) {
       if (e.detail.view === "writeup") { wasPlaying = playing; stopCountdown(); if (playing) setPlaying(false); }
       else if (sc) {
-        requestAnimationFrame(function () { layout(); render(); if (wasPlaying) { wasPlaying = false; setPlaying(true); } });
+        // at once, not on the next frame: the first frame of the switch shows the room drawn
+        layout(); render();
+        if (wasPlaying) { wasPlaying = false; setPlaying(true); }
       }
     });
     document.addEventListener("visibilitychange", function () { lastTs = 0; });

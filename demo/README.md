@@ -1,6 +1,14 @@
-# HAI attack reader: demo page
+# Night Shift: demo page
 
-A static page (no build step, no framework, no backend). Every path is relative.
+The demo page of Night Shift (https://github.com/vid-t/night-shift). A static page (no build step, no
+framework, no backend). Every path is relative.
+
+Terms. The page calls the numbers that code writes beside each curve "computed features": one or two
+numbers computed from the same 300 seconds the model reads, written as a short sentence; code never sees
+the label when it computes them. One curve's sentence is a "feature line". The data files, run names and
+result records keep the older word "hints" (`hints` in `demo.json` and `scenes.json`, `hint_runs`,
+`kimi_hints`, the run family `hints`); none of those keys is shown on the page. The write-up names the old word once, on
+purpose, in the approved copy: "The dated result records still call them "hints"."
 
 ## Rebuild the data
 
@@ -25,7 +33,7 @@ file. Cost and speed figures for our own model are not in those files; they are 
 from `runs/final/FACTS.md`. It stops if a count disagrees with FACTS.md.
 
 `build_scenes.py` writes `demo/data/scenes.json` (about 365 KB): six moments of the check set, each one
-300-second window with all six loops, their curves, hint lines, the seven recorded answers, the vote and
+300-second window with all six loops, their curves, feature lines, the seven recorded answers, the vote and
 gradient boosting's call, plus each curve's usual movement over the check set. It reuses `build_data.py`'s
 readers and stops if a scene disagrees with the facts it asserts, or if its recount of the vote (101 caught,
 11 false alarms) or of gradient boosting (108, 26) is off.
@@ -71,8 +79,8 @@ Everything else in this folder is a working file (`README.md`, `build_data.py`, 
 
 and upload the contents of `../demo-publish/`.
 
-`.github/workflows/pages.yml` publishes exactly this list to GitHub Pages. It starts by hand only: turn Pages on
-for the repository with GitHub Actions as the source, then run `gh workflow run pages.yml`.
+The page is deployed on Vercel from this folder (root directory `demo`, no build step), at
+<https://nightshift-opentslm.vercel.app>. `.vercelignore` keeps the working files out, so exactly this list goes out.
 
 ## `data/results_extra.json`
 
@@ -93,7 +101,7 @@ charts. Structure (each part is a `<section class="part">`, numbered by a CSS co
 | `#top` | title, summary, links to the five parts | |
 | `#data` | 1 Data and attacks | the example window (`#window-chart`); the three sets |
 | `#baseline` | 2 Baseline | check-set score of the range alarm and the two gradient boosting versions (`#baseline-chart`) |
-| `#training` | 3 Training | curves and hints in, answer out (`#flow-chart`); the 64 runs (`#night-chart`, with its table); the two designs; check-set scores of the vote, its single repeats and gradient boosting (`#score-chart`) |
+| `#training` | 3 Training | what the model reads (a list) and the three computed features (a table of example sentences); curves and computed features in, answer out (`#flow-chart`); the 64 runs (`#night-chart`, with its table); the two designs; check-set scores of the vote, its single repeats and gradient boosting (`#score-chart`) |
 | `#results` | 4 Results | test-set scores (`#test-chart`) and their table; attacks found (`#found-chart`); start within 30 seconds (`#start-chart`); `#kimi`: caught and false alarms on the 811 windows (`#big-chart`) and cost (`#cost-chart`) |
 | `#conclusions` | 5 Conclusions and limits | seven models voting against gradient boosting (table, differences computed on the page); `#limits`: the curve check (`#reads-chart`); then the credits |
 
@@ -118,7 +126,7 @@ equals its bound value; `demo/.review/wu_check.cjs` checks this.
 The default view replays six recorded moments of the check set. Nothing runs in the browser. Each scene
 has four steps: watch (the clock runs 0 to 300 seconds; no verdict is shown), read (the six windows travel
 into the central control), answer (the seven models' votes, the start second, one model's sentence and the
-hint lines) and check (the plant log and gradient boosting's call). Space plays and pauses; the arrow keys
+feature lines) and check (the plant log and gradient boosting's call). Space plays and pauses; the arrow keys
 scrub 10 seconds (30 with Shift) during the watch and step through the later steps.
 
 Deep links, for review. Each opens the scene paused at the end of that step:
@@ -140,7 +148,7 @@ Where each control-room number comes from (all in `data/scenes.json` unless name
 |---|---|
 | curves, readouts, small drawings | `scenes[].loops[].series[].values` (the measurement drives the readout and the drawing) |
 | lane scale | `loops[].series[].usual_span_p90`, see below |
-| hint chips and "Why" lines | `scenes[].loops[].hints` (the chip is the "N times" figure, or "flat") |
+| feature chips, "One of the feature lines it was given", "All three feature lines" | `scenes[].loops[].hints` (the chip is the "N times" figure, or "flat") |
 | seven marks, "k of 7" | `scenes[].loops[].voters[].label`, `votes_attack` |
 | attack / normal per loop, "4 of 7" | `vote`, `votes_needed`, `voters` |
 | "began near second N", model marker | `vote_start` |
@@ -188,10 +196,13 @@ Training (part 3), all from `runs/nebius/NIGHT-SUMMARY.md` unless named:
 
 | On the page | Source |
 |---|---|
-| "its largest one-second step is 5.8 times its usual one, at second 243" | the example window's hint line (`demo.json`, `windows[hero].hints`), quoted as text |
+| the three computed features' example sentences (the table under "What the model reads") | real feature lines, quoted as text, from the check-set answer files `runs/nebius/2026-11-21/night/<run>/kept/test_predictions_validation.jsonl`, field `time_series_text` (the prompt each model read) |
+| "its largest change is 0.5 times its usual quiet change" | `r4-zsize-law` (simpler design), in 300 rows of that file |
+| "its largest one-second step is 5.8 times its usual one, at second 243" | `r5-looprange-steplaw` (feature-heavy design); it is also the example window's feature line (`demo.json`, `windows[hero].hints`) |
+| "for 54 seconds it moves the opposite way to what the controller would do" | `r4-zsize-law` and `r5-looprange-steplaw` (both designs' controller check, boiler pressure loop) |
 | every training window four times | the run table, passes column 4 (`--epochs 4`) |
 | about 67 minutes, one eighth of a rented card, under 1 dollar | `runs/final/FACTS.md`, "Cost and speed" |
-| without added hints average 56.5 | "Text clauses beat no clauses" |
+| without added features average 56.5 | "Text clauses beat no clauses" |
 | over five runs; over four runs (50 to 60) | the run counts behind `score.start_of_night` and `night.designs[11]` |
 | after every pass in 8 runs; in all 8 the last pass scored best | "Keep the last pass, not the lowest-loss pass" |
 | up to 23 points | "Single runs of one design differ by up to 23 points" |
