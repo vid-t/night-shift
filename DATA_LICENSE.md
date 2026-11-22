@@ -4,7 +4,7 @@
 
 HAI is licensed under the [Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/). These two files are shared under the same licence. Changes from the source: the tables were extracted to CSV, typos were fixed where the data files disagree with the manual (each fix is stated in the `note` column of `attacks.csv` and in REPORT.md), and the tag names were mapped to the 22.04 names.
 
-`demo/data/demo.json` also derives from HAI: it holds the series of 16 check-set windows (one control loop, 300 seconds each), the hint lines computed from them, and counts of model answers on HAI windows. `demo/data/results_extra.json` holds counts of answers on HAI test windows. Both are shared under the same licence, CC BY-SA 4.0. Changes from the source: the windows were cut from the HAI data files, columns were mapped to the 22.04 names, and each value was rounded to a few significant digits.
+`demo/data/demo.json` also derives from HAI: it holds the series of 16 check-set windows (one control loop, 300 seconds each), the computed-feature lines computed from them, and counts of model answers on HAI windows. `demo/data/scenes.json` holds six moments of the plant from the check set: six loops each, 300 seconds, with the computed-feature lines and the model answers. `demo/data/results_extra.json` holds counts of answers on HAI test windows. All three are shared under the same licence, CC BY-SA 4.0. Changes from the source, for both window files: the windows were cut from the HAI data files, columns were mapped to the 22.04 names, and each value was rounded to a few significant digits.
 
 `REPORT.md` reproduces the attack table, the name map and per-file counts of the HAI files; it is shared under CC BY-SA 4.0 too.
 
@@ -12,7 +12,7 @@ The result files under `runs/` also derive from HAI. `runs/final/vote_A.jsonl` a
 
 The saved models attached to the release were fine-tuned on HAI windows from Llama 3.2 1B. Their use falls under Meta's Llama 3.2 Community License, a copy of which is attached to the release. See `MODELS.md`.
 
-No licence is granted here for the code.
+The code of this repository is under the MIT License; see `LICENSE`.
 
 ## Citation
 

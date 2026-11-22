@@ -28,8 +28,8 @@ OWNER="$(kaggle config view | sed -n 's/^- username: //p')"
 test -n "$OWNER" || { echo "no Kaggle login: set KAGGLE_API_TOKEN or write ~/.kaggle/access_token" >&2; exit 1; }
 
 NAME="$(basename "$SCRIPT" .py)"
-DATASET="$OWNER/hai-attack-reader-run-files"
-KERNEL="$OWNER/hai-attack-reader-${NAME//_/-}"
+DATASET="$OWNER/night-shift-run-files"
+KERNEL="$OWNER/night-shift-${NAME//_/-}"
 BUILD="$(mktemp -d)"
 mkdir -p "$BUILD/files" "$BUILD/kernel"
 
@@ -41,9 +41,9 @@ else
   cp "$JSONL"/{train,validation,test,test_shuffled,validation_shuffled}.jsonl "$BUILD/files/"
   VERSION="$(git -C "$ROOT" rev-parse --short HEAD)"
   test -z "$(git -C "$ROOT" status --porcelain)" || VERSION="$VERSION plus uncommitted changes"
-  echo "hai-attack-reader $VERSION, uploaded $(date -u +%Y-%m-%dT%H:%MZ)" > "$BUILD/files/VERSION"
+  echo "night-shift $VERSION, uploaded $(date -u +%Y-%m-%dT%H:%MZ)" > "$BUILD/files/VERSION"
   cat > "$BUILD/files/dataset-metadata.json" <<EOF
-  {"title": "HAI attack reader run files", "id": "$DATASET", "licenses": [{"name": "CC-BY-SA-4.0"}]}
+  {"title": "Night Shift run files", "id": "$DATASET", "licenses": [{"name": "CC-BY-SA-4.0"}]}
 EOF
   if kaggle datasets status "$DATASET" >/dev/null 2>&1; then
     kaggle datasets version -p "$BUILD/files" -m "$VERSION"
@@ -70,7 +70,7 @@ cp "$SCRIPT" "$BUILD/kernel/$NAME.py"
 cat > "$BUILD/kernel/kernel-metadata.json" <<EOF
 {
   "id": "$KERNEL",
-  "title": "HAI attack reader ${NAME//_/ }",
+  "title": "Night Shift ${NAME//_/ }",
   "code_file": "$NAME.py",
   "language": "python",
   "kernel_type": "script",

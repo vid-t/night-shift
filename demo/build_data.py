@@ -2,7 +2,8 @@
 
 Run from the repo root:  uv run python demo/build_data.py
 
-Reads only check-set (validation) files, the night's answers on them, the baseline answers,
+Reads only check-set (validation) files, the night's answers on them, the baseline answers
+(gradient boosting, gradient boosting with neighbours, the range alarm),
 the curve check and the night's run table. It never opens a test file.
 """
 import hashlib
@@ -82,6 +83,7 @@ def main():
     gb = {p["example_id"]: p["generated"] for p in read_jsonl(BASELINES / "predictions_gradient_boosting.jsonl")}
     gbn = {p["example_id"]: p["generated"] for p in
            read_jsonl(BASELINES / "predictions_gradient_boosting_with_neighbours.jsonl")}
+    ra = {p["example_id"]: p["generated"] for p in read_jsonl(BASELINES / "predictions_range_alarm.jsonl")}
     cc = defaultdict(dict)
     for v in VARIANTS:
         for d in read_jsonl(CURVECHECK / f"{v}.jsonl"):
@@ -100,6 +102,7 @@ def main():
             "vote": "attack" if votes >= 4 else "normal",
             "gb": parse(gb[e])[0],
             "gbn": parse(gbn[e])[0],
+            "ra": parse(ra[e])[0],
             "cc": {v: parse(cc[e][v]["generated"])[0] for v in VARIANTS} if e in cc else None,
             "start": median([st for lab, st in answers if lab == "attack" and st is not None]),
         }
@@ -125,6 +128,9 @@ def main():
     vote = count(lambda e: facts[e]["vote"])
     gb_counts = count(lambda e: facts[e]["gb"])
     gbn_counts = count(lambda e: facts[e]["gbn"])
+    # The range alarm, the weak comparison of the write-up's baseline chart (49 caught, 113 false alarms, -64).
+    range_counts = count(lambda e: facts[e]["ra"])
+    assert (range_counts["caught"], range_counts["false_alarms"]) == (49, 113), range_counts
     singles = {rn: count(lambda e, rn=rn: parse(preds[rn][e]["generated"])[0]) for rn in VOTERS}
 
     # ---- curve check totals ---------------------------------------------------------------
@@ -307,6 +313,7 @@ def main():
         "vote": vote | {"n": len(VOTERS)},
         "gradient_boosting": gb_counts,
         "gradient_boosting_neighbours": gbn_counts,
+        "range_alarm": range_counts,
         "vote_sizes": voting_design["vote_sizes"],
         "hint_runs": {"n": len(hint_runs), "mean": round(sum(hint_runs) / len(hint_runs), 1),
                       "low": min(hint_runs), "high": max(hint_runs)},
@@ -329,7 +336,7 @@ def main():
         print("note: data/results_extra.json is missing; run: uv run python demo/build_results.py")
     size = OUT.stat().st_size
     print(f"wrote {OUT.relative_to(ROOT)}: {size / 1024:.0f} KB, {len(windows)} windows {data['counts_by_group']}")
-    print(f"vote {vote}  gb {gb_counts}  gb+neighbours {gbn_counts}")
+    print(f"vote {vote}  gb {gb_counts}  gb+neighbours {gbn_counts}  range alarm {range_counts}")
     print(f"curve check {curve_rows} {curve_totals}")
     print(f"start of night {score['start_of_night']}  leaders {score['leading_designs']['low_mean']}-"
           f"{score['leading_designs']['high_mean']}  voting design single {voting_design['low']}-{voting_design['high']}")

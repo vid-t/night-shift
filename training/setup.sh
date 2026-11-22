@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prepare OpenTSLM for stage6_hai. Run from anywhere inside hai-attack-reader:
+# Prepare OpenTSLM for stage6_hai. Run from anywhere inside the repository:
 #
 #   bash training/setup.sh [LLM_ID]        # LLM_ID default: meta-llama/Llama-3.2-1B
 #

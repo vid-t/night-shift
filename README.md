@@ -1,4 +1,4 @@
-# hai-attack-reader
+# Night Shift
 
 A small time-series language model reads 300 seconds of one control loop of a lab-scale power-plant testbed (HAI). It says whether the loop is under attack, names the second the attack began, and describes what it saw in a sentence. It is OpenTSLM-SP: the small language model Llama 3.2 1B plus a part that turns curves into input it can read. We trained it on all four releases of the HAI dataset for the TimeNet hackathon. We compare it with a classic statistical method and with a huge general model asked directly.
 
@@ -6,11 +6,11 @@ A small time-series language model reads 300 seconds of one control loop of a la
 
 Built with Llama. The language model is Llama 3.2 1B, under Meta's Llama 3.2 Community License.
 
-An interactive demo page with real windows is in [`demo/`](demo/README.md). The twelve trained models are in the release; [MODELS.md](MODELS.md) says how to use one.
+The demo page is live at <https://nightshift-opentslm.vercel.app>: a control room that replays six real moments of the plant with the models' recorded answers, and the write-up behind a toggle. Its source is in [`demo/`](demo/README.md). The twelve trained models are in the release; [MODELS.md](MODELS.md) says how to use one.
 
 ## Conclusion
 
-1. **Training on the plant's own data beats size.** On the same 811 test windows our votes score 59 and 57. Kimi K3.1 Pro, asked directly, scores -181 with our hints and -284 cold: it calls a third to a half of all normal windows an attack. Each of our models is small, about 1 billion parameters, and trains in about an hour for under a dollar.
+1. **Training on the plant's own data beats size.** On the same 811 test windows our votes score 59 and 57. Kimi K3.1 Pro, asked directly, scores -181 with our computed features and -284 cold: it calls a third to a half of all normal windows an attack. Each of our models is small, about 1 billion parameters, and trains in about an hour for under a dollar.
 2. **On detection, gradient boosting is 3 to 4 points ahead, and that is inside chance.** Of the test set's 256 stretches of time, gradient boosting and our three-model vote differ on only 29: gradient boosting does better on 16, the vote on 13. On the check set we used to choose designs, seven of our models voting led gradient boosting 90 to 82 (87 when gradient boosting also reads the other loops). That lead did not carry over. Choosing on the check set likely flattered our designs there. Gradient boosting ran with default settings and still came out ahead.
 3. **What it adds: when the attack began, and a sentence a person can check.** An alarm alone does not tell an operator when or what. Either vote names the start within 30 seconds for 30 of the 56 attacks, where a fixed guess gets 26. That beats a fixed guess, but not by much. We did not measure how often the sentence is right. Gradient boosting gives no start and no sentence.
 4. **Two weaknesses set the next step.** The model relies more on the numbers our code writes next to each curve than on the curve itself. And one model alone is a gamble: retrained from a new random start, one design scores 42 to 52 of 82, the other 39 to 50. What we would try next, not tested here: let gradient boosting raise the alarm and let the language model explain it.
@@ -23,10 +23,10 @@ The test set has 1,536 windows: 82 attack windows from 56 attacks and 1,454 norm
 |---|---|---|---|---|
 | Gradient boosting (classic statistical method) | 71 | 17 | 54 | 52 |
 | Gradient boosting that also reads the other loops | 68 | 14 | 54 | 52 |
-| Our simpler design (hybrid view + law hint), three models voting | 66 | 15 | 51 | 50 |
-| Our hint-heavy design (loop-relative view + step and law hints), seven models voting | 65 | 15 | 50 | 51 |
+| Our simpler design (hybrid view + law feature), three models voting | 66 | 15 | 51 | 50 |
+| Our feature-heavy design (loop-relative view + step and law features), seven models voting | 65 | 15 | 50 | 51 |
 | Our simpler design, one model: four repeats | 61 to 68 | 13 to 23 | 42, 52, 52, 43 (mean 47.25) | 48 to 52 |
-| Our hint-heavy design, one model: eight repeats | 59 to 64 | 12 to 21 | 50, 43, 49, 39, 47, 46, 44, 42 (mean 45) | 45 to 51 |
+| Our feature-heavy design, one model: eight repeats | 59 to 64 | 12 to 21 | 50, 43, 49, 39, 47, 46, 44, 42 (mean 45) | 45 to 51 |
 | Range alarm (the floor) | 38 | 173 | -135 | 31 |
 
 - Gradient boosting is slightly ahead, but the test set cannot separate it from our votes. It and our three-model vote score differently on only 29 of the 256 stretches of 300 seconds: 16 go to gradient boosting, 13 to our vote (two-sided sign test, p = 0.71).
@@ -38,9 +38,9 @@ The test set has 1,536 windows: 82 attack windows from 56 attacks and 1,454 norm
 | System | Attacks timed within 30 seconds (of 56) | Median start error |
 |---|---|---|
 | Our simpler design, three models voting | 30 | 22 s |
-| Our hint-heavy design, seven models voting | 30 | 26 s |
+| Our feature-heavy design, seven models voting | 30 | 26 s |
 | Our simpler design, one model (seed 1) | 39 | 19 s |
-| Our hint-heavy design, one model (seed 0) | 28 | 26 s |
+| Our feature-heavy design, one model (seed 0) | 28 | 26 s |
 | Always answering "second 108" (the best constant guess) | 26 | |
 | Gradient boosting | no start time | |
 
@@ -52,11 +52,11 @@ The best constant guess already times 26 of the 56 attacks. Our timing is only u
 |---|---|---|---|
 | Gradient boosting | 71 | 8 | 63 |
 | Our simpler design, three models voting | 66 | 7 | 59 |
-| Our hint-heavy design, seven models voting | 65 | 8 | 57 |
-| Kimi K3.1 Pro with our hints and six solved examples | 78 | 259 | -181 |
+| Our feature-heavy design, seven models voting | 65 | 8 | 57 |
+| Kimi K3.1 Pro with our computed features and six solved examples | 78 | 259 | -181 |
 | Kimi K3.1 Pro, cold | 78 | 362 | -284 |
 
-Kimi catches almost every attack window because it calls many normal windows an attack too: cold, about half of them; with our hints and examples, about a third. It does not know what is normal for this plant. Our hints and examples help it, but not enough.
+Kimi catches almost every attack window because it calls many normal windows an attack too: cold, about half of them; with our computed features and examples, about a third. It does not know what is normal for this plant. Our computed features and examples help it, but not enough.
 
 **Cost and speed.**
 
@@ -64,7 +64,7 @@ Kimi catches almost every attack window because it calls many normal windows an 
 |---|---|---|---|
 | Our model, one model | about 0.17 US dollars per 1,000 windows on a rented card at 5.40 dollars an hour | 12 models answered 1,536 windows each in 34 minutes on the card; about 3 seconds a window on a plain desktop processor with no graphics card (2.7 to 4 measured) | stays on site |
 | Our model, three voting / seven voting | about 0.50 / 1.16 dollars per 1,000 windows | three / seven times one model | stays on site |
-| Kimi K3.1 Pro | 1.54 dollars per 1,000 questions cold, 1.64 with hints and examples, 6.17 with thinking on | 1.4 seconds an answer (6.1 with thinking) | leaves the site |
+| Kimi K3.1 Pro | 1.54 dollars per 1,000 questions cold, 1.64 with computed features and examples, 6.17 with thinking on | 1.4 seconds an answer (6.1 with thinking) | leaves the site |
 | Gradient boosting | trains in 5 seconds on a laptop | | stays on site |
 
 Training one of our models took about 67 minutes on one eighth of the card, under 1 dollar. The whole training search of 64 runs cost about 57 dollars of card time. The Kimi comparison cost 3.08 dollars in all.
@@ -88,13 +88,13 @@ These are the steps we took, in order. Each step says what it does, how to run i
 | 9 | Ask a huge general model | `training/llm_compare.py` | any machine, an OpenRouter key |
 | 10 | Check what the model reads | the answers of steps 5 and 7 | |
 | 11 | Recount every number yourself | `runs/final/final_score.py` | any machine |
-| 12 | The demo page | `demo/build_data.py`, `demo/build_results.py` | any machine |
+| 12 | The demo page | `demo/build_data.py`, `demo/build_scenes.py`, `demo/build_results.py` | any machine |
 | 13 | The TimeNet connector | a separate pull request | |
 
 **No graphics card?** Do step 1, skip steps 5 to 7 and download our answer files with the [GitHub CLI](https://cli.github.com/). Steps 8, 11 and 12 then run on a plain desktop:
 
 ```bash
-gh release download v1.0 --repo vid-t/hai-attack-reader --pattern answers.tar.gz
+gh release download v1.0 --repo vid-t/night-shift --pattern answers.tar.gz
 tar -xzf answers.tar.gz            # at the repository root; it fills runs/
 ```
 
@@ -156,10 +156,10 @@ tar -xzf answers.tar.gz            # at the repository root; it fills runs/
 
 - **What.** [OpenTSLM](https://github.com/OpenTSLM/OpenTSLM)-SP: a curve encoder turns each series into soft tokens, and the language model, Llama 3.2 1B, reads them between the text lines. We add a training stage, `stage6_hai`, and fine-tune with LoRA adapters (small trainable add-on weights) on the language model. We start from OpenTSLM's stage 4 checkpoint (`OpenTSLM/llama-3.2-1b-sleep-sp`), not the end of its curriculum: in the stage 5 checkpoint the encoder gives the same output for every curve, so a model that starts there never sees a curve. Our launcher checks the encoder at the start, after every pass and before the answers, and refuses a dead one. Answers are greedy (no sampling). The answer is one or two sentences, then `Change starts near second N.` for an attack, then `Answer: attack` or `Answer: normal`.
   - **Two views.** How a curve is scaled decides what the model can see. The **hybrid view** (`--view zsize`) scales each curve to its own average and spread. Its text line says how big the largest change is, compared with a normal quiet change in that loop. The **loop-relative view** (`--view looprange`) shows each curve as its change from its first 30 seconds, measured against how much that series normally moves in a quiet training window of its loop.
-  - **Text hints** (we call them clauses). Each is one or two numbers computed from the series, fitted on quiet training rows only, added to its text line. `step`: the largest one-second step against the usual one, and its second. `law`: how many seconds the command moves against what the controller should do. Only the boiler pressure loop gets it, the one loop where we could model the controller well. `size` and `plant` were tried too; they did not help.
-  - **Our two final designs.** Simpler design: hybrid view + law hint (`--view zsize --clauses law`). Hint-heavy design: loop-relative view + step and law hints (`--view looprange --clauses step,law`).
+  - **Computed features** (the code calls them clauses). Each is one or two numbers that code computes from the same 300 seconds the model reads, fitted on quiet training rows only, and writes as a short sentence in the curve's text line. Code never sees the label when it computes them. `step`: the largest one-second step against the usual one, and its second. `law`: how many seconds the command moves against what the controller should do. Only the boiler pressure loop gets it, the one loop where we could model the controller well. `size` and `plant` were tried too; they did not help. The dated result records (`runs/final/FACTS.md`, `runs/final/DECLARED.md` and the tables under `runs/final/`) still say "hint" and "hint-heavy", and `runs/nebius/NIGHT-SUMMARY.md` says "clauses"; they all mean the same thing.
+  - **Our two final designs.** Simpler design: hybrid view + law feature (`--view zsize --clauses law`). Feature-heavy design: loop-relative view + step and law features (`--view looprange --clauses step,law`).
 - **Run it.** Nothing to run; steps 5 and 6 use these flags.
-- **What comes out: one worked example.** This window is from the **check set** (validation), not the test set. It is the example the demo page opens with: 300 seconds of the boiler level loop (P1-LC) in HAI 22.04, file `test3`. An attack on this loop starts at second 112. The model gets one instruction, then three series. Each series is a short text line, our computed hint, followed by its curve as soft tokens. This is the hint-heavy design (the law hint only appears in the boiler pressure loop).
+- **What comes out: one worked example.** This window is from the **check set** (validation), not the test set. It is the example window of the demo page's write-up, and the third scene of its control room: 300 seconds of the boiler level loop (P1-LC) in HAI 22.04, file `test3`. An attack on this loop starts at second 112. The model gets one instruction, then three series. Each series is a short text line with our computed features, followed by its curve as soft tokens. This is the feature-heavy design (the law feature only appears in the boiler pressure loop).
 
 ```text
 You are given 300 seconds of the boiler level control loop of a power plant testbed, one reading
@@ -183,7 +183,7 @@ The measurement starts swinging from second 120 while the target and command sta
 Change starts near second 112. Answer: attack
 ```
 
-All seven models of the vote said attack. One of their answers, the one the demo shows next to the vote:
+All seven models of the vote said attack. One of their answers, the one the demo page shows:
 
 ```text
 The command falls from second 128 while the target stays flat. The measurement rises after it.
@@ -202,7 +202,7 @@ The verdict is right. The start is 15 seconds late, and the sentence describes t
   python3 training/cloud/run_variant.py r4-zsize-law --start sleep --view zsize --order label_last \
       --epochs 4 --clauses law --choose-pass last --seed 0
   ```
-  That is the simpler design, seed 0. For the hint-heavy design use `--view looprange --clauses step,law`; for another repeat, another `--seed`. `--rows 50` is a rehearsal: train, check set and test are the same 50 training rows. `python3 training/cloud/run_variant.py --help` lists every option.
+  That is the simpler design, seed 0. For the feature-heavy design use `--view looprange --clauses step,law`; for another repeat, another `--seed`. `--rows 50` is a rehearsal: train, check set and test are the same 50 training rows. `python3 training/cloud/run_variant.py --help` lists every option.
 - **What comes out.** Everything of the run in `work/NAME/`, the saved model and answers in `work/NAME/kept/`. One run takes about 67 minutes on one eighth of a rented card, under 1 dollar.
 - **More.** [training/README.md](training/README.md): the original single-card path, and why the T4 needs float16.
 
@@ -211,9 +211,9 @@ The verdict is right. The start is 15 seconds late, and the sentence describes t
 - **What.** In one night we ran 64 full training runs in 8 rounds over 10 hours, each on one eighth of a rented card. We judged every run on the check set only.
 - **Run it.** Step 5, repeated with other flags and seeds.
 - **What comes out.**
-  - **Start and end.** The starting design (plain range view, no hints) scored 17 to 37 of 144. The leading designs ended at 71.25 to 79.6 on average.
-  - **What worked.** Text hints: runs with hints averaged 73.1 (56 to 86), runs of the same views without them 56.5 (50 to 63). The loop-relative view beat the plain range view. Keeping the last training pass beat keeping the pass with the lowest validation loss, in every run that scored all passes.
-  - **What failed or gave no clear gain.** More attack rows in training failed: at a 50% share the score fell to -3. A different starting checkpoint (`har`) and the `plant` hint gave no gain beyond seed noise.
+  - **Start and end.** The starting design (plain range view, no computed features) scored 17 to 37 of 144. The leading designs ended at 71.25 to 79.6 on average.
+  - **What worked.** Computed features: runs with them averaged 73.1 (56 to 86), runs of the same views without them 56.5 (50 to 63). The loop-relative view beat the plain range view. Keeping the last training pass beat keeping the pass with the lowest validation loss, in every run that scored all passes.
+  - **What failed or gave no clear gain.** More attack rows in training failed: at a 50% share the score fell to -3. A different starting checkpoint (`har`) and the `plant` feature gave no gain beyond seed noise.
   - **The catch.** Single runs of one design differ by up to 23 points from seed to seed, so the six leading designs could not be told apart as single models.
 - **More.** `runs/nebius/NIGHT-SUMMARY.md`: the report of the night, with every run's score.
 
@@ -229,7 +229,7 @@ The verdict is right. The start is 15 seconds late, and the sentence describes t
 
 ### 8. Vote and score
 
-- **What.** A window is called attack when a majority says attack, and the sentence and start second come from a model that agrees. The simpler design votes with three models (seeds 0 to 2, 2 of 3), the hint-heavy design with seven (seeds 0 to 6, 4 of 7).
+- **What.** A window is called attack when a majority says attack, and the sentence and start second come from a model that agrees. The simpler design votes with three models (seeds 0 to 2, 2 of 3), the feature-heavy design with seven (seeds 0 to 6, 4 of 7).
 - **Run it** (any machine, with the answer files of the release or of step 7):
   ```bash
   N=runs/nebius/2026-11-21/night    # where answers.tar.gz puts the answers; for your own runs: N=work
@@ -247,24 +247,24 @@ The verdict is right. The start is 15 seconds late, and the sentence describes t
 
 ### 9. Ask a huge general model: Kimi K3.1 Pro
 
-- **What.** We asked Kimi K3.1 Pro (`moonshotai/kimi-k3.1-pro` through OpenRouter) on 811 of the test windows: all 82 attack windows plus half of each loop's normal windows (129 neighbour, 600 quiet). Two ways: cold (the task and the raw numbers), and with our computed hints plus six solved examples. Thinking off, short answers. The wording was tried on 20 check-set windows per way and frozen before any test result was read.
+- **What.** We asked Kimi K3.1 Pro (`moonshotai/kimi-k3.1-pro` through OpenRouter) on 811 of the test windows: all 82 attack windows plus half of each loop's normal windows (129 neighbour, 600 quiet). Two ways: cold (the task and the raw numbers), and with our computed features plus six solved examples. Thinking off, short answers. The wording was tried on 20 check-set windows per way and frozen before any test result was read.
 - **Run it** (any machine; needs an OpenRouter key, `--key-file` or the file named in `OPENROUTER_API_KEY_FILE`). With `--dry-run` the tool reads the public price list, writes three sample prompts, prints the worst-case cost, and makes no paid call:
   ```bash
   uv run python training/llm_compare.py --model moonshotai/kimi-k3.1-pro --mode cold \
       --rows test --allow-test --ids runs/llm_compare/ids_final_sample.txt \
       --out runs/llm_compare/NAME.jsonl --max-usd 2.00 --dry-run
   ```
-  `--mode hints_examples` adds our hints and six solved training examples. `--reasoning low` turns thinking on. The tool refuses the test rows unless both `--rows test` and `--allow-test` are given, and it stops at the spending cap. The top of `training/llm_compare.py` explains every mode and the cost cap. The tool also stops at 5 dollars for all runs under `runs/llm_compare/` together, and the unpacked archive already holds our 3.08 dollars of answers: move that folder aside before a real run of your own.
-- **What comes out.** Scores -181 with hints and -284 cold (see Results), for 3.08 dollars in all. Thinking on does not get close either. On 58 of those windows (28 attack, 30 normal), Kimi cold caught 27 with 20 false alarms with thinking off, and 25 with 15 with thinking on (low), at four times the price. Gradient boosting caught 25 with 0 false alarms, our votes 20 and 21 with 0. 24 of Kimi's 1,622 answers were cut off before a verdict; asked again with more room, 20 gave one. The counts use the second answer for those; 4 cold answers have no verdict and count as "not attack".
+  `--mode hints_examples` adds our computed features and six solved training examples. `--reasoning low` turns thinking on. The tool refuses the test rows unless both `--rows test` and `--allow-test` are given, and it stops at the spending cap. The top of `training/llm_compare.py` explains every mode and the cost cap. The tool also stops at 5 dollars for all runs under `runs/llm_compare/` together, and the unpacked archive already holds our 3.08 dollars of answers: move that folder aside before a real run of your own.
+- **What comes out.** Scores -181 with computed features and -284 cold (see Results), for 3.08 dollars in all. Thinking on does not get close either. On 58 of those windows (28 attack, 30 normal), Kimi cold caught 27 with 20 false alarms with thinking off, and 25 with 15 with thinking on (low), at four times the price. Gradient boosting caught 25 with 0 false alarms, our votes 20 and 21 with 0. 24 of Kimi's 1,622 answers were cut off before a verdict; asked again with more room, 20 gave one. The counts use the second answer for those; 4 cold answers have no verdict and count as "not attack".
 - **More.** `runs/final/FACTS.md`, section "The huge general model".
 
 ### 10. Check what the model reads: the curve check
 
-- **What.** Does the model read the curve or only the hints? Models answered the same windows again with the curve blanked or its seconds shuffled.
+- **What.** Does the model read the curve or only the computed features? Models answered the same windows again with the curve blanked or its seconds shuffled.
 - **Run it.** The shuffled answers come with every run of step 5 (check set) and step 7 (`test_shuffled`). The blank-curve check ran on a desktop processor with `curve_check.py`; the script and its answers are in `answers.tar.gz`, under `runs/nebius/2026-11-21/night/analysis/curvecheck/`.
 - **What comes out.**
-  - **Check set, text unchanged.** The hints carry much of the signal: with every curve blanked, one hint-heavy model still made 84 attack calls (95 with the curve), one simpler model 72 (99). The curve still matters: with the seconds shuffled, they made only 48 and 50, so when the curve does not look like an attack the model overrules the numbers. One model per design, on inputs neither saw in training: a sign, not a measurement.
-  - **Test set, a weaker check.** Our code recomputes the hints from the shuffled seconds, so this check cannot show whether the model reads the curve or the hints. Simpler design, four models: 25 to 33 attack windows called attack (61 to 68 in true order), with 4 to 12 false alarms of 1,454; it stays calm, loses about half of its catches, and keeps mostly the boiler-pressure loop. Hint-heavy design, eight models: 29 to 44 attack windows called attack, and 395 to 677 of 1,454 normal windows (12 to 21 in true order); it fails, because the recomputed step hint then states a large jump.
+  - **Check set, text unchanged.** The computed features carry much of the signal: with every curve blanked, one feature-heavy model still made 84 attack calls (95 with the curve), one simpler model 72 (99). The curve still matters: with the seconds shuffled, they made only 48 and 50, so when the curve does not look like an attack the model overrules the numbers. One model per design, on inputs neither saw in training: a sign, not a measurement.
+  - **Test set, a weaker check.** Our code computes the features again from the shuffled seconds, so this check cannot show whether the model reads the curve or the computed features. Simpler design, four models: 25 to 33 attack windows called attack (61 to 68 in true order), with 4 to 12 false alarms of 1,454; it stays calm, loses about half of its catches, and keeps mostly the boiler-pressure loop. Feature-heavy design, eight models: 29 to 44 attack windows called attack, and 395 to 677 of 1,454 normal windows (12 to 21 in true order); it fails, because the recomputed step feature then states a large jump.
 - **More.** `runs/nebius/NIGHT-SUMMARY.md`, section "Does the model read the curve?"; `runs/final/FACTS.md`, section "The test rows with their seconds shuffled".
 
 ### 11. Recount every number yourself, no graphics card needed
@@ -284,23 +284,24 @@ The verdict is right. The start is 15 seconds late, and the sentence describes t
 - **Run it** (any machine; after step 1, with the answers unpacked):
   ```bash
   uv run python demo/build_data.py
+  uv run python demo/build_scenes.py
   uv run python demo/build_results.py
   cd demo && python3 -m http.server 8765 --bind 127.0.0.1
   ```
   Then open http://127.0.0.1:8765/. Opening `index.html` as a file does not work: the page fetches its JSON.
-- **What comes out.** `demo/data/demo.json`, built from check-set files only, and `demo/data/results_extra.json`, built from `runs/final/`. Each script stops if its recount disagrees with the committed numbers.
+- **What comes out.** `demo/data/demo.json` and `demo/data/scenes.json`, built from check-set files only, and `demo/data/results_extra.json`, built from `runs/final/`. `scenes.json` holds six moments of the plant, each with all six loops. Each script stops if its recount disagrees with the committed numbers.
 - **More.** [demo/README.md](demo/README.md): the files, where each number comes from, and what to publish.
 
 ### 13. The TimeNet connector
 
-- **What.** A connector that brings these examples to TimeNet (dataset id `icsdataset/hai-loop-attacks`). It goes to OpenTSLM/TimeNet as a separate pull request.
+- **What.** A connector that brings these examples to TimeNet (dataset id `icsdataset/hai-loop-attacks`). It goes to OpenTSLM/TimeNet as a separate pull request: see [our pull requests there](https://github.com/OpenTSLM/TimeNet/pulls?q=is%3Apr+author%3Avid-t).
 - **Run it.** `uv run hai-export` in step 1 writes the examples table.
-- **What comes out.** `data/processed/timenet/examples_table.csv.gz` (24,132 rows). The connector adds 24,132 loop examples as classification tasks and 1,458 localization tasks for the attack interval, over 17 recordings. The examples table will be published in its own repository under CC BY-SA 4.0.
+- **What comes out.** `data/processed/timenet/examples_table.csv.gz` (24,132 rows). The connector adds 24,132 loop examples as classification tasks and 1,458 localization tasks for the attack interval, over 17 recordings. The examples table is published in its own repository, [vid-t/hai-loop-attacks-data](https://github.com/vid-t/hai-loop-attacks-data), under CC BY-SA 4.0.
 - **More.** `src/hai/export.py`.
 
 ## Use a trained model
 
-The twelve trained models are attached to the GitHub release v1.0 of `vid-t/hai-attack-reader`: `Llama-3.2-1B-hai-attack-reader-simpler-seed0..3.pt` and `Llama-3.2-1B-hai-attack-reader-hint-heavy-seed0..7.pt`, 55 MB each, with `SHA256SUMS`, `NOTICE` and the Llama 3.2 Community License text.
+The twelve trained models are attached to the GitHub release v1.0 of `vid-t/night-shift`: `Llama-3.2-1B-night-shift-simpler-seed0..3.pt` and `Llama-3.2-1B-night-shift-feature-heavy-seed0..7.pt`, 55 MB each, with `SHA256SUMS`, `NOTICE` and the Llama 3.2 Community License text.
 Each file holds only the trained parts, not the Llama base weights.
 [MODELS.md](MODELS.md) explains how to use them.
 
@@ -319,7 +320,8 @@ Each file holds only the trained parts, not the Llama base weights.
 | `MODELS.md` | how to use the trained models of the release |
 | `DATA_LICENSE.md` | the licence of the files derived from HAI, and what was changed |
 | `NOTICE`, `LICENSES/` | third-party notices and licence texts (Llama 3.2, OpenTSLM) |
-| `.github/workflows/pages.yml` | publishes the demo page to GitHub Pages; started by hand |
+| `LICENSE` | the MIT License for the code |
+| `demo/.vercelignore` | keeps everything but the page out of the Vercel deployment |
 
 The answer files and logs under `runs/` are in the release's `answers.tar.gz`. The twelve released models are separate files of the release. The other 52 saved models and the working log of the night are not published.
 
@@ -328,8 +330,8 @@ The answer files and logs under `runs/` are in the release's `answers.tar.gz`. T
 - **Gradient boosting is slightly ahead on the test set.** Our model does not beat the classic method on detection. Its check-set lead (90 against 82, or 87 when gradient boosting also reads the other loops) did not hold.
 - **The test set is not fully fresh.** Earlier models and both baselines were scored on it before the night of the training search, and the starting design was chosen after seeing those scores. The night's 64 runs never touched it.
 - **56 test attacks are few.** The test set cannot separate 54 from 51 (gap between -6 and +12 in nine draws of ten). That redraw understates the spread: the windows come from four recording files, one per HAI release. The three other votes of three we could have formed from the same four models score 48, 49 and 52.
-- **The check set is small, and every choice was made on it.** It holds 15 attacks. The hints and the loop-relative view were designed from what the models missed there, so every check-set score is optimistic.
-- **The designs lean on hints computed by code** (step 10). With the step hint, every loop-relative run fails the shuffle check: it calls 242 to 414 of 948 shuffled normal check-set rows an attack, because shuffling also changes the numbers in its text. The same holds on the test set. Gradient boosting on exactly the numbers of the hybrid view's text scores 62 on the check set.
+- **The check set is small, and every choice was made on it.** It holds 15 attacks. The computed features and the loop-relative view were designed from what the models missed there, so every check-set score is optimistic.
+- **The designs lean on features computed by code** (step 10). With the step feature, every loop-relative run fails the shuffle check: it calls 242 to 414 of 948 shuffled normal check-set rows an attack, because shuffling also changes the numbers in its text. The same holds on the test set. Gradient boosting on exactly the numbers of the hybrid view's text scores 62 on the check set.
 - **One model is a gamble.** Single runs of one design differ by up to 23 points on the check set, and the same seed does not reproduce the same run.
 - **Two loops are out of reach.** No vote finds the boiler temperature (P1-TC) attacks of the check set, and no single run calls more than 3 of its 12 attack rows an attack: training holds P1-TC attacks of 23.05 only, the check set of 22.04 only. In the water level loop (P3-LC), no run finds more than 18 of the 42 check-set attack rows; gradient boosting finds 27.
 - **Kimi got one wording, no long thinking, and numbers as text.** That is "what you get if you just ask a huge model", not a contest of equals.
@@ -337,11 +339,11 @@ The answer files and logs under `runs/` are in the release's `answers.tar.gz`. T
 
 ## Data and licences
 
-- **HAI.** The data comes from the HAI security datasets, <https://github.com/icsdataset/hai>, at commit `2a814cebc9a66b06c9e5cd545e2d72e65d383737`, licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Raw and processed data are never committed here. The two committed tables derived from HAI, `data/frozen/attacks.csv` and `data/frozen/tag_map.csv`, are shared under the same licence. So are the demo page's data files, which hold 16 check-set windows and counts, `REPORT.md`, the result files under `runs/` and the release's answer archive. [DATA_LICENSE.md](DATA_LICENSE.md) says what was changed. The examples table the TimeNet connector reads is derived from HAI and carries CC BY-SA 4.0 as well; it will be published in its own repository.
+- **HAI.** The data comes from the HAI security datasets, <https://github.com/icsdataset/hai>, at commit `2a814cebc9a66b06c9e5cd545e2d72e65d383737`, licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Raw and processed data are never committed here. The two committed tables derived from HAI, `data/frozen/attacks.csv` and `data/frozen/tag_map.csv`, are shared under the same licence. So are the demo page's data files, which hold 16 check-set windows, six check-set moments with all six loops each, and counts, `REPORT.md`, the result files under `runs/` and the release's answer archive. [DATA_LICENSE.md](DATA_LICENSE.md) says what was changed. The examples table the TimeNet connector reads is derived from HAI and carries CC BY-SA 4.0 as well; it will be published in its own repository.
 - **OpenTSLM.** [OpenTSLM](https://github.com/OpenTSLM/OpenTSLM) is MIT-licensed (Stanford University, ETH Zurich and the project authors). `training/setup.sh` clones it at a pinned commit into `external/`, which is not in git. Its licence text is in `LICENSES/`. The starting checkpoint is OpenTSLM's published `OpenTSLM/llama-3.2-1b-sleep-sp`.
 - **Llama 3.2 1B.** The language model is Meta's Llama 3.2 1B, under Meta's Llama 3.2 Community License. On the training machine we load the open copy `unsloth/Llama-3.2-1B`, whose weights match Meta's file by SHA-256. The trained models of the release are built with Llama and fall under the same licence; see `NOTICE` and `LICENSES/`.
 - **The TimeNet hackathon.** This is an entry to the [TimeNet Online Hackathon](https://challenge.timenet.ai/). We also built a TimeNet connector for these examples (dataset id `icsdataset/hai-loop-attacks`).
-- **This repository's code.** The repository has no licence file for the code. `DATA_LICENSE.md` covers only the data files derived from HAI and states that no licence is granted for the code.
+- **This repository's code.** The code is under the [MIT License](LICENSE). `DATA_LICENSE.md` covers the data files derived from HAI, which are CC BY-SA 4.0. The trained models fall under the Llama 3.2 Community License (`NOTICE`).
 
 ### Citation
 

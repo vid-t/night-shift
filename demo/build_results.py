@@ -104,7 +104,7 @@ def main():
         }
 
     simpler = single(SIMPLER, "Our simpler design, one model", "simpler design, one model")
-    heavy = single(HINT_HEAVY, "Our hint-heavy design, one model", "hint-heavy design, one model")
+    heavy = single(HINT_HEAVY, "Our feature-heavy design, one model", "feature-heavy design, one model")
     assert simpler["mean"] == 47.25 and heavy["mean"] == 45, (simpler["mean"], heavy["mean"])
 
     systems = [
@@ -114,7 +114,7 @@ def main():
          **counts(full[GBN]), "found": found(full[GBN]["found"])},
         {"key": "vote3", "kind": "ours", "name": "Our simpler design, three models voting", "sub": "hybrid view + law hint",
          **counts(full[VOTE3]), "found": found(table[T_VOTE3]["Found"])},
-        {"key": "vote7", "kind": "ours", "name": "Our hint-heavy design, seven models voting", "sub": "loop view + step and law hints",
+        {"key": "vote7", "kind": "ours", "name": "Our feature-heavy design, seven models voting", "sub": "loop view + step and law hints",
          **counts(full[VOTE7]), "found": found(table[T_VOTE7]["Found"])},
     ]
     floor = {"key": "floor", "kind": "floor", "name": "Range alarm", "sub": "the floor: alarm when a signal leaves its usual range",
@@ -128,8 +128,8 @@ def main():
     start = [
         start_row(T_ONE, "Our simpler design, one model (seed 1)", "one"),
         start_row(T_VOTE3, "Our simpler design, three models voting", "vote3"),
-        start_row(T_VOTE7, "Our hint-heavy design, seven models voting", "vote7"),
-        start_row(T_ONE_HEAVY, "Our hint-heavy design, one model (seed 0)", "one_heavy"),
+        start_row(T_VOTE7, "Our feature-heavy design, seven models voting", "vote7"),
+        start_row(T_ONE_HEAVY, "Our feature-heavy design, one model (seed 0)", "one_heavy"),
     ]
     assert [r["within_30"] for r in start] == [39, 30, 30, 28], start
     gb_start = start_row(T_GB, "Gradient boosting", "gb")
@@ -163,8 +163,8 @@ def main():
     big_systems = [
         {"key": "gb", "kind": "baseline", "name": "Gradient boosting", **counts(sample[GB])},
         {"key": "vote3", "kind": "ours", "name": "Our simpler design, three models voting", **counts(sample[VOTE3])},
-        {"key": "vote7", "kind": "ours", "name": "Our hint-heavy design, seven models voting", **counts(sample[VOTE7])},
-        {"key": "kimi_hints", "kind": "big", "name": "Kimi K3.1 Pro with our hints and six solved examples", **counts(sample[KIMI_HINTS])},
+        {"key": "vote7", "kind": "ours", "name": "Our feature-heavy design, seven models voting", **counts(sample[VOTE7])},
+        {"key": "kimi_hints", "kind": "big", "name": "Kimi K3.1 Pro with our computed features and six solved examples", **counts(sample[KIMI_HINTS])},
         {"key": "kimi_cold", "kind": "big", "name": "Kimi K3.1 Pro, cold", **counts(sample[KIMI_COLD])},
     ]
 
@@ -187,7 +187,7 @@ def main():
         {"key": "vote7", "kind": "ours", "name": "Our model, seven voting", "usd_per_1000": o["seven"], "speed": None, "data": "stays on site"},
         {"key": "kimi_cold", "kind": "big", "name": "Kimi K3.1 Pro, cold", "usd_per_1000": c_cold["usd_per_1000"],
          "speed": f"{c_cold['seconds']} s an answer", "data": "leaves the site"},
-        {"key": "kimi_hints", "kind": "big", "name": "Kimi K3.1 Pro, hints and examples", "usd_per_1000": c_hints["usd_per_1000"],
+        {"key": "kimi_hints", "kind": "big", "name": "Kimi K3.1 Pro, features and examples", "usd_per_1000": c_hints["usd_per_1000"],
          "speed": f"{c_hints['seconds']} s an answer", "data": "leaves the site"},
         {"key": "kimi_think", "kind": "big", "name": "Kimi K3.1 Pro, thinking on", "usd_per_1000": c_think["usd_per_1000"],
          "speed": f"{c_think['seconds']} s an answer", "data": "leaves the site"},
