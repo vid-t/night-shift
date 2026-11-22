@@ -2,7 +2,17 @@
 
 Seven steps on a Linux machine with one NVIDIA GPU. Run them in order from the repo root unless a step says otherwise.
 
-Needs: `git`, [uv](https://docs.astral.sh/uv/) 0.9 or newer, Python 3.12, CUDA, and a Hugging Face login with access to `meta-llama/Llama-3.2-1B` (export `HF_TOKEN` with a read token before step 3). The starting checkpoint `OpenTSLM/llama-3.2-1b-tsqa-sp` is open.
+## Status and results (21 November 2026, after the one test run)
+
+**The final models were not trained with the seven steps below.** They were trained with `training/cloud/run_variant.py` on a rented card, several runs side by side, after `bash training/setup.sh unsloth/Llama-3.2-1B`. The seven steps and the Kaggle section remain the single-card path and the record of how the setup was found; the starting checkpoint, the padding fix, greedy answers and the encoder check described there are all used by the final runs.
+
+- **The training search:** 64 full runs in 8 rounds, judged on the check set (validation) only. Text hints computed by code made the difference. The two final designs: hybrid view + law hint (`--view zsize --clauses law`) and loop-relative view + step and law hints (`--view looprange --clauses step,law`), both `--start sleep --order label_last --epochs 4 --choose-pass last`. Record: `runs/nebius/NIGHT-SUMMARY.md`. What was fixed before the test run: `runs/final/DECLARED.md`.
+- **The test run, once:** `python3 training/cloud/run_variant.py NAME --answer-only test test_shuffled` per model, then `training/vote.py` for the votes, then `runs/final/final_score.py`.
+- **Result on the test set** (score = attack windows called attack minus normal windows called attack; perfect is 82): gradient boosting 54, our hybrid + law design with three models voting 51, our loop-relative + step and law design with seven models voting 50. One model of ours averages 45 to 47. Kimi K3.1 Pro, asked directly on 811 of the test windows, calls about half of the normal windows attack cold (362 of 729) and about a third with our hints and examples (259) (score -181 with our hints and examples, -284 cold, against 63 for gradient boosting on the same windows).
+- **What our model adds:** a start second and a sentence. The three-model vote times 30 of the 56 test attacks within 30 seconds (median error 22 seconds); always answering second 108 times 26.
+- **Where the numbers are:** `runs/final/FACTS.md` (the sheet of final facts), `runs/final/FINAL-RESULTS.md`, `runs/final/results_table_test.md`, `runs/final/final_results.json`. These are in git; the answer files and the saved models are in the release (see the main README, "No graphics card?" and "Use a trained model", and `MODELS.md`).
+
+Needs: `git`, [uv](https://docs.astral.sh/uv/) 0.9 or newer, Python 3.12, CUDA, and a Hugging Face login with access to `meta-llama/Llama-3.2-1B` (export `HF_TOKEN` with a read token before step 3). The starting checkpoint `OpenTSLM/llama-3.2-1b-sleep-sp` is open.
 
 **Another copy of the model.** With any id other than `meta-llama/Llama-3.2-1B`, replace `curriculum_learning.py` by `../../training/launch.py` in the commands below. The open copy `unsloth/Llama-3.2-1B` pads text on the left, and OpenTSLM then loses every series label (see "Run on Kaggle"). `launch.py` corrects that.
 
@@ -34,6 +44,7 @@ uv run hai-build && uv run hai-export
 ```
   3880 rows  data/processed/opentslm/train.jsonl
   1092 rows  data/processed/opentslm/validation.jsonl
+  1092 rows  data/processed/opentslm/validation_shuffled.jsonl
   1536 rows  data/processed/opentslm/test.jsonl
   4404 rows  data/processed/opentslm/test_full.jsonl
   1536 rows  data/processed/opentslm/test_shuffled.jsonl
@@ -226,7 +237,7 @@ The script loads the language model in float32 and makes the tokenizer pad on th
 
 ### Outcome on 2026-11-20, in float32, tokenizer padding fixed: passed
 
-Mac mini (Apple M4, 16 GB RAM, 10 cores, CPU only), weights already in the cache.
+A desktop computer (Apple M4, 16 GB RAM, 10 cores, CPU only), weights already in the cache.
 
 ```
 [launch] tokenizer padded on the left with '<|finetune_right_pad_id|>': now on the right with '<|end_of_text|>'

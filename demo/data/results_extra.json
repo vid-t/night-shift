@@ -1,0 +1,368 @@
+{
+ "source": "runs/final/final_results.json and runs/final/results_table_test.md, built by demo/build_results.py",
+ "test": {
+  "rows": {
+   "total": 1536,
+   "attack": 82,
+   "normal": 1454,
+   "neighbour": 254,
+   "quiet": 1200,
+   "attacks": 56
+  },
+  "perfect": 82,
+  "systems": [
+   {
+    "key": "gb",
+    "kind": "baseline",
+    "name": "Gradient boosting",
+    "sub": "classic statistical method",
+    "caught": 71,
+    "false_alarms": 17,
+    "score": 54,
+    "found": 52
+   },
+   {
+    "key": "gbn",
+    "kind": "baseline",
+    "name": "Gradient boosting reading the other loops",
+    "sub": "also sees the neighbouring loops' signals",
+    "caught": 68,
+    "false_alarms": 14,
+    "score": 54,
+    "found": 52
+   },
+   {
+    "key": "vote3",
+    "kind": "ours",
+    "name": "Our simpler design, three models voting",
+    "sub": "hybrid view + law hint",
+    "caught": 66,
+    "false_alarms": 15,
+    "score": 51,
+    "found": 50
+   },
+   {
+    "key": "vote7",
+    "kind": "ours",
+    "name": "Our hint-heavy design, seven models voting",
+    "sub": "loop view + step and law hints",
+    "caught": 65,
+    "false_alarms": 15,
+    "score": 50,
+    "found": 51
+   }
+  ],
+  "single": [
+   {
+    "name": "Our simpler design, one model",
+    "short": "simpler design, one model",
+    "repeats": 4,
+    "scores": [
+     42,
+     52,
+     52,
+     43
+    ],
+    "mean": 47.25,
+    "caught": [
+     61,
+     68
+    ],
+    "false_alarms": [
+     13,
+     23
+    ],
+    "found": [
+     48,
+     52
+    ],
+    "scores_low": 42,
+    "scores_high": 52,
+    "scores_list": "42, 52, 52, 43"
+   },
+   {
+    "name": "Our hint-heavy design, one model",
+    "short": "hint-heavy design, one model",
+    "repeats": 8,
+    "scores": [
+     50,
+     43,
+     49,
+     39,
+     47,
+     46,
+     44,
+     42
+    ],
+    "mean": 45.0,
+    "caught": [
+     59,
+     64
+    ],
+    "false_alarms": [
+     12,
+     21
+    ],
+    "found": [
+     45,
+     51
+    ],
+    "scores_low": 39,
+    "scores_high": 50,
+    "scores_list": "50, 43, 49, 39, 47, 46, 44, 42"
+   }
+  ],
+  "floor": {
+   "key": "floor",
+   "kind": "floor",
+   "name": "Range alarm",
+   "sub": "the floor: alarm when a signal leaves its usual range",
+   "caught": 38,
+   "false_alarms": 173,
+   "score": -135,
+   "found": 31
+  },
+  "check": {
+   "perfect": 144,
+   "vote7": 90,
+   "vote3": 80,
+   "gb": 82,
+   "gbn": 87
+  },
+  "start": [
+   {
+    "key": "one",
+    "name": "Our simpler design, one model (seed 1)",
+    "within_30": 39,
+    "median_error": 19
+   },
+   {
+    "key": "vote3",
+    "name": "Our simpler design, three models voting",
+    "within_30": 30,
+    "median_error": 22
+   },
+   {
+    "key": "vote7",
+    "name": "Our hint-heavy design, seven models voting",
+    "within_30": 30,
+    "median_error": 26
+   },
+   {
+    "key": "one_heavy",
+    "name": "Our hint-heavy design, one model (seed 0)",
+    "within_30": 28,
+    "median_error": 26
+   }
+  ],
+  "start_gb": {
+   "key": "gb",
+   "name": "Gradient boosting",
+   "within_30": 0,
+   "median_error": null
+  },
+  "constant": {
+   "second": 108,
+   "within_30": 26,
+   "of": 56
+  },
+  "shuffled": {
+   "normal": 1454,
+   "simpler": {
+    "repeats": 4,
+    "caught": [
+     25,
+     33
+    ],
+    "false_alarms": [
+     4,
+     12
+    ],
+    "caught_list": "25, 33, 32, 25",
+    "false_alarms_list": "9, 12, 5, 4",
+    "true_caught": [
+     61,
+     68
+    ],
+    "true_false_alarms": [
+     13,
+     23
+    ]
+   },
+   "heavy": {
+    "repeats": 8,
+    "caught": [
+     29,
+     44
+    ],
+    "false_alarms": [
+     395,
+     677
+    ],
+    "caught_list": "38, 44, 38, 39, 37, 33, 29, 30",
+    "false_alarms_list": "624, 677, 648, 672, 502, 524, 395, 497",
+    "true_caught": [
+     59,
+     64
+    ],
+    "true_false_alarms": [
+     12,
+     21
+    ]
+   }
+  }
+ },
+ "big_model": {
+  "rows": {
+   "total": 811,
+   "attack": 82,
+   "normal": 729,
+   "neighbour": 129,
+   "quiet": 600
+  },
+  "systems": [
+   {
+    "key": "gb",
+    "kind": "baseline",
+    "name": "Gradient boosting",
+    "caught": 71,
+    "false_alarms": 8,
+    "score": 63
+   },
+   {
+    "key": "vote3",
+    "kind": "ours",
+    "name": "Our simpler design, three models voting",
+    "caught": 66,
+    "false_alarms": 7,
+    "score": 59
+   },
+   {
+    "key": "vote7",
+    "kind": "ours",
+    "name": "Our hint-heavy design, seven models voting",
+    "caught": 65,
+    "false_alarms": 8,
+    "score": 57
+   },
+   {
+    "key": "kimi_hints",
+    "kind": "big",
+    "name": "Kimi K3.1 Pro with our hints and six solved examples",
+    "caught": 78,
+    "false_alarms": 259,
+    "score": -181
+   },
+   {
+    "key": "kimi_cold",
+    "kind": "big",
+    "name": "Kimi K3.1 Pro, cold",
+    "caught": 78,
+    "false_alarms": 362,
+    "score": -284
+   }
+  ],
+  "thinking": {
+   "rows": 58,
+   "attack": 28,
+   "normal": 30,
+   "off": {
+    "caught": 27,
+    "false_alarms": 20,
+    "score": 7
+   },
+   "on": {
+    "caught": 25,
+    "false_alarms": 15,
+    "score": 10
+   },
+   "gb": {
+    "caught": 25,
+    "false_alarms": 0,
+    "score": 25
+   },
+   "vote3": {
+    "caught": 20,
+    "false_alarms": 0,
+    "score": 20
+   },
+   "vote7": {
+    "caught": 21,
+    "false_alarms": 0,
+    "score": 21
+   }
+  },
+  "cost": [
+   {
+    "key": "gb",
+    "kind": "baseline",
+    "name": "Gradient boosting",
+    "usd_per_1000": null,
+    "speed": "trains in 5 seconds on a laptop",
+    "data": "stays on site"
+   },
+   {
+    "key": "one",
+    "kind": "ours",
+    "name": "Our model, one model",
+    "usd_per_1000": 0.17,
+    "speed": "about 3 s a window on a plain desktop processor, no graphics card",
+    "data": "stays on site"
+   },
+   {
+    "key": "vote3",
+    "kind": "ours",
+    "name": "Our model, three voting",
+    "usd_per_1000": 0.5,
+    "speed": null,
+    "data": "stays on site"
+   },
+   {
+    "key": "vote7",
+    "kind": "ours",
+    "name": "Our model, seven voting",
+    "usd_per_1000": 1.16,
+    "speed": null,
+    "data": "stays on site"
+   },
+   {
+    "key": "kimi_cold",
+    "kind": "big",
+    "name": "Kimi K3.1 Pro, cold",
+    "usd_per_1000": 1.54,
+    "speed": "1.4 s an answer",
+    "data": "leaves the site"
+   },
+   {
+    "key": "kimi_hints",
+    "kind": "big",
+    "name": "Kimi K3.1 Pro, hints and examples",
+    "usd_per_1000": 1.64,
+    "speed": "1.4 s an answer",
+    "data": "leaves the site"
+   },
+   {
+    "key": "kimi_think",
+    "kind": "big",
+    "name": "Kimi K3.1 Pro, thinking on",
+    "usd_per_1000": 6.17,
+    "speed": "6.1 s an answer",
+    "data": "leaves the site"
+   }
+  ],
+  "ours": {
+   "card_usd_per_hour": 5.4,
+   "card_run": "12 models answered 1,536 windows each in 34 minutes",
+   "usd_per_1000": {
+    "one": 0.17,
+    "three": 0.5,
+    "seven": 1.16
+   },
+   "cpu_seconds_per_window": "about 3",
+   "train_one": "about 67 minutes on one eighth of the card, under 1 dollar",
+   "night_search": "about 57 dollars of card time for the 64 runs",
+   "gb_train": "trains in 5 seconds on a laptop"
+  },
+  "total_usd": 3.08
+ }
+}

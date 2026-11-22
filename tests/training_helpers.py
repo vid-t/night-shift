@@ -16,6 +16,8 @@ LOOPS = ["P1-PC", "P1-LC", "P1-FC", "P1-TC", "P2-SC", "P3-LC"]
 
 
 def load_script(name: str):
+    if name == "HAIAttackQADataset":
+        opentslm_without_init()   # the class imports opentslm and torch: skip the test without them
     spec = importlib.util.spec_from_file_location(f"training_{name}", TRAINING / f"{name}.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

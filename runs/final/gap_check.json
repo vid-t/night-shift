@@ -1,0 +1,94 @@
+{
+ "made": "after the test result was read; changes no result",
+ "draws": 20000,
+ "seed": 20261122,
+ "time_windows": {
+  "attack": 56,
+  "quiet": 200
+ },
+ "recording_files": 4,
+ "scores": {
+  "gradient boosting": 54,
+  "gradient boosting with neighbours": 54,
+  "vote of three (simpler design)": 51,
+  "vote of seven (hint-heavy design)": 50
+ },
+ "pairs": {
+  "gradient boosting minus vote of three (simpler design)": {
+   "observed": 3,
+   "low_90": -6,
+   "high_90": 12,
+   "low_95": -7,
+   "high_95": 13,
+   "median": 3,
+   "share_b_at_least_a": 0.32,
+   "share_b_above_a": 0.254
+  },
+  "gradient boosting minus vote of seven (hint-heavy design)": {
+   "observed": 4,
+   "low_90": -6,
+   "high_90": 14,
+   "low_95": -8,
+   "high_95": 16,
+   "median": 4,
+   "share_b_at_least_a": 0.286,
+   "share_b_above_a": 0.233
+  },
+  "gradient boosting with neighbours minus vote of three (simpler design)": {
+   "observed": 3,
+   "low_90": -6,
+   "high_90": 12,
+   "low_95": -8,
+   "high_95": 14,
+   "median": 3,
+   "share_b_at_least_a": 0.327,
+   "share_b_above_a": 0.264
+  },
+  "vote of three (simpler design) minus vote of seven (hint-heavy design)": {
+   "observed": 1,
+   "low_90": -8,
+   "high_90": 11,
+   "low_95": -10,
+   "high_95": 12,
+   "median": 1,
+   "share_b_at_least_a": 0.471,
+   "share_b_above_a": 0.399
+  }
+ },
+ "disagree": {
+  "gradient boosting against vote of three (simpler design)": {
+   "time_windows": 256,
+   "first_better": 16,
+   "second_better": 13,
+   "same": 227,
+   "sign_test_p": 0.71
+  },
+  "gradient boosting against vote of seven (hint-heavy design)": {
+   "time_windows": 256,
+   "first_better": 19,
+   "second_better": 16,
+   "same": 221,
+   "sign_test_p": 0.74
+  },
+  "gradient boosting with neighbours against vote of three (simpler design)": {
+   "time_windows": 256,
+   "first_better": 16,
+   "second_better": 12,
+   "same": 228,
+   "sign_test_p": 0.57
+  },
+  "vote of three (simpler design) against vote of seven (hint-heavy design)": {
+   "time_windows": 256,
+   "first_better": 15,
+   "second_better": 15,
+   "same": 226,
+   "sign_test_p": 1.0
+  }
+ },
+ "votes_of_three_simpler_design": {
+  "r4-zsize-law+r5-zsize-law-s1+r7-zsize-law-s2": 51,
+  "r4-zsize-law+r5-zsize-law-s1+r8-zsize-law-s3": 52,
+  "r4-zsize-law+r7-zsize-law-s2+r8-zsize-law-s3": 48,
+  "r5-zsize-law-s1+r7-zsize-law-s2+r8-zsize-law-s3": 49
+ }
+}

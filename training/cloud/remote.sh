@@ -2,7 +2,7 @@
 # Drive a rented GPU machine from this computer. Run from anywhere inside hai-attack-reader.
 #
 #   export HAI_REMOTE=hai@203.0.113.7          # user@address of the machine (required)
-#   export HAI_REMOTE_KEY=~/.ssh/nebius_hai    # private SSH key (this is the default)
+#   export HAI_REMOTE_KEY=~/.ssh/id_ed25519    # private SSH key (this is the default)
 #
 #   bash training/cloud/remote.sh sync                  copy the code and the exported files to ~/hai there
 #   bash training/cloud/remote.sh setup                 install uv, set up OpenTSLM, report the GPU (once)
@@ -21,7 +21,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 : "${HAI_REMOTE:?set HAI_REMOTE to user@address of the machine}"
-KEY="${HAI_REMOTE_KEY:-$HOME/.ssh/nebius_hai}"
+KEY="${HAI_REMOTE_KEY:-$HOME/.ssh/id_ed25519}"
 LLM_ID="unsloth/Llama-3.2-1B"
 FILES=(train validation test test_shuffled validation_shuffled)
 

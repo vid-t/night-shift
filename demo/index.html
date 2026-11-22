@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HAI Attack Reader</title>
+<meta name="description" content="A small language model watches one control loop of a lab plant and says whether it is under attack. On the test set, gradient boosting is slightly ahead; our model adds the start second and a sentence. An interactive demo with real windows, the test result, and its limits.">
+<link rel="preload" href="fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23111b27'/%3E%3Cpath d='M4 20h7l3-9 4 14 3-7h7' fill='none' stroke='%23e8435a' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#try">Skip to the window explorer</a>
+
+<header class="bar">
+  <div class="bar__in">
+    <a class="bar__name" href="#top">HAI attack reader</a>
+    <nav class="bar__nav" aria-label="Sections">
+      <a href="#test">Test set</a>
+      <a href="#big">Huge model</a>
+      <a href="#try">Try it</a>
+      <a href="#reads">What it reads</a>
+      <a href="#score">Check set</a>
+      <a href="#night">The night</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#limits">Limits</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- 1. The task in ten seconds -->
+<section class="hero" aria-labelledby="hero-h">
+  <div class="hero__text">
+    <h1 id="hero-h">A small language model watches one control loop of a plant and says when it is under attack.</h1>
+    <p class="lede">It reads 300 seconds of signals, such as a boiler's water level and its valve. Code adds one hint line per signal, stating a number such as its largest one-second jump. The model answers <b class="t-attack">attack</b> or <b>normal</b>, names the second the attack began, and writes one sentence.</p>
+    <p class="lede lede--result"><b>On the test set, run once, gradient boosting, a classic statistical method, is slightly ahead:</b> <b data-x="test.systems.0.score">54</b> of a perfect <span data-x="test.perfect">82</span>, against <b data-x="test.systems.2.score">51</b> for three of our models voting and <b data-x="test.systems.3.score">50</b> for seven. Chance alone could erase that gap: on a redrawn test set, our vote is level or ahead about one time in three. Our model adds what gradient boosting does not give: the second the attack began, and a sentence a person can check.</p>
+    <p class="lede">A huge general model, Kimi K3.1 Pro, is far behind both. Asked cold, it calls about half of all normal windows an attack.</p>
+    <p class="hero__links">
+      <a class="btn btn--solid" href="#test">See the test result</a>
+      <a class="btn" href="#try">Try a real window</a>
+      <a class="btn" href="#conclusion">Read the conclusion</a>
+      <a class="btn" href="#limits">Read the limits first</a>
+    </p>
+  </div>
+
+  <figure class="fig hero__fig" aria-labelledby="hero-fig-h">
+    <h2 class="fig__h" id="hero-fig-h">One real window from the boiler: the signals go in, a verdict and a sentence come out.</h2>
+    <div class="flow">
+      <div class="flow__step">
+        <p class="flow__label">In: 300 seconds of the boiler-level loop</p>
+        <div class="chart" id="hero-chart" role="img" aria-label="Curves of the boiler-level loop over 300 seconds with the true attack start marked."></div>
+      </div>
+      <div class="flow__step">
+        <p class="flow__label">In: the hint line code wrote for each signal</p>
+        <ul class="hints" id="hero-hints"></ul>
+        <p class="gloss">An actuator is the part that acts on the plant, such as a valve or a pump.</p>
+      </div>
+      <div class="flow__step flow__step--out">
+        <p class="flow__label">Out: the model's answer</p>
+        <p class="answer" id="hero-answer"></p>
+      </div>
+    </div>
+    <figcaption class="fig__src">Check-set window <span id="hero-id"></span>, from the set that guided the design. Answer: the seven-model vote. Source: HAI dataset, CC BY-SA 4.0.</figcaption>
+  </figure>
+</section>
+
+<!-- 2. The test set -->
+<section class="sec sec--band" id="test" aria-labelledby="test-h">
+  <div class="sec__head">
+    <h2 id="test-h">On the test set, gradient boosting is slightly ahead of our best: <span data-x="test.systems.0.score">54</span> against <span data-x="test.systems.2.score">51</span> and <span data-x="test.systems.3.score">50</span>.</h2>
+    <p class="sec__sub">Score = attack windows caught minus false alarms, so calling everything an attack does not pay. The test set holds <span data-x="test.rows.total">1,536</span> windows: <span data-x="test.rows.attack">82</span> attack windows from <span data-x="test.rows.attacks">56</span> attacks, and <span data-x="test.rows.normal">1,454</span> normal ones. Perfect is <span data-x="test.perfect">82</span>. We fixed both designs, the voters and the scoring before the run, and ran it once.</p>
+  </div>
+  <figure class="fig" aria-labelledby="test-fig-h">
+    <h3 class="fig__h" id="test-fig-h">Score on the test set. Our votes sit just under gradient boosting; one model of ours averages 45 to 47.</h3>
+    <div class="chart" id="test-chart" role="img" aria-label="Test-set scores on a scale from 0 to 82."></div>
+    <figcaption class="fig__src">Scores on the <span data-x="test.rows.total">1,536</span> test windows. Each label reads score = caught − false alarms. Bars show the range over repeats, dots single repeats, the tick the mean. Source: HAI dataset, CC BY-SA 4.0.</figcaption>
+  </figure>
+  <div class="duo">
+    <figure class="fig" aria-labelledby="found-fig-h">
+      <h3 class="fig__h" id="found-fig-h">Attacks found: gradient boosting and our two votes each find 50 to 52 of the <span data-x="test.rows.attacks">56</span> attacks.</h3>
+      <div class="chart" id="found-chart" role="img" aria-label="Attacks found, of 56, for each system."></div>
+      <figcaption class="fig__src">An attack counts as found when at least one of its windows is called attack. Source: HAI dataset, CC BY-SA 4.0.</figcaption>
+    </figure>
+    <figure class="fig" aria-labelledby="start-fig-h">
+      <h3 class="fig__h" id="start-fig-h">What gradient boosting does not give: the second the attack started. Our answers beat a constant guess, not by a lot.</h3>
+      <div class="chart" id="start-chart" role="img" aria-label="Attacks whose start second is named within 30 seconds, of 56."></div>
+      <figcaption class="fig__src">Attacks, of <span data-x="test.rows.attacks">56</span>, whose start the answer names within 30 seconds; median error in brackets. Dashed line: always answering “second <span data-x="test.constant.second">108</span>”. Source: HAI dataset, CC BY-SA 4.0.</figcaption>
+    </figure>
+  </div>
+  <div class="cost">
+    <p><b>The check-set lead did not hold.</b> On the check set that guided the design, seven models voting scored <span data-x="test.check.vote7">90</span> of <span data-x="test.check.perfect">144</span> (63%), gradient boosting <span data-x="test.check.gb">82</span> (57%). On the test set: <span data-x="test.systems.3.score">50</span> of <span data-x="test.perfect">82</span> (61%) against <span data-x="test.systems.0.score">54</span> (66%). Our vote held its level. Gradient boosting did better on fresh data.</p>
+    <p><b>3 points is inside chance.</b> The test set covers 256 stretches of 300 seconds, each seen through six loops. Gradient boosting and our three-model vote score differently on only 29 of them: 16 go to gradient boosting, 13 to our vote. We also drew the test set again 20,000 times. In nine draws of ten the gap lies between −6 and +12, and our vote is level or ahead in about a third of the draws. The test set is also not fully fresh: see <a href="#limits">the limits</a>.</p>
+  </div>
+</section>
+
+<!-- 3. Small against huge -->
+<section class="sec" id="big" aria-labelledby="big-h">
+  <div class="sec__head">
+    <h2 id="big-h">A huge general model catches almost every attack, because it calls a third to a half of all normal windows an attack.</h2>
+    <p class="sec__sub">We asked Kimi K3.1 Pro about <span data-x="big_model.rows.total">811</span> of the test windows: all <span data-x="big_model.rows.attack">82</span> attack windows and half of each loop's normal windows (<span data-x="big_model.rows.normal">729</span>). Twice: cold, with the task and the raw numbers, then with our hints and six solved examples. It was not trained for this plant, so it does not know what normal looks like here.</p>
+  </div>
+  <figure class="fig" aria-labelledby="big-fig-h">
+    <h3 class="fig__h" id="big-fig-h">On the same <span data-x="big_model.rows.total">811</span> windows: attack windows caught, and normal windows wrongly called attack.</h3>
+    <div class="chart" id="big-chart" role="img" aria-label="Caught of 82 and false alarms of 729 for five systems."></div>
+    <figcaption class="fig__src">Each bar uses its own full scale: <span data-x="big_model.rows.attack">82</span> attack windows left, <span data-x="big_model.rows.normal">729</span> normal windows right. 24 of Kimi's 1,622 answers were cut off before a verdict; asked again with more room, 20 gave one. The other 4 count as “not attack”. Source: HAI dataset, CC BY-SA 4.0.</figcaption>
+  </figure>
+  <figure class="fig fig--next" aria-labelledby="cost-fig-h">
+    <h3 class="fig__h" id="cost-fig-h">What answering costs, per 1,000 windows, and where the plant data goes.</h3>
+    <div class="chart" id="cost-chart" role="img" aria-label="US dollars per 1,000 windows for each system."></div>
+    <figcaption class="fig__src">Our model: priced on a rented graphics card at <span data-x="big_model.ours.card_usd_per_hour">5.40</span> US dollars an hour, where <span data-x="big_model.ours.card_run">12 models answered 1,536 windows each in 34 minutes</span>. Training one model: <span data-x="big_model.ours.train_one">about 67 minutes on one eighth of the card, under 1 dollar</span>. Kimi: API prices as paid; the whole comparison cost <span data-x="big_model.total_usd">3.08</span> US dollars. Source: run costs; answers on HAI windows, HAI dataset, CC BY-SA 4.0.</figcaption>
+  </figure>
+  <div class="cost">
+    <p><b>Thinking did not fix it.</b> <span id="think-line">On 58 windows (28 attack, 30 normal), Kimi cold caught 27 with 20 false alarms with thinking off, and 25 with 15 with thinking on (low), at four times the price. Gradient boosting caught 25 with 0 false alarms; our votes 20 and 21 with 0.</span></p>
+    <p><b>A limit of this comparison:</b> Kimi got one wording, no long thinking, and numbers as text. That is what you get if you just ask a huge model, not a contest of equals.</p>
+  </div>
+</section>
+
+<!-- 4. Try it (check set) -->
+<section class="sec" id="try" aria-labelledby="try-h">
+  <div class="sec__head">
+    <h2 id="try-h">Pick a window. See what the model saw, what it said, and what was true.</h2>
+    <p class="sec__sub"><span data-k="windows.length">16</span> real windows from the check set, the set that guided the design. The model never trained on them. Its misses and false alarms are included.</p>
+  </div>
+
+  <div class="explorer">
+    <div class="picker" id="picker" role="radiogroup" aria-label="Example windows"></div>
+
+    <article class="win" id="win" aria-live="polite">
+      <header class="win__head">
+        <div>
+          <h3 class="win__title" id="win-title"></h3>
+          <p class="win__meta" id="win-meta"></p>
+        </div>
+        <p class="outcome" id="win-outcome"></p>
+      </header>
+
+      <dl class="verdicts" id="win-verdicts"></dl>
+
+      <div class="cc" id="win-cc" hidden>
+        <div class="cc__top">
+          <p class="cc__q">Change the curve, keep the text. Does the answer hold?</p>
+          <div class="seg" role="radiogroup" aria-label="Curve shown to the model" id="cc-seg">
+            <button type="button" role="radio" data-v="machine" aria-checked="true">Normal curve</button>
+            <button type="button" role="radio" data-v="flat" aria-checked="false">Blank curve</button>
+            <button type="button" role="radio" data-v="curveshuffle" aria-checked="false">Shuffled curve</button>
+          </div>
+        </div>
+        <p class="cc__res" id="cc-res"></p>
+      </div>
+
+      <div class="chart chart--win" id="win-chart" role="img"></div>
+      <p class="chart__key" id="win-key"></p>
+
+      <div class="win__cols">
+        <section class="win__block" aria-labelledby="win-hints-h">
+          <h4 id="win-hints-h">What the model read, word for word</h4>
+          <ul class="hints" id="win-hints"></ul>
+          <p class="gloss">An actuator is the part that acts on the plant, such as a valve or a pump.</p>
+          <details class="prompt">
+            <summary>The instruction before the curves</summary>
+            <p id="win-prompt"></p>
+          </details>
+        </section>
+        <section class="win__block" aria-labelledby="win-vote-h">
+          <h4 id="win-vote-h">Seven models, one vote</h4>
+          <ol class="voters" id="win-voters"></ol>
+          <p class="gloss">A seed is the random start of one training repeat. Seeds 0 to 6 are seven repeats of the same design.</p>
+          <p class="voters__rule">Four of seven saying attack makes the vote attack.</p>
+          <h4>The answer</h4>
+          <p class="answer" id="win-answer"></p>
+          <h4>The reference answer it was trained to write</h4>
+          <p class="ref" id="win-ref"></p>
+        </section>
+      </div>
+      <p class="fig__src">Source: HAI dataset, CC BY-SA 4.0. Curves are scaled to fit their own band; the model saw them as numbers relative to how much each signal usually moves.</p>
+    </article>
+  </div>
+</section>
+
+<!-- 5. What the model reads (check set) -->
+<section class="sec sec--band" id="reads" aria-labelledby="reads-h">
+  <div class="sec__head">
+    <h2 id="reads-h">Blank out the curves and most attack calls stay. The model leans on the hints.</h2>
+    <p class="sec__sub">The check, on the check set: one of the seven models answered the same windows again. The text stayed identical. Only the curve changed: blank (all zeros), or its seconds shuffled.</p>
+  </div>
+  <div class="reads">
+    <figure class="fig" aria-labelledby="reads-fig-h">
+      <h3 class="fig__h" id="reads-fig-h">Attack windows called attack, out of <span data-k="curve_check.rows.attack">144</span></h3>
+      <div class="chart" id="reads-chart" role="img" aria-label="Bar chart: attack calls with normal, blank and shuffled curves."></div>
+      <figcaption class="fig__src">One model, the first of the seven voting repeats (seed 0), on the <span data-k="curve_check.rows.attack">144</span> attack windows and <span data-k="curve_check.rows.neighbour">396</span> neighbour windows of the check set. Normal-curve answers are the training machine's; a re-run on another computer differed on <span data-k="curve_check.rows.rerun_differs">1</span> window. Source: HAI dataset, CC BY-SA 4.0.</figcaption>
+    </figure>
+    <div class="reads__text">
+      <p><b>Blank curve:</b> <span data-k="curve_check.totals.flat.attack_called">84</span> attack calls against <span data-k="curve_check.totals.machine.attack_called">95</span>. The hint text alone carries most of the verdict.</p>
+      <p><b>Shuffled curve:</b> <span data-k="curve_check.totals.curveshuffle.attack_called">48</span>. When the curve does not look like an attack, the model overrules the hints. So it does read the curve.</p>
+      <p><b>Neighbour windows called attack</b>, out of <span data-k="curve_check.rows.neighbour">396</span>: <span data-k="curve_check.totals.machine.neighbour_called">10</span> with the normal curve, <span data-k="curve_check.totals.flat.neighbour_called">15</span> blank, <span data-k="curve_check.totals.curveshuffle.neighbour_called">4</span> shuffled. A neighbour window is a normal loop watched while an attack hits another loop.</p>
+      <p><b>The simpler design leans on the curve about twice as much.</b> Checked the same way, blank curves take one of its models from 99 attack calls to 72. The chart shows the hint-heavy design.</p>
+      <p class="note">This is one model, on inputs it never saw in training. Read it as a sign, not a measurement. Windows tagged <a href="#try">curve check</a> in the explorer have a switch to try it yourself.</p>
+      <p><b>On the test set, with the seconds of every series shuffled,</b> the hint-heavy design calls <span data-x="test.shuffled.heavy.false_alarms.0">395</span> to <span data-x="test.shuffled.heavy.false_alarms.1">677</span> of the <span data-x="test.shuffled.normal">1,454</span> normal windows attack, against <span data-x="test.shuffled.heavy.true_false_alarms.0">12</span> to <span data-x="test.shuffled.heavy.true_false_alarms.1">21</span> in true order. Its step hint is computed again from the shuffled seconds and reports a large jump. The simpler design stays calm (<span data-x="test.shuffled.simpler.false_alarms.0">4</span> to <span data-x="test.shuffled.simpler.false_alarms.1">12</span> false alarms) and loses about half its catches: <span data-x="test.shuffled.simpler.caught.0">25</span> to <span data-x="test.shuffled.simpler.caught.1">33</span>, against <span data-x="test.shuffled.simpler.true_caught.0">61</span> to <span data-x="test.shuffled.simpler.true_caught.1">68</span>. The hints change with the shuffle, so this test cannot separate curve reading from hint reading.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6. The check set: where the night ended -->
+<section class="sec" id="score" aria-labelledby="score-h">
+  <div class="sec__head">
+    <h2 id="score-h">On the check set that guided the design, seven models voting scored <span data-k="score.vote.score">90</span> of <span data-k="score.perfect">144</span>. That edge did not carry over to the test set.</h2>
+    <p class="sec__sub">The check set holds <span data-k="totals.rows">1,092</span> windows: <span data-k="totals.attack_rows">144</span> attack windows from <span data-k="totals.attacks">15</span> attacks. We made every design choice of the night by looking at these scores, so they are optimistic. The test result is <a href="#test">at the top</a>.</p>
+  </div>
+  <p class="sum" aria-label="Check-set score of the seven-model vote">
+    <span class="sum__n"><b data-k="score.vote.caught">101</b><small>attack windows caught, of <span data-k="totals.attack_rows">144</span></small></span>
+    <span class="sum__op" aria-hidden="true">−</span>
+    <span class="sum__n"><b data-k="score.vote.false_alarms">11</b><small>false alarms, of <span data-k="totals.normal_rows">948</span> normal windows</small></span>
+    <span class="sum__op" aria-hidden="true">=</span>
+    <span class="sum__n sum__n--res"><b data-k="score.vote.score">90</b><small>seven models voting, check set</small></span>
+  </p>
+  <figure class="fig" aria-labelledby="score-fig-h">
+    <h3 class="fig__h" id="score-fig-h">On the check set, seven repeats voting edged past gradient boosting. A single model is a gamble between repeats.</h3>
+    <div class="chart" id="score-chart" role="img" aria-label="Check-set score comparison on a scale from 0 to 144."></div>
+    <figcaption class="fig__src">All scores on the <span data-k="totals.rows">1,092</span> check windows. Bars show a range, dots single results. Source: HAI dataset, CC BY-SA 4.0.</figcaption>
+  </figure>
+  <div class="cost">
+    <p><b>The price of the 90:</b> seven models do seven times the answering work of one. On the check set, fewer voters help less: any three of the eight repeats score <span data-k="score.vote_sizes.3.low">74</span> to <span data-k="score.vote_sizes.3.high">90</span> together, depending on which three.</p>
+    <p><b>The fair comparison is 87, not 82.</b> Gradient boosting that also reads the other loops' signals scores <span data-k="score.gradient_boosting_neighbours.score">87</span> (<span data-k="score.gradient_boosting_neighbours.caught">108</span> caught, <span data-k="score.gradient_boosting_neighbours.false_alarms">21</span> false alarms). Only the vote beats it, by 3 points. Other sets of seven repeats score <span data-k="score.vote_sizes.7.low">87</span> to <span data-k="score.vote_sizes.7.high">90</span>. It was a narrow edge on the set that chose the design. On the test set both gradient boosting versions scored <span data-x="test.systems.0.score">54</span>, ahead of both votes.</p>
+  </div>
+</section>
+
+<!-- 7. The night (check set) -->
+<section class="sec sec--band" id="night" aria-labelledby="night-h">
+  <div class="sec__head">
+    <h2 id="night-h"><span data-k="night.runs.length">64</span> training runs in one night, scored on the check set. Hints lifted the score. Repeats of one design differ by up to 23 points.</h2>
+    <p class="sec__sub"><span data-k="night.rounds">8</span> rounds of 8 runs on one rented graphics card: about 10 hours, <span data-x="big_model.ours.night_search">about 57 dollars of card time for the 64 runs</span>. Each dot is one run, scored on the check set. No run of the night touched the test set.</p>
+  </div>
+  <figure class="fig" aria-labelledby="night-fig-h">
+    <h3 class="fig__h" id="night-fig-h">Check-set score of every run, by round</h3>
+    <div class="legend" id="night-legend"></div>
+    <p class="gloss gloss--legend">A "view" is how a curve is turned into numbers for the model. Range view: scaled to its own lowest and highest value. Spread view: in units of its usual spread. Loop view: against how much its loop moves in a quiet stretch. Hints: computed lines added to the text.</p>
+    <div class="chart chart--night" id="night-chart" role="img" aria-label="Dot chart of 64 runs by round and score, coloured by design family."></div>
+    <figcaption class="fig__src">Ringed dots are the seven runs that vote. Lines mark gradient boosting on the check set. Perfect is 144. Source: run table of the night; HAI dataset, CC BY-SA 4.0.</figcaption>
+    <details class="tbl">
+      <summary>Show all <span data-k="night.runs.length">64</span> runs as a table</summary>
+      <div class="tbl__wrap"><table id="night-table"></table></div>
+    </details>
+  </figure>
+  <div class="lessons">
+    <div>
+      <h3>What worked</h3>
+      <ul>
+        <li><b>Short hints in the text.</b> Code computes one or two numbers per signal and writes them next to the curve. On the check set, runs with hints average 73.1; the same views without them average 56.5.</li>
+        <li><b>Voting over repeats, to steady the score.</b> On the check set, seven repeats of one design score <span data-k="score.vote.score">90</span> together; alone they score <span data-k="score.voting_design_single.low">63</span> to <span data-k="score.voting_design_single.high">86</span>. On the test set the vote scores <span data-x="test.systems.3.score">50</span>; repeats of its design alone score <span data-x="test.single.1.scores_low">39</span> to <span data-x="test.single.1.scores_high">50</span>.</li>
+        <li><b>Keeping the last training pass</b> instead of the pass with the lowest loss. A pass is one run through the training data; loss is the model's error on held-out check rows. The last pass was the best in all 8 runs that scored every pass.</li>
+        <li><b>A start second and a sentence.</b> On the test set, the votes name the start within 30 seconds for <span data-x="test.start.1.within_30">30</span> of <span data-x="test.rows.attacks">56</span> attacks, against <span data-x="test.constant.within_30">26</span> for a constant guess. Gradient boosting gives neither.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What failed</h3>
+      <ul>
+        <li><b>Beating gradient boosting on fresh data.</b> The check-set lead (<span data-k="score.vote.score">90</span> against <span data-k="score.gradient_boosting.score">82</span>) became <span data-x="test.systems.3.score">50</span> against <span data-x="test.systems.0.score">54</span> on the test set.</li>
+        <li><b>More attack examples in training.</b> At half attacks the check-set score fell to −3: far more false alarms for a few more catches.</li>
+        <li><b>Two blind spots no design fixed.</b> On the check set: water-level attacks without a valve jump, and 12 boiler-temperature windows from a dataset version whose temperature attacks training never saw.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Conclusion -->
+<section class="sec" id="conclusion" aria-labelledby="conclusion-h">
+  <div class="sec__head">
+    <h2 id="conclusion-h">A small model trained on the plant beats a huge general one, comes a close second to gradient boosting, and adds when the attack began.</h2>
+  </div>
+  <div class="cost cost--lead">
+    <p><b>1. Training on the plant beats size.</b> On the same <span data-x="big_model.rows.total">811</span> windows our votes score <span data-x="big_model.systems.1.score">59</span> and <span data-x="big_model.systems.2.score">57</span>. Kimi K3.1 Pro scores <span data-x="big_model.systems.3.score">−181</span> with our hints and <span data-x="big_model.systems.4.score">−284</span> cold, because it calls a third to a half of all normal windows an attack. Each of our models is small, about 1 billion parameters, and trains in about an hour for under a dollar.</p>
+    <p><b>2. On detection, gradient boosting is 3 to 4 points ahead, and that is inside chance.</b> It and our three-model vote score differently on 29 of the test set's 256 stretches of time: 16 go to gradient boosting, 13 to our vote. During the night, on the check set we used to choose designs, seven of our models voting led <span data-x="test.check.vote7">90</span> to <span data-x="test.check.gb">82</span>. That lead did not carry over. Choosing on the check set likely flattered our designs there. Gradient boosting ran with default settings and still came out ahead.</p>
+    <p><b>3. What it adds: when the attack began, and a sentence a person can check.</b> An alarm alone does not tell an operator when or what. Either vote names the start within 30 seconds for <span data-x="test.start.1.within_30">30</span> of the <span data-x="test.rows.attacks">56</span> attacks, where a fixed guess gets <span data-x="test.constant.within_30">26</span>. That beats a fixed guess, but not by much. We did not measure how often the sentence is right. Gradient boosting gives no start and no sentence.</p>
+    <p><b>4. Two weaknesses set the next step.</b> The model leans on hints that code computes, more than on the curve. And one model alone is a gamble: retrained from a new random start, one design scores <span data-x="test.single.0.scores_low">42</span> to <span data-x="test.single.0.scores_high">52</span> of <span data-x="test.perfect">82</span>, the other <span data-x="test.single.1.scores_low">39</span> to <span data-x="test.single.1.scores_high">50</span>. What we would try next, not tested here: let gradient boosting raise the alarm and let the language model explain it.</p>
+  </div>
+</section>
+
+<!-- 9. Limits and credits -->
+<section class="sec sec--ink" id="limits" aria-labelledby="limits-h">
+  <div class="sec__head">
+    <h2 id="limits-h">What this does not show</h2>
+  </div>
+  <ul class="limits">
+    <li><b>The test set is not fully fresh.</b> We scored earlier models and both baselines on it before this night, and chose the starting design after seeing those scores. The night's <span data-k="night.runs.length">64</span> runs never touched it.</li>
+    <li><b>56 attacks are few.</b> The test set cannot separate <span data-x="test.systems.0.score">54</span> from <span data-x="test.systems.2.score">51</span>. Our redraw also understates the spread: the windows come from four recordings, and the three other votes we could have formed from the same four models score 48, 49 and 52.</li>
+    <li><b>The explorer, the curve check and the night use the check set.</b> We chose the designs, the hints and the vote by looking at it, so those numbers are optimistic. It is small too: <span data-k="totals.attack_rows">144</span> attack windows from <span data-k="totals.attacks">15</span> attacks.</li>
+    <li><b>About 36 of the <span data-k="totals.attack_rows">144</span> check-set attack windows were out of reach</b> for every design of the night. 24 are water-level windows with no valve jump. 12 are boiler-temperature windows from a dataset version whose temperature attacks training never saw.</li>
+    <li><b>It leans on computed hints.</b> Blank curves leave most attack calls in place. With the test seconds shuffled, the hint-heavy design raises <span data-x="test.shuffled.heavy.false_alarms.0">395</span> to <span data-x="test.shuffled.heavy.false_alarms.1">677</span> false alarms of <span data-x="test.shuffled.normal">1,454</span>. The simpler design stays calm and loses about half its catches.</li>
+    <li><b>One model is a gamble.</b> On the test set, one model of the simpler design scores <span data-x="test.single.0.scores_list">42, 52, 52, 43</span> over four repeats. On the check set a vote narrows that spread, at three or seven times the answering work.</li>
+    <li><b>The huge-model comparison is not a contest of equals.</b> Kimi got one wording, no long thinking, and numbers as text.</li>
+    <li><b>It is a research demo, not a deployed detector.</b> HAI is a lab-scale plant with recorded attacks, not a live site.</li>
+  </ul>
+  <div class="credits">
+    <h3>Credits</h3>
+    <p><b>Data:</b> HAI, the HIL-based Augmented ICS security dataset, <a href="https://github.com/icsdataset/hai">github.com/icsdataset/hai</a>, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. HIL means hardware-in-the-loop: a real plant coupled to a simulation. ICS means industrial control system. The curves and windows on this page are derived from HAI and shared under the same licence.</p>
+    <p><b>Model:</b> OpenTSLM-SP. It joins Llama 3.2, a language model with 1 billion parameters (small by today's standards), to a curve encoder. The encoder turns each curve into input the language model can read. Both were fine-tuned, that is trained further, for this task. <b>Built with Llama</b>: Llama 3.2 is used under Meta's Llama 3.2 Community License. Built for the TimeNet hackathon.</p>
+    <p><b>Comparison model:</b> Kimi K3.1 Pro, asked through an API on 811 test windows. Its answers are not on this page; only the counts are.</p>
+    <p><b>Type:</b> Archivo, SIL Open Font License, self-hosted. No trackers, no cookies, no outside requests.</p>
+  </div>
+</section>
+
+</main>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<noscript><p class="noscript">The window explorer and the charts need JavaScript. The text above still holds every headline number.</p></noscript>
+<script src="js/app.js" defer></script>
+</body>
+</html>

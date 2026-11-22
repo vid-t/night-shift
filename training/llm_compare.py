@@ -76,7 +76,7 @@ DATASET_PY = REPO / "training" / "HAIAttackQADataset.py"
 COMPARE_DIR = REPO / "runs" / "llm_compare"   # every comparison run's spend under here counts toward the 5 USD
 OPENTSLM_SRC = REPO / "external" / "OpenTSLM" / "src" / "opentslm"
 
-GLOBAL_LIMIT_USD = 5.0     # the owner's hard limit for the whole comparison
+GLOBAL_LIMIT_USD = 5.0     # hard cap of the tool for all comparison runs together
 MAX_RETRIES = 4
 TIMEOUT_S = 120
 PROGRESS_EVERY = 50
