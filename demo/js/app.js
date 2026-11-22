@@ -1,39 +1,37 @@
-/* HAI attack reader demo. Plain JavaScript, no build step. Data: data/demo.json (check set), data/results_extra.json (test set, huge model). */
+/* HAI attack reader: the write-up view. Plain JavaScript, no build step.
+   Data: data/demo.json (check set), data/results_extra.json (test set, huge model).
+   Binds the numbers in the static text and draws the charts (SVG). */
 (function () {
   "use strict";
 
   var NS = "http://www.w3.org/2000/svg";
   var D = null;          // demo.json
-  var state = { id: null, variant: "machine" };
+  var X = null;          // results_extra.json
   var redraws = {};      // charts that redraw on resize
+  // The write-up is one of two views (js/views.js). Its charts are sized from element widths,
+  // so they draw only while it is visible, and redraw when it becomes visible.
+  function shown() { return document.body.getAttribute("data-view") === "writeup"; }
 
-  var GROUPS = [
-    ["caught", "Attacks caught"],
-    ["missed", "Attacks missed"],
-    ["false_alarm", "False alarms"],
-    ["quiet", "Quiet normal windows"],
-    ["neighbour", "Neighbour windows, attack elsewhere"]
-  ];
-  var VARIANT_NAME = { machine: "normal curve", plain: "normal curve", flat: "blank curve", curveshuffle: "shuffled curve" };
   var FAMILIES = [
-    ["hints", "With hints in the text", "circle"],
-    ["nohint", "Newer views, no hints", "square"],
-    ["zscore", "Spread view, no hints", "diamond"],
-    ["range", "Range view (the starting design) and its variants", "triangle"]
+    ["hints", "With hints beside the curves", "circle"],
+    ["nohint", "Newer designs, no hints", "square"],
+    ["zscore", "Curve scaled to its own mean and spread, no hints", "diamond"],
+    ["range", "The design we started with, and its variants", "triangle"]
   ];
 
-  /* ---------- design names in plain words (raw names come from the night's run table) ---------- */
+  /* ---------- design names in plain words (raw names come from the search's run table) ----------
+     The write-up does not explain "view": each raw view name becomes how the curve is turned into numbers. */
   var VIEW_PLAIN = [
-    ["Range view", "Range view"],
-    ["Z-score view", "Spread view"],
-    ["Hybrid", "Spread view with the size of its biggest change"],
-    ["Loop-relative", "Loop view"]
+    ["Range view", "Starting design"],
+    ["Z-score view", "Curve scaled to its own mean and spread"],
+    ["Hybrid", "Curve scaled to its own mean and spread, with the size of its largest change"],
+    ["Loop-relative", "Curve against how much its loop normally moves"]
   ];
   var CLAUSE_PLAIN = {
-    step: "largest one-second step",
-    law: "seconds against the controller",
+    step: "largest one-second jump and its second",
+    law: "how long the valve moved against the controller",
     plant: "gap between a measurement and what its command predicts",
-    size: "size of the change"
+    size: "size of the largest change"
   };
   var MOD_PLAIN = [
     [/^no clause$/, "no extra hints"],
@@ -123,20 +121,6 @@
   }
   function hideTip() { tip.hidden = true; }
 
-  /* ---------- marks: shape = truth (circle attack, square normal), fill = vote said attack ---------- */
-  function markSVG(group, size) {
-    var s = size || 14, h = s / 2;
-    var attackTruth = group === "caught" || group === "missed";
-    var saidAttack = group === "caught" || group === "false_alarm";
-    var col = attackTruth ? "var(--attack)" : "var(--mk-ink, var(--ink))";
-    var fill = saidAttack ? col : "none";
-    var shape = attackTruth
-      ? '<circle cx="' + h + '" cy="' + h + '" r="' + (h - 1.5) + '" fill="' + fill + '" stroke="' + col + '" stroke-width="2"/>'
-      : '<rect x="1.5" y="1.5" width="' + (s - 3) + '" height="' + (s - 3) + '" rx="1" fill="' + fill + '" stroke="' + col + '" stroke-width="2"/>';
-    if (group === "neighbour") shape += '<path d="M3.5 ' + (s - 3.5) + 'L' + (s - 3.5) + ' 3.5" stroke="' + col + '" stroke-width="1.6"/>';
-    return '<svg viewBox="0 0 ' + s + " " + s + '" aria-hidden="true">' + shape + "</svg>";
-  }
-
   /* ---------- text pieces ---------- */
   function hintItems(list, hints) {
     list.innerHTML = "";
@@ -164,14 +148,12 @@
   /* ---------- the window chart: one band per signal ---------- */
   function seriesChart(host, w, opts) {
     opts = opts || {};
-    var variant = opts.variant || "machine";
     var W = width(host);
     var compact = opts.compact || W < 520;
     var bandH = compact ? 38 : 52, gapH = 24;
     var padR = 6;
     var truth = w.attack_start;
     var ans = opts.answerStart;
-    var xs = function (sec) { return (sec / 299) * (W - padR); };
     var both = truth != null && ans != null;
     var top = both ? 58 : 40, bottom = 30;
     var n = w.series.length;
@@ -179,7 +161,6 @@
     host.innerHTML = "";
     var s = svg("svg", { viewBox: "0 0 " + W + " " + H, width: W, height: H }, host);
     var x = function (sec) { return (sec / 299) * (W - padR); };
-    var order = w.curve_check && w.curve_check.order;
 
     var bandsTop = top, bandsBot = top + n * (bandH + gapH) - gapH;
 
@@ -194,25 +175,21 @@
       var y0 = top + i * (bandH + gapH);
       var vals = ser.values;
       var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
-      var flat = variant === "flat";
-      var shown = vals;
-      if (variant === "curveshuffle" && order) shown = order.map(function (j) { return vals[j]; });
       var constant = hi - lo < 1e-9;
       var y = function (v) {
-        if (flat || constant) return y0 + bandH / 2;
+        if (constant) return y0 + bandH / 2;
         return y0 + bandH - ((v - lo) / (hi - lo)) * bandH;
       };
       svg("line", { x1: 0, x2: W - padR, y1: y0 + bandH, y2: y0 + bandH, stroke: "var(--rule)", "stroke-width": 1 }, s);
       var label = cap(ser.name);
-      if (flat) label += " (blank: all zeros)";
-      else if (constant) label += " (never changes)";
+      if (constant) label += " (never changes)";
       txt(s, 0, y0 - 7, label, { fill: "var(--ink)", "font-size": 12, "font-weight": 600 });
       var d = "";
-      for (var k = 0; k < shown.length; k++) d += (k ? "L" : "M") + x(k).toFixed(1) + " " + y(shown[k]).toFixed(1);
+      for (var k = 0; k < vals.length; k++) d += (k ? "L" : "M") + x(k).toFixed(1) + " " + y(vals[k]).toFixed(1);
       var isTarget = ser.role === "target";
       svg("path", {
         d: d, fill: "none", "stroke-linejoin": "round",
-        stroke: flat ? "var(--ink-3)" : isTarget ? "var(--ink-3)" : ser.role === "command" ? "var(--ink-2)" : "var(--ink)",
+        stroke: isTarget ? "var(--ink-3)" : ser.role === "command" ? "var(--ink-2)" : "var(--ink)",
         "stroke-width": isTarget ? 1.5 : 1.75,
         "stroke-dasharray": isTarget ? "4 3" : "none"
       }, s);
@@ -245,178 +222,24 @@
       cross.setAttribute("x1", x(sec)); cross.setAttribute("x2", x(sec)); cross.setAttribute("opacity", .5);
       var html = "<b>Second " + sec + "</b>";
       w.series.forEach(function (ser) {
-        var v = variant === "flat" ? 0 : (variant === "curveshuffle" && order ? ser.values[order[sec]] : ser.values[sec]);
-        html += "<br>" + esc(cap(ser.name)) + ": " + fmt(v);
+        html += "<br>" + esc(cap(ser.name)) + ": " + fmt(ser.values[sec]);
       });
-      if (variant === "flat") html += "<br><i>blank variant: the model saw zeros</i>";
       showTip(html, ev.clientX, ev.clientY);
     }
     hit.addEventListener("pointermove", move);
     hit.addEventListener("pointerleave", function () { cross.setAttribute("opacity", 0); hideTip(); });
   }
 
-  /* ---------- picker + window panel ---------- */
-  function buildPicker() {
-    var host = $("#picker");
-    host.innerHTML = "";
-    GROUPS.forEach(function (g) {
-      var items = D.windows.filter(function (w) { return w.group === g[0]; });
-      if (!items.length) return;
-      var box = el("div", { class: "picker__group" });
-      box.appendChild(el("h3", { html: esc(g[1]) + " <span>" + items.length + "</span>" }));
-      var list = el("div", { class: "picker__list" });
-      items.forEach(function (w) {
-        var b = el("button", { type: "button", class: "pick", role: "radio", "aria-checked": "false", "data-id": w.id, tabindex: "-1" });
-        b.innerHTML = '<span class="mk">' + markSVG(w.group) + "</span>" +
-          '<span class="pick__main"><b>' + esc(w.loop) + "</b> " + esc(w.loop_name) +
-          '<span class="pick__sub">vote ' + w.votes_attack + " of 7 said attack</span></span>" +
-          (w.curve_check ? '<span class="pick__cc">curve check</span>' : "<span></span>");
-        b.addEventListener("click", function () { select(w.id, true); });
-        list.appendChild(b);
-      });
-      box.appendChild(list);
-      host.appendChild(box);
-    });
-    host.addEventListener("keydown", function (ev) {
-      if (["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"].indexOf(ev.key) < 0) return;
-      var btns = Array.prototype.slice.call(host.querySelectorAll(".pick"));
-      var i = btns.findIndex(function (b) { return b.dataset.id === state.id; });
-      if (ev.key === "Home") i = 0;
-      else if (ev.key === "End") i = btns.length - 1;
-      else i = (i + (ev.key === "ArrowDown" || ev.key === "ArrowRight" ? 1 : -1) + btns.length) % btns.length;
-      ev.preventDefault();
-      select(btns[i].dataset.id, true);
-      btns[i].focus();
-    });
-  }
-
-  function select(id, userAction) {
-    var w = D.windows.find(function (x) { return x.id === id; });
-    if (!w) return;
-    if (state.id !== id) state.variant = "machine";
-    state.id = id;
-    document.querySelectorAll(".pick").forEach(function (b) {
-      var on = b.dataset.id === id;
-      b.setAttribute("aria-checked", on ? "true" : "false");
-      b.tabIndex = on ? 0 : -1;
-    });
-    if (userAction) { try { history.replaceState(null, "", "#w=" + encodeURIComponent(id)); } catch (e) { /* ignore */ } }
-    renderWindow(w);
-  }
-
-  function renderWindow(w) {
-    var plantTitle = { boiler: "Boiler", turbine: "Turbine", "water treatment": "Water treatment" }[w.plant] || cap(w.plant);
-    $("#win-title").textContent = w.loop + ", " + w.loop_name;
-    $("#win-meta").textContent = plantTitle + " plant · HAI dataset release " + w.version + " (recorded " + (w.id.split("/")[2] || "").slice(0, 4) + ") · window " + w.id;
-
-    var right = (w.vote === "attack") === (w.label === "attack");
-    var outcomeText = { caught: "Caught", missed: "Missed", false_alarm: "False alarm", quiet: "Correctly quiet", neighbour: "Correctly quiet" }[w.group];
-    var oc = $("#win-outcome");
-    oc.dataset.good = String(right);
-    oc.innerHTML = '<span class="mk">' + markSVG(w.group) + "</span>" + esc(outcomeText);
-
-    // verdict row
-    var truthTxt, truthSmall;
-    if (w.label === "attack") {
-      truthTxt = "Attack";
-      truthSmall = w.attack_start != null ? "starts at second " + w.attack_start : "";
-      if (w.no_visible_change) truthSmall += (truthSmall ? "; " : "") + "no visible change in these signals";
-    } else if (w.kind === "neighbour") {
-      truthTxt = "Normal"; truthSmall = "an attack is hitting another loop" + (w.reacting ? "; this loop reacts to it" : "");
-    } else { truthTxt = "Normal"; truthSmall = "no attack anywhere in the plant"; }
-    var voteSmall = w.votes_attack + " of 7 said attack" + (w.vote_start != null ? "; start near second " + w.vote_start : "");
-    var gbSmall = "also reading the other loops: " + w.gb_neighbours + ". It gives no start second.";
-    var vd = $("#win-verdicts");
-    vd.innerHTML =
-      '<div><dt>What was true</dt><dd class="v-' + w.label + '">' + truthTxt + "<small>" + esc(truthSmall) + "</small></dd></div>" +
-      '<div><dt>Seven-model vote</dt><dd class="v-' + w.vote + '">' + cap(w.vote) + "<small>" + esc(voteSmall) + "</small></dd></div>" +
-      '<div><dt>Gradient boosting</dt><dd class="v-' + w.gb + '">' + cap(w.gb) + "<small>" + esc(gbSmall) + "</small></dd></div>";
-
-    // curve check
-    var cc = $("#win-cc");
-    if (w.curve_check) {
-      cc.hidden = false;
-      document.querySelectorAll("#cc-seg button").forEach(function (b) {
-        b.setAttribute("aria-checked", b.dataset.v === state.variant ? "true" : "false");
-        b.tabIndex = b.dataset.v === state.variant ? 0 : -1;
-      });
-      var c = w.curve_check;
-      var cur = c[state.variant];
-      var parts = ["machine", "flat", "curveshuffle"].map(function (v) {
-        var on = v === state.variant;
-        var s = cap(VARIANT_NAME[v]) + ": " + c[v].label;
-        return on ? "<b>" + esc(s) + "</b>" : esc(s);
-      }).join(" · ");
-      $("#cc-res").innerHTML = "The first of the seven voting models (seed 0) answered this window three times. " + parts +
-        '.<br>With the ' + esc(VARIANT_NAME[state.variant]) + ": " + answerHTML(cur.text);
-    } else {
-      cc.hidden = true;
-      state.variant = "machine";
-    }
-
-    // chart
-    var single = !!w.curve_check;
-    var answerStart = single ? w.curve_check[state.variant].start : w.vote_start;
-    var drawWin = function () { seriesChart($("#win-chart"), w, { variant: state.variant, answerStart: answerStart }); };
-    drawWin();
-    redraws.win = drawWin;
-    $("#win-chart").setAttribute("aria-label", "Curves of " + w.loop + " over 300 seconds" +
-      (w.attack_start != null ? ", attack starting at second " + w.attack_start : "") + ".");
-    var key = [];
-    if (w.attack_start != null) key.push("<span><i></i>true attack start</span>");
-    if (answerStart != null) key.push('<span><i class="k-model"></i>' + (single ? "start that seed 0 gives with the " + VARIANT_NAME[state.variant] : "start the vote gives: the middle value of the starts named by the models that said attack") + "</span>");
-    key.push("<span>Hover or touch the curves to read a second.</span>");
-    $("#win-key").innerHTML = key.join("");
-
-    // hints and prompt
-    hintItems($("#win-hints"), w.hints);
-    $("#win-prompt").textContent = w.prompt;
-
-    // voters
-    var vo = $("#win-voters");
-    vo.innerHTML = "";
-    w.voters.forEach(function (v, i) {
-      var li = el("li", { class: v.label === "attack" ? "is-attack" : "is-normal", title: v.text });
-      li.innerHTML = "seed " + i + "<b>" + (v.label === "attack" ? "attack" : "normal") + "</b>" + (v.start != null ? "at " + v.start : "&nbsp;");
-      vo.appendChild(li);
-    });
-
-    var seed = w.voters.findIndex(function (v) { return v.run === w.vote_example.run; });
-    $("#win-answer").innerHTML = answerHTML(w.vote_example.text) +
-      ' <span class="voters__rule">Written by seed ' + seed + ", one of the voters on the winning side.</span>";
-    $("#win-ref").innerHTML = answerHTML(w.reference_answer);
-  }
-
-  function bindSeg() {
-    var seg = $("#cc-seg");
-    seg.addEventListener("click", function (ev) {
-      var b = ev.target.closest("button");
-      if (!b) return;
-      state.variant = b.dataset.v;
-      select(state.id, false);
-    });
-    seg.addEventListener("keydown", function (ev) {
-      if (["ArrowLeft", "ArrowRight"].indexOf(ev.key) < 0) return;
-      var order = ["machine", "flat", "curveshuffle"];
-      var i = order.indexOf(state.variant);
-      i = (i + (ev.key === "ArrowRight" ? 1 : 2)) % 3;
-      state.variant = order[i];
-      ev.preventDefault();
-      select(state.id, false);
-      seg.querySelector('[data-v="' + state.variant + '"]').focus();
-    });
-  }
-
-  /* ---------- hero ---------- */
-  function renderHero() {
-    var w = D.windows.find(function (x) { return x.id === D.hero; });
-    var draw = function () { seriesChart($("#hero-chart"), w, { variant: "machine", answerStart: w.vote_start, compact: true }); };
-    draw();
-    redraws.hero = draw;
-    hintItems($("#hero-hints"), w.hints);
-    $("#hero-answer").innerHTML = answerHTML(w.vote_example.text) +
-      ' <span class="voters__rule">' + w.votes_attack + " of 7 models said attack. The truth: attack from second " + w.attack_start + ".</span>";
-    $("#hero-id").textContent = w.id;
+  /* ---------- the example window: part 1 (the data) and part 3 (what the model reads and writes) ---------- */
+  function heroWindow() { return D.windows.find(function (x) { return x.id === D.hero; }); }
+  function renderWindowFigures() {
+    var w = heroWindow();
+    // Part 1 shows the data only: the true start, no answer yet.
+    redraws.window = function () { seriesChart($("#window-chart"), w, {}); };
+    redraws.flow = function () { seriesChart($("#flow-chart"), w, { answerStart: w.vote_start, compact: true }); };
+    hintItems($("#flow-hints"), w.hints);
+    $("#flow-answer").innerHTML = answerHTML(w.vote_example.text) +
+      ' <span class="voters__rule">' + w.votes_attack + " of " + w.voters.length + " models said attack. The truth: attack from second " + w.attack_start + ".</span>";
   }
 
   /* ---------- curve-check bars ---------- */
@@ -434,7 +257,7 @@
     [0, 36, 72, 108, 144].forEach(function (g) {
       if (g > max) return;
       svg("line", { x1: x(g), x2: x(g), y1: top - 4, y2: H - 22, stroke: g === max ? "var(--ink-3)" : "var(--rule)", "stroke-width": 1, "stroke-dasharray": g === max ? "3 3" : "none" }, s);
-      txt(s, x(g), H - 6, g === max ? max + " = all" : String(g), { "text-anchor": g === max ? "end" : "middle", fill: "var(--ink-3)", "font-size": 11 });
+      txt(s, x(g), H - 6, g === max ? max + " = all" : String(g), { "text-anchor": tickAnchor(x(g), g === max), fill: "var(--ink-3)", "font-size": 11 });
     });
     rows.forEach(function (r, i) {
       var y = top + i * (barH + gap) + (W < 480 ? 18 : 0);
@@ -448,29 +271,20 @@
     });
   }
 
-  /* ---------- score comparison ---------- */
-  function scoreChart() {
-    var host = $("#score-chart");
+  /* ---------- check-set scores on one 0 to 144 scale (part 2: the comparisons; part 3: the vote) ---------- */
+  function scoreRows(host, rows) {
     var W = width(host);
-    var sc = D.score, P = sc.perfect;
+    var P = D.score.perfect;
     var narrow = W < 640;
     var labW = narrow ? 0 : 300, rowH = narrow ? 58 : 44, top = 22;
-    var rows = [
-      { label: "Start of the night, one model", sub: sc.start_of_night.n + " runs", range: [sc.start_of_night.low, sc.start_of_night.high], color: "var(--night-range)" },
-      { label: "Best designs, one model, average of repeats", sub: "6 designs, means", range: [sc.leading_designs.low_mean, sc.leading_designs.high_mean], color: "var(--model)", soft: true },
-      { label: "Voting design, one model, each repeat", sub: sc.voting_design_single.n + " repeats", range: [sc.voting_design_single.low, sc.voting_design_single.high], dots: sc.voting_design_single.scores, color: "var(--model)" },
-      { label: "Seven models voting", value: sc.vote.score, color: "var(--model)", big: true },
-      { label: "Gradient boosting", value: sc.gradient_boosting.score, color: "var(--ink)", hollow: true },
-      { label: "Gradient boosting, also reading other loops", value: sc.gradient_boosting_neighbours.score, color: "var(--ink)", hollow: true }
-    ];
     var H = top + rows.length * rowH + 30;
     host.innerHTML = "";
     var s = svg("svg", { viewBox: "0 0 " + W + " " + H, width: W, height: H }, host);
     var plotW = W - labW - 16;
     var x = function (v) { return labW + (Math.max(0, v) / P) * plotW; };
     [0, 36, 72, 108, P].forEach(function (g) {
-      svg("line", { x1: x(g), x2: x(g), y1: top - 10, y2: H - 24, stroke: g === P ? "var(--ink)" : "var(--rule)", "stroke-width": 1, "stroke-dasharray": g === P ? "none" : "2 3" }, s);
-      txt(s, x(g), H - 8, g === P ? "perfect " + P : String(g), { "text-anchor": g === P ? "end" : "middle", fill: g === P ? "var(--ink)" : "var(--ink-3)", "font-size": 11, "font-weight": g === P ? 700 : 400 });
+      svg("line", { x1: x(g), x2: x(g), y1: top - 10, y2: H - 24, stroke: g === P ? "var(--ink)" : "var(--rule)", "stroke-width": 1, "stroke-dasharray": g === P || g === 0 ? "none" : "2 3" }, s);
+      txt(s, x(g), H - 8, g === P ? "perfect " + P : String(g), { "text-anchor": tickAnchor(x(g), g === P), fill: g === P ? "var(--ink)" : "var(--ink-3)", "font-size": 11, "font-weight": g === P ? 700 : 400 });
     });
     rows.forEach(function (r, i) {
       var cy = top + i * rowH + (narrow ? 34 : rowH / 2);
@@ -482,15 +296,43 @@
         if (r.dots) r.dots.forEach(function (d) { svg("circle", { cx: x(d), cy: cy, r: 5, fill: r.color, stroke: "var(--paper)", "stroke-width": 2 }, s); });
         txt(s, x(r.range[1]) + (r.dots ? 13 : 10), cy + 4, fmt(r.range[0]) + " to " + fmt(r.range[1]), { fill: "var(--ink-2)", "font-size": 12, "font-weight": 650 });
         tipHtml = "<b>" + esc(r.label) + "</b><br>" + fmt(r.range[0]) + " to " + fmt(r.range[1]) + (r.dots ? "<br>repeats: " + r.dots.join(", ") : "");
+      } else if (r.value < 0) {
+        // Below zero: an arrow at zero and the number as text, never a stretched axis (as the test chart draws the range alarm).
+        var ax = x(0);
+        svg("path", { d: "M" + (ax + 16) + " " + cy + "H" + (ax + 2) + "M" + (ax + 8) + " " + (cy - 5) + "L" + (ax + 2) + " " + cy + "L" + (ax + 8) + " " + (cy + 5), stroke: r.color, "stroke-width": 2.5, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round" }, s);
+        txt(s, ax + 24, cy + 5, fmt(r.value), { fill: "var(--ink)", "font-size": 14, "font-weight": 800 });
+        tipHtml = "<b>" + esc(r.label) + "</b><br>score " + fmt(r.value) + ", below zero";
       } else {
         svg("circle", { cx: x(r.value), cy: cy, r: r.big ? 9 : 7, fill: r.hollow ? "var(--paper)" : r.color, stroke: r.color, "stroke-width": r.hollow ? 2.5 : 2 }, s);
-        txt(s, x(r.value) + (r.big ? 15 : 13), cy + 5, String(r.value), { fill: "var(--ink)", "font-size": r.big ? 17 : 14, "font-weight": 800 });
-        tipHtml = "<b>" + esc(r.label) + "</b><br>score " + r.value;
+        txt(s, x(r.value) + (r.big ? 15 : 13), cy + 5, fmt(r.value), { fill: "var(--ink)", "font-size": r.big ? 17 : 14, "font-weight": 800 });
+        tipHtml = "<b>" + esc(r.label) + "</b><br>score " + fmt(r.value);
       }
+      if (r.counts) tipHtml += " = " + r.counts.caught + " caught − " + r.counts.false_alarms + " false alarms";
       var hit = svg("rect", { x: 0, y: cy - rowH / 2, width: W, height: rowH, fill: "transparent" }, s);
       hit.addEventListener("pointermove", function (ev) { showTip(tipHtml, ev.clientX, ev.clientY); });
       hit.addEventListener("pointerleave", hideTip);
     });
+    host.setAttribute("aria-label", "Check-set scores, perfect " + P + ": " + rows.map(function (r) {
+      return r.label + " " + (r.range ? fmt(r.range[0]) + " to " + fmt(r.range[1]) : fmt(r.value));
+    }).join("; ") + ".");
+  }
+  function gbRows() {
+    var sc = D.score;
+    return [
+      { label: "Gradient boosting", value: sc.gradient_boosting.score, counts: sc.gradient_boosting, color: "var(--ink)", hollow: true },
+      { label: "Gradient boosting reading the other loops", value: sc.gradient_boosting_neighbours.score, counts: sc.gradient_boosting_neighbours, color: "var(--ink)", hollow: true }
+    ];
+  }
+  function baselineChart() {
+    var ra = D.score.range_alarm;
+    scoreRows($("#baseline-chart"), [{ label: "Range alarm", value: ra.score, counts: ra, color: "var(--night-range)" }].concat(gbRows()));
+  }
+  function scoreChart() {
+    var sc = D.score;
+    scoreRows($("#score-chart"), [
+      { label: "Hint-heavy design, one model, each repeat", range: [sc.voting_design_single.low, sc.voting_design_single.high], dots: sc.voting_design_single.scores, color: "var(--model)" },
+      { label: "Seven models voting", value: sc.vote.score, counts: sc.vote, color: "var(--model)", big: true }
+    ].concat(gbRows()));
   }
 
   /* ---------- the night: 64 runs ---------- */
@@ -504,8 +346,8 @@
     var f = FAMILIES.find(function (x) { return x[0] === fam; });
     var color = "var(--night-" + fam + ")";
     var p = shapePath(f[2], cx, cy, r);
-    return p ? svg("path", { d: p, fill: color, stroke: "var(--band)", "stroke-width": 1.5 }, parent)
-      : svg("circle", { cx: cx, cy: cy, r: r + .5, fill: color, stroke: "var(--band)", "stroke-width": 1.5 }, parent);
+    return p ? svg("path", { d: p, fill: color, stroke: "var(--paper)", "stroke-width": 1.5 }, parent)
+      : svg("circle", { cx: cx, cy: cy, r: r + .5, fill: color, stroke: "var(--paper)", "stroke-width": 1.5 }, parent);
   }
   function nightLegend() {
     var host = $("#night-legend");
@@ -527,11 +369,17 @@
     var host = $("#night-chart");
     var W = width(host);
     var runs = D.night.runs, R = D.night.rounds;
-    var padL = 34, padR = W < 520 ? 34 : 112, top = 24, plotH = W < 520 ? 300 : 380, bottom = 34;
+    var padL = 34, top = 24, plotH = W < 520 ? 300 : 380, bottom = 34;
     var H = top + plotH + bottom;
     var lo = -10, hi = 100;
     host.innerHTML = "";
     var s = svg("svg", { viewBox: "0 0 " + W + " " + H, width: W, height: H }, host);
+    // gradient boosting reference lines: the right margin is as wide as the longest label, so it never clips
+    var refs = [[D.score.gradient_boosting.score, "gradient boosting " + D.score.gradient_boosting.score], [D.score.gradient_boosting_neighbours.score, "also other loops " + D.score.gradient_boosting_neighbours.score]];
+    var refAttrs = { fill: "var(--ink)", "font-size": 11, "font-weight": 650 };
+    var refLabels = refs.map(function (l) { return txt(s, 0, -100, W < 520 ? String(l[0]) : l[1], refAttrs); });
+    var refW = refLabels.reduce(function (m, t) { var w = 0; try { w = t.getComputedTextLength(); } catch (e) { /* not rendered */ } return Math.max(m, w); }, 0);
+    var padR = Math.max(W < 520 ? 34 : 112, Math.ceil(refW) + 12);
     var bandW = (W - padL - padR) / R;
     var y = function (v) { return top + (1 - (v - lo) / (hi - lo)) * plotH; };
     for (var g = 0; g <= 100; g += 20) {
@@ -544,10 +392,10 @@
       txt(s, cx, H - 12, (W < 520 ? "" : "round ") + r, { "text-anchor": "middle", fill: "var(--ink-2)", "font-size": 12 });
       if (r > 1) svg("line", { x1: padL + (r - 1) * bandW, x2: padL + (r - 1) * bandW, y1: top, y2: top + plotH, stroke: "#d6dee6", "stroke-width": 1, "stroke-dasharray": "2 4" }, s);
     }
-    // gradient boosting reference lines
-    [[D.score.gradient_boosting.score, "gradient boosting " + D.score.gradient_boosting.score], [D.score.gradient_boosting_neighbours.score, "also other loops " + D.score.gradient_boosting_neighbours.score]].forEach(function (l, i) {
+    refs.forEach(function (l, i) {
       svg("line", { x1: padL, x2: W - padR, y1: y(l[0]), y2: y(l[0]), stroke: "var(--ink)", "stroke-width": 1.25, "stroke-dasharray": i ? "2 3" : "6 3" }, s);
-      txt(s, W - padR + 6, y(l[0]) + (i ? -2 : 10), W < 520 ? String(l[0]) : l[1], { fill: "var(--ink)", "font-size": 11, "font-weight": 650 });
+      refLabels[i].setAttribute("x", W - padR + 6);
+      refLabels[i].setAttribute("y", y(l[0]) + (i ? -2 : 10));
     });
     // dots: spread within the round band by score order
     var rad = W < 520 ? 4 : 5.5;
@@ -590,16 +438,17 @@
     t.innerHTML = html + "</tbody>";
   }
 
-  /* ---------- shared row chart pieces (test set and huge-model sections) ---------- */
-  var X = null;          // results_extra.json
+  /* ---------- shared row chart pieces (part 4: test set, Kimi, cost) ---------- */
   var KIND_COLOR = { baseline: "var(--ink)", ours: "var(--model)", floor: "var(--night-range)", big: "var(--ink-2)" };
   function grid(s, x, ticks, y1, y2, H, end, endLabel) {
     ticks.forEach(function (g) {
       var isEnd = g === end;
       svg("line", { x1: x(g), x2: x(g), y1: y1, y2: y2, stroke: isEnd ? "var(--ink)" : "var(--rule)", "stroke-width": 1, "stroke-dasharray": isEnd || g === 0 ? "none" : "2 3" }, s);
-      txt(s, x(g), H - 8, isEnd ? endLabel : String(g), { "text-anchor": isEnd ? "end" : "middle", fill: isEnd ? "var(--ink)" : "var(--ink-3)", "font-size": 11, "font-weight": isEnd ? 700 : 400 });
+      txt(s, x(g), H - 8, isEnd ? endLabel : String(g), { "text-anchor": tickAnchor(x(g), isEnd), fill: isEnd ? "var(--ink)" : "var(--ink-3)", "font-size": 11, "font-weight": isEnd ? 700 : 400 });
     });
   }
+  // A tick at the chart's left edge (no label column, at narrow widths) starts there instead of centring on it.
+  function tickAnchor(px, isEnd) { return isEnd ? "end" : px < 12 ? "start" : "middle"; }
   function rowHit(s, y, h, W, html) {
     var hit = svg("rect", { x: 0, y: y, width: W, height: h, fill: "transparent" }, s);
     hit.addEventListener("pointermove", function (ev) { showTip(html, ev.clientX, ev.clientY); });
@@ -635,8 +484,9 @@
       var tipHtml;
       if (r.sy) {
         var sy = r.sy, ours = sy.kind === "ours", col = KIND_COLOR[sy.kind];
-        label(s, 0, narrow ? y0 + 14 : cy - 2, sy.name, narrow ? null : sy.sub, ours);
-        svg("circle", { cx: x(sy.score), cy: cy, r: ours ? 8 : 7, fill: ours ? col : "var(--band)", stroke: col, "stroke-width": ours ? 2 : 2.5 }, s);
+        // The data's sub-lines ("hybrid view + law hint") use terms the write-up no longer explains: name only.
+        label(s, 0, narrow ? y0 + 14 : cy + 4, sy.name, null, ours);
+        svg("circle", { cx: x(sy.score), cy: cy, r: ours ? 8 : 7, fill: ours ? col : "var(--paper)", stroke: col, "stroke-width": ours ? 2 : 2.5 }, s);
         var t = txt(s, x(sy.score) + 14, cy + 5, String(sy.score), { fill: "var(--ink)", "font-size": ours ? 16 : 15, "font-weight": 800 });
         var t2 = svg("tspan", { fill: "var(--ink-3)", "font-size": 12, "font-weight": 450, dx: 6 }, t);
         t2.textContent = "= " + sy.caught + " − " + sy.false_alarms;
@@ -646,14 +496,14 @@
         var g = r.group, lo = g.scores_low, hi = g.scores_high;
         label(s, 0, narrow ? y0 + 14 : cy - 2, g.name, narrow ? null : g.repeats + " repeats", false);
         svg("rect", { x: x(lo), y: cy - 2, width: Math.max(3, x(hi) - x(lo)), height: 4, rx: 2, fill: "var(--model)", opacity: .35 }, s);
-        g.scores.forEach(function (d) { svg("circle", { cx: x(d), cy: cy, r: 4.5, fill: "var(--model)", stroke: "var(--band)", "stroke-width": 1.5, opacity: .85 }, s); });
+        g.scores.forEach(function (d) { svg("circle", { cx: x(d), cy: cy, r: 4.5, fill: "var(--model)", stroke: "var(--paper)", "stroke-width": 1.5, opacity: .85 }, s); });
         svg("line", { x1: x(g.mean), x2: x(g.mean), y1: cy - 10, y2: cy + 10, stroke: "var(--ink)", "stroke-width": 2 }, s);
-        txt(s, x(hi) + 12, cy + 4, lo + " to " + hi + ", mean " + fmt(g.mean), { fill: "var(--ink-2)", "font-size": 12, "font-weight": 650 });
+        txt(s, x(hi) + 12, cy + 4, lo + " to " + hi + ", mean " + Math.round(g.mean), { fill: "var(--ink-2)", "font-size": 12, "font-weight": 650 });
         tipHtml = "<b>" + esc(g.name) + "</b><br>" + g.repeats + " repeats: " + g.scores.join(", ") + "<br>mean " + fmt(g.mean);
         summary.push(g.name + " " + lo + " to " + hi);
       } else {
         var f = r.floor;
-        label(s, 0, narrow ? y0 + 14 : cy - 2, f.name, narrow ? null : "the floor", false);
+        label(s, 0, narrow ? y0 + 14 : cy + 4, f.name, null, false);
         var ax = x(0);
         svg("path", { d: "M" + (ax + 16) + " " + cy + "H" + (ax + 2) + "M" + (ax + 8) + " " + (cy - 5) + "L" + (ax + 2) + " " + cy + "L" + (ax + 8) + " " + (cy + 5), stroke: "var(--night-range)", "stroke-width": 2.5, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round" }, s);
         var tf = txt(s, ax + 24, cy + 5, String(f.score).replace("-", "−"), { fill: "var(--ink)", "font-size": 15, "font-weight": 800 });
@@ -706,7 +556,7 @@
     }).concat(T.single.map(function (g) {
       return { label: g.name, range: g.found, color: "var(--model)", text: g.found[0] + " to " + g.found[1], tip: "<b>" + esc(g.name) + "</b><br>" + g.found[0] + " to " + g.found[1] + " of " + A + " over " + g.repeats + " repeats" };
     })).concat([{ label: T.floor.name, value: T.floor.found, color: KIND_COLOR.floor, text: String(T.floor.found), tip: "<b>" + esc(T.floor.name) + "</b><br>" + T.floor.found + " of " + A }]);
-    barChart($("#found-chart"), rows, A, { ticks: [0, 14, 28, 42, A], end: A, endLabel: "all " + A, labW: 300, padR: 64, bg: "var(--band)" });
+    barChart($("#found-chart"), rows, A, { ticks: [0, 14, 28, 42, A], end: A, endLabel: "all " + A, labW: 300, padR: 64, bg: "var(--paper)" });
     $("#found-chart").setAttribute("aria-label", "Attacks found, of " + A + ": " + rows.map(function (r) { return r.label + " " + r.text; }).join("; ") + ".");
   }
   function startChart() {
@@ -715,7 +565,7 @@
       return { label: r.name, value: r.within_30, color: "var(--model)", bold: r.key.indexOf("one") !== 0, text: r.within_30 + "  (" + r.median_error + " s)",
         tip: "<b>" + esc(r.name) + "</b><br>start within 30 s for " + r.within_30 + " of " + A + " attacks<br>median error " + r.median_error + " s" };
     }).concat([{ label: "Gradient boosting", value: 0, color: "var(--ink)", text: "gives no start time", tip: "<b>Gradient boosting</b><br>says attack or normal; no start second" }]);
-    barChart($("#start-chart"), rows, A, { ticks: [0, 14, 28, 42, A], end: A, endLabel: "all " + A, labW: 300, padR: 120, bg: "var(--band)",
+    barChart($("#start-chart"), rows, A, { ticks: [0, 14, 28, 42, A], end: A, endLabel: "all " + A, labW: 300, padR: 120, bg: "var(--paper)",
       ref: { value: T.constant.within_30, label: "always “second " + T.constant.second + "”: " + T.constant.within_30 } });
     $("#start-chart").setAttribute("aria-label", "Start named within 30 seconds, of " + A + ": " + rows.map(function (r) { return r.label + " " + r.text; }).join("; ") + "; always answering second " + T.constant.second + ": " + T.constant.within_30 + ".");
   }
@@ -774,7 +624,8 @@
     host.setAttribute("aria-label", "On " + B.rows.total + " test windows, caught of " + A + " and false alarms of " + N + ": " + rows.map(function (r) { return r.name + " " + r.caught + " and " + r.false_alarms; }).join("; ") + ".");
   }
   function costChart() {
-    var host = $("#cost-chart"), C = X.big_model.cost;
+    // The thinking side run stays in the data file; the page text no longer covers it, so the chart leaves it out.
+    var host = $("#cost-chart"), C = X.big_model.cost.filter(function (c) { return c.key !== "kimi_think"; });
     var max = Math.max.apply(null, C.map(function (c) { return c.usd_per_1000 || 0; }));
     var W = width(host), narrow = W < 680;
     var labW = narrow ? 0 : 300, rowH = narrow ? 80 : 46, barH = 14, top = 6;
@@ -783,9 +634,10 @@
     var s = svg("svg", { viewBox: "0 0 " + W + " " + H, width: W, height: H }, host);
     var plotW = (W - labW) * (narrow ? .62 : .5);
     var x = function (v) { return labW + (v / max) * plotW; };
-    [0, 2, 4, 6].forEach(function (g) {
+    var ticks = max > 3 ? [0, 2, 4, 6] : [0, 0.5, 1, 1.5];
+    ticks.forEach(function (g) {
       svg("line", { x1: x(g), x2: x(g), y1: top, y2: H - 24, stroke: g ? "var(--rule-soft)" : "var(--rule)", "stroke-dasharray": g ? "2 3" : "none" }, s);
-      txt(s, x(g), H - 8, "$" + g, { "text-anchor": "middle", fill: "var(--ink-3)", "font-size": 11 });
+      txt(s, x(g), H - 8, "$" + (g && max <= 3 ? g.toFixed(2) : g), { "text-anchor": tickAnchor(x(g), false), fill: "var(--ink-3)", "font-size": 11 });
     });
     C.forEach(function (c, i) {
       var y0 = top + i * rowH, by = narrow ? y0 + 20 : y0 + 6;
@@ -807,27 +659,51 @@
     });
     host.setAttribute("aria-label", "US dollars per 1,000 windows: " + C.map(function (c) { return c.name + " " + (c.usd_per_1000 != null ? c.usd_per_1000 : "not priced") + ", data " + c.data; }).join("; ") + ".");
   }
-  function thinkLine() {
-    var t = X.big_model.thinking;
-    $("#think-line").textContent = "On " + t.rows + " windows (" + t.attack + " attack, " + t.normal + " normal), Kimi cold caught " + t.off.caught + " with " + t.off.false_alarms +
-      " false alarms with thinking off, and " + t.on.caught + " with " + t.on.false_alarms + " with thinking on (low), at four times the price. On the same windows gradient boosting caught " +
-      t.gb.caught + " with " + t.gb.false_alarms + " false alarms; our votes " + t.vote3.caught + " and " + t.vote7.caught + " with " + t.vote3.false_alarms + ".";
-  }
-
-  /* ---------- numbers in the static text ---------- */
+  /* ---------- numbers in the static text ----------
+     data-k="path" reads demo.json, data-x="path" reads results_extra.json (a path starting with "hero."
+     reads the example window of demo.json). Options on the same element, all paths in the same file:
+       data-minus="path"  shows the value minus this one (the differences in part 5)
+       data-of="path"     shows the value as a whole percentage of this one
+       data-round         rounds to a whole number
+     The static text keeps the same value as a fallback when a file is missing. */
   function bindNumbers() {
-    document.querySelectorAll("[data-k]").forEach(function (n) {
-      var v = get(D, n.dataset.k);
-      if (v != null && typeof v !== "object") n.textContent = fmt(v);
-    });
-    document.querySelectorAll("[data-x]").forEach(function (n) {
-      var v = get(X, n.dataset.x);
+    function bind(n, src, path) {
+      var look = function (pth) { return pth.indexOf("hero.") === 0 && src === D ? get(heroWindow(), pth.slice(5)) : get(src, pth); };
+      var v = look(path);
       if (v == null || typeof v === "object") return;
-      n.textContent = typeof v === "number" && /usd/.test(n.dataset.x) ? v.toFixed(2) : fmt(v);
+      if (n.dataset.minus != null) v = v - look(n.dataset.minus);
+      if (n.dataset.of != null) v = Math.round(100 * v / look(n.dataset.of));
+      if (n.dataset.round != null) v = Math.round(v);
+      if (typeof v !== "number") { n.textContent = String(v); return; }
+      n.textContent = /usd/.test(path) ? v.toFixed(2) : fmt(v);
+    }
+    document.querySelectorAll("[data-k]").forEach(function (n) { bind(n, D, n.dataset.k); });
+    if (X) document.querySelectorAll("[data-x]").forEach(function (n) { bind(n, X, n.dataset.x); });
+  }
+
+  /* ---------- tables: at narrow widths each row stacks as label and value pairs (css/style.css).
+     Each cell gets its column header as data-label, read after the numbers are bound. ---------- */
+  function labelTables() {
+    document.querySelectorAll("#view-writeup .dtab table").forEach(function (t) {
+      var heads = Array.prototype.map.call(t.querySelectorAll("thead th"), function (th) { return th.textContent.trim(); });
+      // explicit roles: a table restyled with display:block loses its table semantics in some browsers
+      t.setAttribute("role", "table");
+      t.parentNode.classList.add("is-labelled");
+      t.querySelectorAll("thead, tbody").forEach(function (g) { g.setAttribute("role", "rowgroup"); });
+      t.querySelectorAll("tr").forEach(function (r) { r.setAttribute("role", "row"); });
+      t.querySelectorAll("thead th").forEach(function (c) { c.setAttribute("role", "columnheader"); });
+      t.querySelectorAll("tbody th").forEach(function (c) { c.setAttribute("role", "rowheader"); });
+      t.querySelectorAll("td").forEach(function (c) { c.setAttribute("role", "cell"); });
+      t.querySelectorAll("tbody tr").forEach(function (tr) {
+        Array.prototype.forEach.call(tr.children, function (c, i) {
+          if (c.tagName === "TD" && heads[i]) c.setAttribute("data-label", heads[i]);
+          if (c.tagName === "TD" && !c.textContent.trim()) c.classList.add("is-empty");
+        });
+      });
     });
   }
 
-  /* ---------- nav state ---------- */
+  /* ---------- header: mark the part in view, and keep it in sight in the scrolling strip ---------- */
   function navSpy() {
     if (!("IntersectionObserver" in window)) return;
     var links = {};
@@ -836,51 +712,75 @@
       entries.forEach(function (en) {
         if (en.isIntersecting && links[en.target.id]) {
           Object.keys(links).forEach(function (k) { links[k].removeAttribute("aria-current"); });
-          links[en.target.id].setAttribute("aria-current", "true");
+          var a = links[en.target.id];
+          a.setAttribute("aria-current", "true");
+          var nav = a.parentNode;
+          if (nav.scrollWidth > nav.clientWidth + 1) {
+            var left = a.offsetLeft - nav.offsetLeft, right = left + a.offsetWidth;
+            if (left < nav.scrollLeft || right > nav.scrollLeft + nav.clientWidth) nav.scrollLeft = Math.max(0, left - 16);
+          }
         }
       });
     }, { rootMargin: "-45% 0px -50% 0px" });
     Object.keys(links).forEach(function (id) { var s = document.getElementById(id); if (s) io.observe(s); });
   }
+  // When the part links do not fit (phones), fade the side that has more links, so the strip reads as scrollable.
+  function navStrip() {
+    var nav = $(".bar__nav");
+    if (!nav) return;
+    var mark = function () {
+      var more = nav.scrollWidth > nav.clientWidth + 1;
+      nav.classList.toggle("is-more-right", more && nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 2);
+      nav.classList.toggle("is-more-left", more && nav.scrollLeft > 2);
+    };
+    nav.addEventListener("scroll", mark, { passive: true });
+    window.addEventListener("resize", mark);
+    document.addEventListener("hai:viewchange", mark);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(mark);
+    mark();
+  }
 
   function drawAll() {
+    if (!shown()) return;
     Object.keys(redraws).forEach(function (k) { redraws[k](); });
+    document.dispatchEvent(new CustomEvent("hai:writeup-drawn"));
   }
 
   function fail(msg) {
     var m = el("p", { class: "noscript", text: msg });
-    document.querySelector("main").prepend(m);
+    (document.getElementById("view-writeup") || document.querySelector("main")).prepend(m);
   }
 
+  /* The control room (js/console.js) loads its own data; nothing here blocks it. */
   function init() {
     tip = $("#tip");
+    labelTables();
+    navStrip();
     var main = fetch("data/demo.json").then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
     var extra = fetch("data/results_extra.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
     Promise.all([main, extra]).then(function (res) {
       D = res[0];
       X = res[1] || {};
       bindNumbers();
-      renderHero();
-      buildPicker();
-      bindSeg();
-      var fromHash = decodeURIComponent((location.hash.match(/^#w=(.+)$/) || [])[1] || "");
-      var first = D.windows.find(function (w) { return w.id === fromHash; }) || D.windows.find(function (w) { return w.id === D.hero; }) || D.windows[0];
-      select(first.id, false);
-      if (fromHash) { var t = document.getElementById("try"); if (t) t.scrollIntoView(); }
-      redraws.reads = readsChart;
+      labelTables();
+      renderWindowFigures();
+      redraws.baseline = baselineChart;
       redraws.score = scoreChart;
       redraws.night = nightChart;
+      redraws.reads = readsChart;
       nightLegend();
       nightTable();
-      readsChart(); scoreChart(); nightChart();
       if (X.test && X.big_model) {
         redraws.test = testChart; redraws.found = foundChart; redraws.start = startChart;
         redraws.big = bigChart; redraws.cost = costChart;
-        testChart(); foundChart(); startChart(); bigChart(); costChart(); thinkLine();
       } else {
-        fail("The test-set results could not be loaded (data/results_extra.json). The headline numbers in the text still hold.");
+        fail("The test-set results could not be loaded (data/results_extra.json). The numbers in the text still hold.");
       }
       navSpy();
+      drawAll();
+      document.addEventListener("hai:viewchange", function (ev) { if (ev.detail.view === "writeup") drawAll(); });
+      // the 64-runs chart sizes its right margin from its label widths: measure again with the page font
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawAll);
       var lastW = window.innerWidth, timer;
       window.addEventListener("resize", function () {
         if (Math.abs(window.innerWidth - lastW) < 2) return;

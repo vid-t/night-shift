@@ -6,7 +6,7 @@ A small time-series language model reads 300 seconds of one control loop of a la
 
 Built with Llama. The language model is Llama 3.2 1B, under Meta's Llama 3.2 Community License.
 
-An interactive demo page with real windows is in [`demo/`](demo/README.md). The twelve trained models are in the release; [MODELS.md](MODELS.md) says how to use one.
+The demo page is in [`demo/`](demo/README.md): a control room that replays six real moments of the plant with the models' recorded answers, and the write-up behind a toggle. The twelve trained models are in the release; [MODELS.md](MODELS.md) says how to use one.
 
 ## Conclusion
 
@@ -88,7 +88,7 @@ These are the steps we took, in order. Each step says what it does, how to run i
 | 9 | Ask a huge general model | `training/llm_compare.py` | any machine, an OpenRouter key |
 | 10 | Check what the model reads | the answers of steps 5 and 7 | |
 | 11 | Recount every number yourself | `runs/final/final_score.py` | any machine |
-| 12 | The demo page | `demo/build_data.py`, `demo/build_results.py` | any machine |
+| 12 | The demo page | `demo/build_data.py`, `demo/build_scenes.py`, `demo/build_results.py` | any machine |
 | 13 | The TimeNet connector | a separate pull request | |
 
 **No graphics card?** Do step 1, skip steps 5 to 7 and download our answer files with the [GitHub CLI](https://cli.github.com/). Steps 8, 11 and 12 then run on a plain desktop:
@@ -159,7 +159,7 @@ tar -xzf answers.tar.gz            # at the repository root; it fills runs/
   - **Text hints** (we call them clauses). Each is one or two numbers computed from the series, fitted on quiet training rows only, added to its text line. `step`: the largest one-second step against the usual one, and its second. `law`: how many seconds the command moves against what the controller should do. Only the boiler pressure loop gets it, the one loop where we could model the controller well. `size` and `plant` were tried too; they did not help.
   - **Our two final designs.** Simpler design: hybrid view + law hint (`--view zsize --clauses law`). Hint-heavy design: loop-relative view + step and law hints (`--view looprange --clauses step,law`).
 - **Run it.** Nothing to run; steps 5 and 6 use these flags.
-- **What comes out: one worked example.** This window is from the **check set** (validation), not the test set. It is the example the demo page opens with: 300 seconds of the boiler level loop (P1-LC) in HAI 22.04, file `test3`. An attack on this loop starts at second 112. The model gets one instruction, then three series. Each series is a short text line, our computed hint, followed by its curve as soft tokens. This is the hint-heavy design (the law hint only appears in the boiler pressure loop).
+- **What comes out: one worked example.** This window is from the **check set** (validation), not the test set. It is the example window of the demo page's write-up, and the third scene of its control room: 300 seconds of the boiler level loop (P1-LC) in HAI 22.04, file `test3`. An attack on this loop starts at second 112. The model gets one instruction, then three series. Each series is a short text line, our computed hint, followed by its curve as soft tokens. This is the hint-heavy design (the law hint only appears in the boiler pressure loop).
 
 ```text
 You are given 300 seconds of the boiler level control loop of a power plant testbed, one reading
@@ -183,7 +183,7 @@ The measurement starts swinging from second 120 while the target and command sta
 Change starts near second 112. Answer: attack
 ```
 
-All seven models of the vote said attack. One of their answers, the one the demo shows next to the vote:
+All seven models of the vote said attack. One of their answers, the one the demo page shows:
 
 ```text
 The command falls from second 128 while the target stays flat. The measurement rises after it.
@@ -284,11 +284,12 @@ The verdict is right. The start is 15 seconds late, and the sentence describes t
 - **Run it** (any machine; after step 1, with the answers unpacked):
   ```bash
   uv run python demo/build_data.py
+  uv run python demo/build_scenes.py
   uv run python demo/build_results.py
   cd demo && python3 -m http.server 8765 --bind 127.0.0.1
   ```
   Then open http://127.0.0.1:8765/. Opening `index.html` as a file does not work: the page fetches its JSON.
-- **What comes out.** `demo/data/demo.json`, built from check-set files only, and `demo/data/results_extra.json`, built from `runs/final/`. Each script stops if its recount disagrees with the committed numbers.
+- **What comes out.** `demo/data/demo.json` and `demo/data/scenes.json`, built from check-set files only, and `demo/data/results_extra.json`, built from `runs/final/`. `scenes.json` holds six moments of the plant, each with all six loops. Each script stops if its recount disagrees with the committed numbers.
 - **More.** [demo/README.md](demo/README.md): the files, where each number comes from, and what to publish.
 
 ### 13. The TimeNet connector
@@ -337,7 +338,7 @@ The answer files and logs under `runs/` are in the release's `answers.tar.gz`. T
 
 ## Data and licences
 
-- **HAI.** The data comes from the HAI security datasets, <https://github.com/icsdataset/hai>, at commit `2a814cebc9a66b06c9e5cd545e2d72e65d383737`, licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Raw and processed data are never committed here. The two committed tables derived from HAI, `data/frozen/attacks.csv` and `data/frozen/tag_map.csv`, are shared under the same licence. So are the demo page's data files, which hold 16 check-set windows and counts, `REPORT.md`, the result files under `runs/` and the release's answer archive. [DATA_LICENSE.md](DATA_LICENSE.md) says what was changed. The examples table the TimeNet connector reads is derived from HAI and carries CC BY-SA 4.0 as well; it will be published in its own repository.
+- **HAI.** The data comes from the HAI security datasets, <https://github.com/icsdataset/hai>, at commit `2a814cebc9a66b06c9e5cd545e2d72e65d383737`, licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Raw and processed data are never committed here. The two committed tables derived from HAI, `data/frozen/attacks.csv` and `data/frozen/tag_map.csv`, are shared under the same licence. So are the demo page's data files, which hold 16 check-set windows, six check-set moments with all six loops each, and counts, `REPORT.md`, the result files under `runs/` and the release's answer archive. [DATA_LICENSE.md](DATA_LICENSE.md) says what was changed. The examples table the TimeNet connector reads is derived from HAI and carries CC BY-SA 4.0 as well; it will be published in its own repository.
 - **OpenTSLM.** [OpenTSLM](https://github.com/OpenTSLM/OpenTSLM) is MIT-licensed (Stanford University, ETH Zurich and the project authors). `training/setup.sh` clones it at a pinned commit into `external/`, which is not in git. Its licence text is in `LICENSES/`. The starting checkpoint is OpenTSLM's published `OpenTSLM/llama-3.2-1b-sleep-sp`.
 - **Llama 3.2 1B.** The language model is Meta's Llama 3.2 1B, under Meta's Llama 3.2 Community License. On the training machine we load the open copy `unsloth/Llama-3.2-1B`, whose weights match Meta's file by SHA-256. The trained models of the release are built with Llama and fall under the same licence; see `NOTICE` and `LICENSES/`.
 - **The TimeNet hackathon.** This is an entry to the [TimeNet Online Hackathon](https://challenge.timenet.ai/). We also built a TimeNet connector for these examples (dataset id `icsdataset/hai-loop-attacks`).

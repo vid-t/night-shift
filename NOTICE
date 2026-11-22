@@ -16,5 +16,6 @@ Other third-party material:
   installs OpenTSLM at a pinned commit. Licence text: LICENSES/OpenTSLM-MIT.txt.
 - HAI security dataset (https://github.com/icsdataset/hai), CC BY-SA 4.0. Files derived
   from it are listed in DATA_LICENSE.md and shared under the same licence.
-- Archivo typeface (demo/fonts/archivo-latin.woff2), SIL Open Font License 1.1,
-  Copyright 2020 The Archivo Project Authors. Licence text: demo/fonts/OFL.txt.
+- Geist and Geist Mono typefaces (demo/fonts/geist-latin.woff2,
+  demo/fonts/geist-mono-latin.woff2), SIL Open Font License 1.1, Copyright The Geist
+  Project Authors (https://github.com/vercel/geist-font). Licence text: demo/fonts/OFL.txt.
