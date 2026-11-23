@@ -18,6 +18,7 @@ training = ["torch>=2.2", "tqdm>=4.62"]
 [project.scripts]
 hai-build = "hai.build:main"
 hai-export = "hai.export:main"
+hai-audit = "hai.audit:main"
 
 [build-system]
 requires = ["hatchling"]

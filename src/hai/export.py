@@ -14,6 +14,10 @@ Reads data/processed/examples.parquet and writes
   data/processed/timenet/examples_table.csv.gz one row per example, no series values
 
 Every draw uses a fixed seed, so two runs write the same bytes.
+
+`--table v2` reads and writes data/processed/v2/ instead. Its TimeNet table has two more columns
+(`attack_runs`, `matched_from`), and the export audits the written table against the raw files
+(hai.audit) and fails when a check fails.
 """
 import argparse
 import json
@@ -23,7 +27,7 @@ import numpy as np
 import pandas as pd
 
 from hai.answers import label_of
-from hai.config import PROCESSED
+from hai.config import TABLES, out_dir, table_version, use_table
 from hai.dataset import LOOP_NAMES, SEED
 from hai.loaders import tag_map
 
@@ -33,10 +37,17 @@ SPLIT_FILES = ("train", "validation", "test", "test_full", "test_shuffled", "val
 TABLE_COLUMNS = ["example_id", "window_id", "version", "file", "split", "window_kind", "anchor", "scored", "start",
                  "loop", "label", "attack_ids", "loop_uncertain", "attack_start_s", "attack_end_s",
                  "no_visible_change", "reacting", "train_use", "tags", "roles", "source_tags", "answer"]
+# v2: every attacked run of the loop in the window ("first-last first-last", seconds from the window start,
+# inclusive), and how each series' source column was matched to its 22.04 tag
+TABLE_COLUMNS_V2 = [*TABLE_COLUMNS[:15], "attack_runs", *TABLE_COLUMNS[15:21], "matched_from", "answer"]
 
 
-def read_examples(path: Path = PROCESSED / "examples.parquet") -> pd.DataFrame:
-    return pd.read_parquet(path)
+def table_columns() -> list[str]:
+    return TABLE_COLUMNS if table_version() == "v1" else TABLE_COLUMNS_V2
+
+
+def read_examples(path: Path | None = None) -> pd.DataFrame:
+    return pd.read_parquet(path or out_dir() / "examples.parquet")
 
 
 def test_rows(ex: pd.DataFrame) -> np.ndarray:
@@ -93,18 +104,22 @@ def table(ex: pd.DataFrame) -> pd.DataFrame:
     src = {(r.version, r.standard): r.source for r in tag_map().itertuples()}
     t = ex.copy()
     t["source_tags"] = [" ".join(src[(v, tag)] for tag in tags) for v, tags in zip(t.version, t.tags)]
+    if table_version() != "v1":
+        how = {(r.version, r.standard): r.matched_from for r in tag_map().itertuples()}
+        t["matched_from"] = [" ".join(how[(v, tag)] for tag in tags) for v, tags in zip(t.version, t.tags)]
     t["tags"] = t.tags.map(" ".join)
     t["roles"] = t.roles.map(" ".join)
     t["start"] = t.start.dt.strftime("%Y-%m-%d %H:%M:%S")
-    return t[TABLE_COLUMNS]
+    return t[table_columns()]
 
 
 def write_table(ex: pd.DataFrame, path: Path) -> None:
     table(ex).to_csv(path, index=False, compression={"method": "gzip", "mtime": 0})
 
 
-def export(ex: pd.DataFrame, out: Path = PROCESSED) -> dict[str, int]:
+def export(ex: pd.DataFrame, out: Path | None = None) -> dict[str, int]:
     """Write every file under `out` (opentslm/ and timenet/). Returns rows per file."""
+    out = out_dir() if out is None else out
     (out / "opentslm").mkdir(parents=True, exist_ok=True)
     (out / "timenet").mkdir(parents=True, exist_ok=True)
     ex = ex.reset_index(drop=True)
@@ -133,14 +148,28 @@ def export(ex: pd.DataFrame, out: Path = PROCESSED) -> dict[str, int]:
 
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--examples", type=Path, default=PROCESSED / "examples.parquet")
-    ap.add_argument("--out", type=Path, default=PROCESSED, help="folder that gets opentslm/ and timenet/ (default: %(default)s)")
+    ap.add_argument("--table", choices=TABLES, default="v1", help="table version (default: %(default)s)")
+    ap.add_argument("--examples", type=Path, default=None,
+                    help="default: data/processed/examples.parquet (v1) or data/processed/v2/examples.parquet (v2)")
+    ap.add_argument("--out", type=Path, default=None,
+                    help="folder that gets opentslm/ and timenet/ (default: the folder of the table version)")
+    ap.add_argument("--no-audit", action="store_true", help="v2: skip the audit of the written table")
     args = ap.parse_args(argv)
-    if not args.examples.exists():
-        raise SystemExit(f"{args.examples} missing: run `uv run hai-build` first")
-    counts = export(read_examples(args.examples), args.out)
+    use_table(args.table)
+    examples = args.examples or out_dir() / "examples.parquet"
+    out = args.out or out_dir()
+    if not examples.exists():
+        raise SystemExit(f"{examples} missing: run `uv run hai-build --table {args.table}` first")
+    counts = export(read_examples(examples), out)
     for name, n in counts.items():
-        print(f"{n:>6} rows  {args.out / name}")
+        print(f"{n:>6} rows  {out / name}")
+    if args.table != "v1" and not args.no_audit:
+        from hai import audit
+
+        report = audit.run(out / "timenet" / "examples_table.csv.gz", out / "timenet" / "AUDIT.md")
+        if report.failed:
+            raise SystemExit(f"audit failed: {report.failed} checks, see {out / 'timenet' / 'AUDIT.md'}")
+        print(f"audit passed: {out / 'timenet' / 'AUDIT.md'}")
 
 
 if __name__ == "__main__":
