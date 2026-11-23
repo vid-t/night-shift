@@ -2,9 +2,15 @@
 
 download and verify -> attack table vs PDF -> table vs flags -> windows ->
 loop examples -> answer text -> splits -> baselines -> REPORT.md
+
+`--table v2` builds the second table version (see hai.config.TABLES) into data/processed/v2/;
+the default, v1, writes the table Night Shift was trained and scored on, to the same paths as before.
+`--out` writes every output (REPORT.md included) to another folder, for example to check that a
+rebuild reproduces the published files without touching them.
 """
 import argparse
 import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -12,7 +18,7 @@ import pandas as pd
 from hai import attacks_pdf, check_table, download, report
 from hai.answers import SWING_ELIGIBLE_MAX_RATE, answer, swing
 from hai.baselines import run as run_baselines
-from hai.config import DATA_FILES, ENABLED, FROZEN, NORMAL_FILES, PROCESSED
+from hai.config import DATA_FILES, ENABLED, FROZEN, NORMAL_FILES, ROOT, TABLES, out_dir, table_version, use_table
 from hai.dataset import SEED, build_examples
 from hai.loaders import count_rows, load, standard_tags
 
@@ -159,9 +165,15 @@ def tracking(version: str) -> pd.DataFrame:
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--versions", default=",".join(ENABLED), help="comma-separated, default: %(default)s")
+    ap.add_argument("--table", choices=TABLES, default="v1", help="table version (default: %(default)s)")
+    ap.add_argument("--out", type=Path, default=None,
+                    help="output folder (default: data/processed for v1, data/processed/v2 for v2)")
     args = ap.parse_args(argv)
     versions = args.versions.split(",")
-    PROCESSED.mkdir(parents=True, exist_ok=True)
+    use_table(args.table, args.out)
+    out = out_dir()
+    out.mkdir(parents=True, exist_ok=True)
+    print(f"table {table_version()}, writing to {out}", flush=True)
 
     print("1. download and verify SHA-256", flush=True)
     download.main()
@@ -190,7 +202,7 @@ def main(argv=None) -> None:
         else:
             included.append(v)
     checks, before = pd.concat(checks, ignore_index=True), pd.concat(before, ignore_index=True)
-    checks.to_csv(PROCESSED / "table_check.csv", index=False)
+    checks.to_csv(out / "table_check.csv", index=False)
 
     print(f"4. windows and loop examples for {included}", flush=True)
     table = check_table.attacks_table()
@@ -211,6 +223,9 @@ def main(argv=None) -> None:
     texts = [answer(r, {t: scales[(r.version, t)] for t in r.tags}, r.loop in eligible) for r in ex.itertuples()]
     ex["answer"] = [t for t, _ in texts]
     ex["no_visible_change"] = [hidden for _, hidden in texts]
+    if table_version() != "v1":
+        # v2: no rationale where the rules see nothing; the old text named a start second the series do not show
+        ex.loc[ex.no_visible_change, "answer"] = ""
     level_only = np.array([r.label == "attack" and answer(r, {t: scales[(r.version, t)] for t in r.tags})[1]
                            for r in ex.itertuples()], bool)  # the rule without the swing test, for the report
     ex["reacting"] = reacting(ex, scales, eligible)
@@ -219,12 +234,12 @@ def main(argv=None) -> None:
     ex["scales"] = [[float(scales[(r.version, t)]) for t in r.tags] for r in ex.itertuples()]
     ex["train_use"] = training_sample(ex)
 
-    wins.to_parquet(PROCESSED / "windows.parquet", index=False)
-    ex.to_parquet(PROCESSED / "examples.parquet", index=False)
+    wins.to_parquet(out / "windows.parquet", index=False)
+    ex.to_parquet(out / "examples.parquet", index=False)
 
     print("6. baselines on validation", flush=True)
     base = run_baselines(ex[ex.split != "test"], ranges, scales)
-    with open(PROCESSED / "baselines.json", "w") as f:
+    with open(out / "baselines.json", "w") as f:
         json.dump({k: v.to_dict("records") for k, v in base.items()}, f, indent=1, default=str)
 
     print("7. REPORT.md", flush=True)
@@ -232,7 +247,8 @@ def main(argv=None) -> None:
                  facts=pd.concat(facts, ignore_index=True), checks=checks, before=before,
                  unmatched=pd.concat(unmatched, ignore_index=True),
                  renames=pd.concat(renames, ignore_index=True), tracks=pd.concat(tracks, ignore_index=True),
-                 wins=wins, ex=ex, base=base, eligibility=eligibility, level_only=level_only)
+                 wins=wins, ex=ex, base=base, eligibility=eligibility, level_only=level_only,
+                 path=ROOT / "REPORT.md" if args.table == "v1" and args.out is None else out / "REPORT.md")
     print("done")
 
 

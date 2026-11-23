@@ -7,12 +7,13 @@ from functools import lru_cache
 
 import pandas as pd
 
-from hai.config import FROZEN, PROCESSED, raw_path
+from hai.config import PROCESS_FLAG_VERSIONS, raw_path, table_version, tag_map_file, tidy_dir
 
 
 @lru_cache
 def tag_map() -> pd.DataFrame:
-    return pd.read_csv(FROZEN / "tag_map.csv", dtype=str, keep_default_na=False)
+    """The tag map of the selected table version (hai.config.use_table): data/frozen/tag_map.csv for v1."""
+    return pd.read_csv(tag_map_file(), dtype=str, keep_default_na=False)
 
 
 def standard_tags() -> list[str]:
@@ -25,6 +26,10 @@ def _tidy(df: pd.DataFrame, version: str, time_col: str, attack: pd.Series) -> p
     for std, src in zip(tm.standard, tm.source):
         out[std] = df[src].astype("float64") if src else float("nan")
     out["attack"] = attack.astype("int8").to_numpy()
+    if table_version() != "v1" and version in PROCESS_FLAG_VERSIONS:
+        # v2 reads the localization interval from the flag of the loop's own process
+        for p in ("P1", "P2", "P3"):
+            out[f"attack_{p}"] = df[f"attack_{p}"].astype("int8").to_numpy()
     return out
 
 
@@ -74,9 +79,9 @@ LOADERS = {"20.07": load_2007, "21.03": load_2103, "22.04": load_2204, "23.05": 
 
 
 def load(version: str, stem: str, cache: bool = True) -> pd.DataFrame:
-    """Tidy table for one file, cached as parquet in data/processed/tidy/<tag map hash>."""
-    key = hashlib.sha256((FROZEN / "tag_map.csv").read_bytes()).hexdigest()[:8]
-    path = PROCESSED / "tidy" / key / version / f"{stem}.parquet"
+    """Tidy table for one file, cached as parquet in <tidy dir>/<tag map hash> (data/processed/tidy for v1)."""
+    key = hashlib.sha256(tag_map_file().read_bytes()).hexdigest()[:8]
+    path = tidy_dir() / key / version / f"{stem}.parquet"
     if cache and path.exists():
         return pd.read_parquet(path)
     df = LOADERS[version](stem)

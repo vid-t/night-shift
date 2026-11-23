@@ -6,11 +6,17 @@ bands, so the start second cannot be guessed. One of the six, picked at random,
 is the scored window of that attack. Normal windows: at least 600 seconds from
 any attack, half from attack files, half from the version's normal file.
 A loop example is one window seen through one loop.
+
+Table v2 (hai.config.use_table) changes two things here. Where HAI has one flag per process
+(20.07, 21.03), a loop's attack seconds are the seconds of its attack's run in which the flag of the
+loop's own process is on; a loop is labelled `attack` when one of them falls in the window, and the
+example lists every run (`attack_runs`). And a window that is an exact copy of a window in another
+file of the version (same start, same rows) is dropped.
 """
 import numpy as np
 import pandas as pd
 
-from hai.config import DATA_FILES, NORMAL_FILES, split_of
+from hai.config import DATA_FILES, NORMAL_FILES, PROCESS_FLAG_VERSIONS, split_of, table_version
 from hai.loaders import load, tag_map
 
 WIN = 300
@@ -99,6 +105,77 @@ def normal_windows(version: str, steps: pd.DataFrame, spans: pd.DataFrame, rng) 
     return out
 
 
+def runs_of(flag: np.ndarray) -> list[tuple[int, int]]:
+    """(first, last) index of every run of ones, both inclusive."""
+    f = np.concatenate([[0], np.asarray(flag, "int8") != 0, [0]]).astype("int8")
+    d = np.diff(f)
+    return list(zip(np.flatnonzero(d == 1).tolist(), (np.flatnonzero(d == -1) - 1).tolist()))
+
+
+def step_runs(version: str, steps: pd.DataFrame) -> list[list[tuple[pd.Timestamp, pd.Timestamp]]]:
+    """For each attack step, the runs of seconds that count as attacked for its loop.
+
+    v1, and versions without process flags: the whole flag run of the attack. v2 in 20.07 and 21.03:
+    the runs inside the attack's flag run in which the flag of the loop's process (attack_P1, _P2,
+    _P3) is on. HAI's process flags pulse during some attacks, so one attack can give several runs.
+    """
+    if table_version() == "v1" or version not in PROCESS_FLAG_VERSIONS:
+        return [[(s.flag_start, s.flag_end)] for s in steps.itertuples()]
+    out = []
+    for s in steps.itertuples():
+        d = load(version, s.file)
+        i0 = int((s.flag_start - d.time.iloc[0]).total_seconds())
+        i1 = int((s.flag_end - d.time.iloc[0]).total_seconds())
+        assert d.time.iloc[i0] == s.flag_start and d.time.iloc[i1] == s.flag_end
+        flag = d[f"attack_{s.loop.split('-')[0]}"].to_numpy()[i0:i1 + 1]
+        out.append([(d.time.iloc[i0 + a], d.time.iloc[i0 + b]) for a, b in runs_of(flag)])
+    return out
+
+
+def exact_copies(version: str, wins: pd.DataFrame, tables: dict) -> pd.Series:
+    """For each window, the file of the window it copies exactly, or "".
+
+    A copy has the same start as a window of another file of the version and the same rows (every
+    tidy column). HAI 21.03 train1 and test3 share 12 hours of identical rows, so their windows could
+    coincide. The window in the version's normal file is kept; between two attack files, the first in
+    DATA_FILES.
+    """
+    order = {stem: (stem != NORMAL_FILES[version], DATA_FILES[version].index(stem)) for stem in DATA_FILES[version]}
+    out = pd.Series("", index=wins.index)
+    for _, group in wins.groupby("start"):
+        if group.file.nunique() < 2:
+            continue
+        rows = {}
+        for w in group.itertuples():
+            d = tables[w.file]
+            i0 = int((w.start - d.time.iloc[0]).total_seconds())
+            rows[w.Index] = d.iloc[i0:i0 + WIN].drop(columns="time").reset_index(drop=True)
+        ranked = sorted(group.itertuples(), key=lambda w: order[w.file])
+        for i, w in enumerate(ranked):
+            for keep in ranked[:i]:
+                if keep.file != w.file and rows[w.Index].equals(rows[keep.Index]) and not out[keep.Index]:
+                    out[w.Index] = keep.file
+                    break
+    return out
+
+
+def loop_seconds(on: pd.DataFrame, w) -> list[tuple[int, int]]:
+    """The attacked runs of one loop in window `w`, in seconds from the window start, both ends inclusive.
+
+    Union of the runs of every step of the loop that touches the window. The last second can lie
+    after the window end.
+    """
+    runs = [((a - w.start).total_seconds(), (b - w.start).total_seconds()) for rs in on.runs for a, b in rs
+            if a <= w.end and b >= w.start]
+    if not runs:
+        return []
+    lo, hi = int(min(a for a, _ in runs)), int(max(b for _, b in runs))
+    mask = np.zeros(hi - lo + 1, "int8")
+    for a, b in runs:
+        mask[int(a) - lo:int(b) - lo + 1] = 1
+    return [(lo + a, lo + b) for a, b in runs_of(mask)]
+
+
 def build_examples(version: str, attacks: pd.DataFrame, steps: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Returns (windows, loop examples) for one version.
 
@@ -115,8 +192,15 @@ def build_examples(version: str, attacks: pd.DataFrame, steps: pd.DataFrame) -> 
     wins["split"] = [split_of(version, f) or ("train" if f == NORMAL_FILES[version] else None) for f in wins.file]
     tags = loop_tags(version)
     tables = {stem: load(version, stem) for stem in wins.file.unique()}
+    v2 = table_version() != "v1"
+    if v2:
+        steps = steps.assign(runs=step_runs(version, steps))
+        wins["copy_of"] = exact_copies(version, wins, tables)
     examples, keep = [], []
     for w in wins.itertuples():
+        if v2 and w.copy_of:
+            keep.append(False)  # an exact copy of a window in another file
+            continue
         hit = steps[(steps.file == w.file) & (steps.flag_start <= w.end) & (steps.flag_end >= w.start)]
         covered = hit[hit.loop.isin(LOOPS)]
         if len(hit) and covered.empty:
@@ -129,6 +213,25 @@ def build_examples(version: str, attacks: pd.DataFrame, steps: pd.DataFrame) -> 
         assert len(seg) == WIN and seg.time.iloc[0] == w.start
         for loop in LOOPS:
             on = covered[covered.loop == loop]
+            if v2:
+                runs = loop_seconds(on, w)
+                ids = sorted({a for a, rs in zip(on.attack_id, on.runs)
+                              if any(x <= w.end and y >= w.start for x, y in rs)})
+                examples.append({
+                    "window_id": f"{version}/{w.file}/{w.start:%Y%m%dT%H%M%S}",
+                    "version": version, "file": w.file, "split": w.split, "window_kind": w.kind,
+                    "anchor": w.anchor, "offset": w.offset, "scored": bool(w.scored), "start": w.start, "loop": loop,
+                    "label": "attack" if runs else "normal",
+                    "attack_ids": " ".join(ids),
+                    "loop_uncertain": bool(hit.note.str.contains("loop uncertain").any()),
+                    "attack_start_s": runs[0][0] if runs else -1,
+                    "attack_end_s": runs[-1][1] if runs else -1,
+                    "attack_runs": " ".join(f"{a}-{b}" for a, b in runs),
+                    "tags": [t for t, _ in tags.get(loop, [])],
+                    "roles": [r for _, r in tags.get(loop, [])],
+                    "values": [seg[t].to_numpy("float32") for t, _ in tags.get(loop, [])],
+                })
+                continue
             label = "attack" if len(on) else "normal"
             first = on.sort_values("flag_start").iloc[0] if len(on) else None
             examples.append({
